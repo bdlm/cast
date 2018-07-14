@@ -10,17 +10,21 @@ import (
 
 var errNegativeNotAllowed = errors.New("unable to cast negative value")
 
-// jsonStringToObject attempts to unmarshall a string as JSON into
-// the object passed as pointer.
+/*
+jsonStringToObject attempts to unmarshall a string as JSON into the object
+passed as pointer.
+*/
 func jsonStringToObject(s string, v interface{}) error {
 	data := []byte(s)
 	return json.Unmarshal(data, v)
 }
 
-// From html/template/content.go
-// Copyright 2011 The Go Authors. All rights reserved.
-// indirect returns the value, after dereferencing as many times
-// as necessary to reach the base type (or nil).
+/*
+From html/template/content.go
+Copyright 2011 The Go Authors. All rights reserved.
+indirect returns the value, after dereferencing as many times as necessary
+to reach the base type (or nil).
+*/
 func indirect(a interface{}) interface{} {
 	if a == nil {
 		return nil
@@ -36,11 +40,13 @@ func indirect(a interface{}) interface{} {
 	return v.Interface()
 }
 
-// From html/template/content.go
-// Copyright 2011 The Go Authors. All rights reserved.
-// indirectToStringerOrError returns the value, after dereferencing as many times
-// as necessary to reach the base type (or nil) or an implementation of fmt.Stringer
-// or error,
+/*
+From html/template/content.go
+Copyright 2011 The Go Authors. All rights reserved.
+indirectToStringerOrError returns the value, after dereferencing as many
+times as necessary to reach the base type (or nil) or an implementation of
+fmt.Stringer or error.
+*/
 func indirectToStringerOrError(a interface{}) interface{} {
 	if a == nil {
 		return nil
@@ -56,6 +62,9 @@ func indirectToStringerOrError(a interface{}) interface{} {
 	return v.Interface()
 }
 
+/*
+parseDateWith
+*/
 func parseDateWith(s string, dates []string) (d time.Time, e error) {
 	for _, dateType := range dates {
 		if d, e = time.Parse(dateType, s); e == nil {
