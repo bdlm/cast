@@ -13,7 +13,7 @@ func TestToBoolSlice(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect []bool
-		iserr  bool
+		err    bool
 	}{
 		{[]bool{true, false, true}, []bool{true, false, true}, false},
 		{[]interface{}{true, false, true}, []bool{true, false, true}, false},
@@ -29,7 +29,7 @@ func TestToBoolSlice(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToBoolSlice(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}
@@ -43,7 +43,7 @@ func TestToIntSlice(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect []int
-		iserr  bool
+		err    bool
 	}{
 		{[]int{1, 3}, []int{1, 3}, false},
 		{[]interface{}{1.2, 3.2}, []int{1, 3}, false},
@@ -59,7 +59,7 @@ func TestToIntSlice(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToIntSlice(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}
@@ -73,7 +73,7 @@ func TestToSlice(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect []interface{}
-		iserr  bool
+		err    bool
 	}{
 		{[]interface{}{1, 3}, []interface{}{1, 3}, false},
 		{[]map[string]interface{}{{"k1": 1}, {"k2": 2}}, []interface{}{map[string]interface{}{"k1": 1}, map[string]interface{}{"k2": 2}}, false},
@@ -86,7 +86,7 @@ func TestToSlice(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToSlice(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}
@@ -100,7 +100,7 @@ func TestToStringSlice(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect []string
-		iserr  bool
+		err    bool
 	}{
 		{[]string{"a", "b"}, []string{"a", "b"}, false},
 		{[]interface{}{1, 3}, []string{"1", "3"}, false},
@@ -114,7 +114,7 @@ func TestToStringSlice(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToStringSlice(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}
@@ -128,7 +128,7 @@ func TestToDurationSlice(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect []time.Duration
-		iserr  bool
+		err    bool
 	}{
 		{[]string{"1s", "1m"}, []time.Duration{time.Second, time.Minute}, false},
 		{[]int{1, 2}, []time.Duration{1, 2}, false},
@@ -145,7 +145,7 @@ func TestToDurationSlice(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToDurationSlice(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}

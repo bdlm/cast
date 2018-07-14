@@ -33,32 +33,56 @@ func ToTime(i interface{}) (tim time.Time, err error) {
 	}
 }
 
-// StringToDate attempts to parse a string into a time.Time type using a
-// predefined list of formats.  If no suitable format is found, an error is
-// returned.
+/*
+StringToDate attempts to parse a string into a time.Time type using a
+predefined list of formats.  If no suitable format is found, an error is
+returned.
+*/
 func StringToDate(s string) (time.Time, error) {
 	return parseDateWith(s, []string{
-		time.RFC3339,
-		"2006-01-02T15:04:05", // iso8601 without timezone
-		time.RFC1123Z,
-		time.RFC1123,
-		time.RFC822Z,
-		time.RFC822,
-		time.RFC850,
-		time.ANSIC,
-		time.UnixDate,
-		time.RubyDate,
-		"2006-01-02 15:04:05.999999999 -0700 MST", // Time.String()
-		"2006-01-02",
 		"02 Jan 2006",
-		"2006-01-02 15:04:05 -07:00",
-		"2006-01-02 15:04:05 -0700",
-		"2006-01-02 15:04:05Z07:00", // RFC3339 without T
-		"2006-01-02 15:04:05",
+		ISO8601Date,
+		ISO8601DateTime1, // iso8601 without timezone
+		ISO8601DateTime2, // iso8601 without timezone
+		ISO8601DateTimeOffset1,
+		ISO8601DateTimeOffset2,
+		ISO8601DateTimeOffset3,
+		time.ANSIC,
 		time.Kitchen,
+		time.RFC1123,
+		time.RFC1123Z,
+		time.RFC3339,
+		time.RFC822,
+		time.RFC822Z,
+		time.RFC850,
+		time.RubyDate,
 		time.Stamp,
-		time.StampMilli,
 		time.StampMicro,
+		time.StampMilli,
 		time.StampNano,
-	})
+		time.UnixDate,
+		TimeString, // Time.String() output
+	}, []string{})
 }
+
+const (
+	// ISO8601Date defines the ISO-8601 date format.
+	ISO8601Date = "2006-01-02"
+	// ISO8601DateTime1 defines the ISO-8601 date/time format without a
+	// timezone offset.
+	ISO8601DateTime1 = "2006-01-02 15:04:05"
+	// ISO8601DateTime2 defines the ISO-8601 date/time format without a
+	// timezone offset.
+	ISO8601DateTime2 = "2006-01-02T15:04:05"
+	// ISO8601DateTimeOffset1 defines the ISO-8601 date/time format with a
+	// timezone offset.
+	ISO8601DateTimeOffset1 = "2006-01-02 15:04:05Z07:00"
+	// ISO8601DateTimeOffset2 defines the ISO-8601 date/time format with a
+	// timezone offset.
+	ISO8601DateTimeOffset2 = "2006-01-02 15:04:05 -07:00"
+	// ISO8601DateTimeOffset3 defines the ISO-8601 date/time format with a
+	// timezone offset.
+	ISO8601DateTimeOffset3 = "2006-01-02 15:04:05 -0700"
+	// TimeString defines the Time.String() date/time format.
+	TimeString = "2006-01-02 15:04:05.999999999 -0700 MST"
+)

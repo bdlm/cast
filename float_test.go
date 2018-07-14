@@ -13,7 +13,7 @@ func TestToFloat64(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect float64
-		iserr  bool
+		err    bool
 	}{
 		{int(8), 8, false},
 		{int8(8), 8, false},
@@ -39,7 +39,7 @@ func TestToFloat64(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToFloat64(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}
@@ -53,7 +53,7 @@ func TestToFloat32(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect float32
-		iserr  bool
+		err    bool
 	}{
 		{int(8), 8, false},
 		{int8(8), 8, false},
@@ -79,7 +79,7 @@ func TestToFloat32(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToFloat32(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}
@@ -98,7 +98,7 @@ func TestToString(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect string
-		iserr  bool
+		err    bool
 	}{
 		{int(8), "8", false},
 		{int8(8), "8", false},
@@ -131,7 +131,7 @@ func TestToString(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToString(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}

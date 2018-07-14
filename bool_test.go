@@ -12,7 +12,7 @@ func TestToBool(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect bool
-		iserr  bool
+		err    bool
 	}{
 		{0, false, false},
 		{nil, false, false},
@@ -41,7 +41,7 @@ func TestToBool(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToBool(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}

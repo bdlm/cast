@@ -2,13 +2,10 @@ package cast
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"time"
 )
-
-var errNegativeNotAllowed = errors.New("unable to cast negative value")
 
 /*
 jsonStringToObject attempts to unmarshall a string as JSON into the object
@@ -20,10 +17,11 @@ func jsonStringToObject(s string, v interface{}) error {
 }
 
 /*
-From html/template/content.go
-Copyright 2011 The Go Authors. All rights reserved.
 indirect returns the value, after dereferencing as many times as necessary
 to reach the base type (or nil).
+
+From html/template/content.go
+Copyright 2011 The Go Authors. All rights reserved.
 */
 func indirect(a interface{}) interface{} {
 	if a == nil {
@@ -41,11 +39,12 @@ func indirect(a interface{}) interface{} {
 }
 
 /*
-From html/template/content.go
-Copyright 2011 The Go Authors. All rights reserved.
 indirectToStringerOrError returns the value, after dereferencing as many
 times as necessary to reach the base type (or nil) or an implementation of
 fmt.Stringer or error.
+
+From html/template/content.go
+Copyright 2011 The Go Authors. All rights reserved.
 */
 func indirectToStringerOrError(a interface{}) interface{} {
 	if a == nil {
@@ -65,11 +64,18 @@ func indirectToStringerOrError(a interface{}) interface{} {
 /*
 parseDateWith
 */
-func parseDateWith(s string, dates []string) (d time.Time, e error) {
+func parseDateWith(s string, dates []string, customDates []string) (time.Time, error) {
+	var t time.Time
+	var err error
 	for _, dateType := range dates {
-		if d, e = time.Parse(dateType, s); e == nil {
-			return
+		if t, err = time.Parse(dateType, s); err == nil {
+			return t, err
 		}
 	}
-	return d, fmt.Errorf("unable to parse date: %s", s)
+	for _, dateType := range customDates {
+		if t, err = time.Parse(dateType, s); err == nil {
+			return t, err
+		}
+	}
+	return t, fmt.Errorf("unable to parse date: %s", s)
 }

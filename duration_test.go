@@ -15,7 +15,7 @@ func TestToDuration(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect time.Duration
-		iserr  bool
+		err    bool
 	}{
 		{time.Duration(5), td, false},
 		{int(5), td, false},
@@ -47,7 +47,7 @@ func TestToDuration(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToDuration(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}

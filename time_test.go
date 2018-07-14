@@ -13,7 +13,7 @@ func TestToTime(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect time.Time
-		iserr  bool
+		err    bool
 	}{
 		{"2009-11-10 23:00:00 +0000 UTC", time.Date(2009, 11, 10, 23, 0, 0, 0, time.UTC), false},   // Time.String()
 		{"Tue Nov 10 23:00:00 2009", time.Date(2009, 11, 10, 23, 0, 0, 0, time.UTC), false},        // ANSIC
@@ -54,7 +54,7 @@ func TestToTime(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToTime(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}

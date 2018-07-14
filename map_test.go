@@ -40,7 +40,7 @@ func TestStringMapStringSlice(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect map[string][]string
-		iserr  bool
+		err    bool
 	}{
 		{stringMapStringSlice, stringMapStringSlice, false},
 		{stringMapInterfaceSlice, stringMapStringSlice, false},
@@ -69,7 +69,7 @@ func TestStringMapStringSlice(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToStringMapStringSlice(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}
@@ -83,7 +83,7 @@ func TestToStringMap(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect map[string]interface{}
-		iserr  bool
+		err    bool
 	}{
 		{map[interface{}]interface{}{"tag": "tags", "group": "groups"}, map[string]interface{}{"tag": "tags", "group": "groups"}, false},
 		{map[string]interface{}{"tag": "tags", "group": "groups"}, map[string]interface{}{"tag": "tags", "group": "groups"}, false},
@@ -100,7 +100,7 @@ func TestToStringMap(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToStringMap(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}
@@ -114,7 +114,7 @@ func TestToStringMapBool(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect map[string]bool
-		iserr  bool
+		err    bool
 	}{
 		{map[interface{}]interface{}{"v1": true, "v2": false}, map[string]bool{"v1": true, "v2": false}, false},
 		{map[string]interface{}{"v1": true, "v2": false}, map[string]bool{"v1": true, "v2": false}, false},
@@ -131,7 +131,7 @@ func TestToStringMapBool(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToStringMapBool(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}
@@ -153,7 +153,7 @@ func TestToStringMapString(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect map[string]string
-		iserr  bool
+		err    bool
 	}{
 		{stringMapString, stringMapString, false},
 		{stringMapInterface, stringMapString, false},
@@ -172,7 +172,7 @@ func TestToStringMapString(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToStringMapString(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}

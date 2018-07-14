@@ -12,7 +12,7 @@ func TestToUint(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect uint
-		iserr  bool
+		err    bool
 	}{
 		{int(8), 8, false},
 		{int8(8), 8, false},
@@ -47,7 +47,7 @@ func TestToUint(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToUint(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}
@@ -61,7 +61,7 @@ func TestToUint64(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect uint64
-		iserr  bool
+		err    bool
 	}{
 		{int(8), 8, false},
 		{int8(8), 8, false},
@@ -96,7 +96,7 @@ func TestToUint64(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToUint64(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}
@@ -110,7 +110,7 @@ func TestToUint32(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect uint32
-		iserr  bool
+		err    bool
 	}{
 		{int(8), 8, false},
 		{int8(8), 8, false},
@@ -145,7 +145,7 @@ func TestToUint32(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToUint32(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}
@@ -159,7 +159,7 @@ func TestToUint16(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect uint16
-		iserr  bool
+		err    bool
 	}{
 		{int(8), 8, false},
 		{int8(8), 8, false},
@@ -194,7 +194,7 @@ func TestToUint16(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToUint16(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}
@@ -208,7 +208,7 @@ func TestToUint8(t *testing.T) {
 	tests := []struct {
 		input  interface{}
 		expect uint8
-		iserr  bool
+		err    bool
 	}{
 		{int(8), 8, false},
 		{int8(8), 8, false},
@@ -243,7 +243,7 @@ func TestToUint8(t *testing.T) {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
 		v, err := cast.ToUint8(test.input)
-		if test.iserr {
+		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
 		}
