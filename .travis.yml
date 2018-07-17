@@ -23,6 +23,8 @@ go:
     - tip
 
 before_script:
+    - echo "gopath=$GOPATH"
+    - ls -la
     - mkdir -p $GOPATH/src/github.com/bdlm
     - rm -rf $GOPATH/src/github.com/bdlm/cast
     - ln -s . $GOPATH/src/github.com/bdlm/cast
