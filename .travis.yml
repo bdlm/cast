@@ -26,6 +26,9 @@ before_script:
     - mkdir -p $GOPATH/src/github.com/bdlm
     - rm -rf $GOPATH/src/github.com/bdlm/cast
     - ln -s $(pwd) $GOPATH/src/github.com/bdlm/cast
+    - echo "pwd=$(pwd)"
+    - ls -laF
+    - go list ./...
 
 script:
     - sh .travis.sh
