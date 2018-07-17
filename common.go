@@ -64,15 +64,10 @@ func indirectToStringerOrError(a interface{}) interface{} {
 /*
 parseDateWith
 */
-func parseDateWith(s string, dates []string, customDates []string) (time.Time, error) {
+func parseDateWith(s string, dates []string) (time.Time, error) {
 	var t time.Time
 	var err error
 	for _, dateType := range dates {
-		if t, err = time.Parse(dateType, s); err == nil {
-			return t, err
-		}
-	}
-	for _, dateType := range customDates {
 		if t, err = time.Parse(dateType, s); err == nil {
 			return t, err
 		}
