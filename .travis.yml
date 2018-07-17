@@ -1,6 +1,6 @@
 notifications:
     slack:
-        secure: f1hta4qmYdckTimsVrJs/99gf2KKAraFOtocxFyS0C18+HtQUEbvwPbTiMLM/SvZpVILjWWyK1IVwtnuyQCsbjh4rXxxoV+1NGa+j15OCjluNz0ysluIftgr1wtaT08d0+peqinu/1ZKf7kMm7gp+64kq9EbhddHa6Hu1bL9/uUvcq0PpAVn3V+wt/AFDWWa9RUvs6SVd1lgbdNxQU2fZt6efpuXO7RXnxMSeF5T73iSQL1fZN0a+3rqu8JzZEq1PRfRw7dQGxAsIt+DBLtVa7P/3Zk/6kf9fEINR1O8vk76hXkkRLxVn1Za8RqYtHhgt3fn49aJwwFwRBa5wmDVJQ4PZKRlDFz2p5I2D9nMXklE+6vRYZU5aujh7Z/lM47jw+7tjER4cJxNQ2T9F9rAK2Zibr9qEi0pqx9A2E4jQuchQill3y17gMnyWn8vrkh4dpziDJ5iRkPki/JoWML0ptkYJIfp4AwoOSN69SRJ0o+Q1+rhoJgUSt1ylmtMIPA/4usmSWXwdhVXYc+AHvAfh869aD2VeqOUSCZjSar1XWWafirDhxDxVEqRKCRGm6BVf16QN5giGJuqAdHR0R4zYc8rJNtLzSFF6LEfErAi75GXjiCEDl+tU87a40Q0XLgaML8bed1yHv+Nv/DOoMvsyjcZ2uvwMEXZuTSheAd8fNE=
+        secure: izOWvKhesHUYRPDkmBMbCXtzBSrCZdzSDacLfHpY33W9NMmeU99u6muOKdXfDj+Tb7bym3yj0s1Z815SMXmuAXoWQyqqGNEWnqc1eJmFfR0DzG9U+bH6hDf0zUJS7UTZ/8232TTkuTVK3zaSE1SHJb0p5z9k822e+Bs9aSpqGcpsrbvBvNQUB1z9p0mGTlp1vMdNAXr2YHizu5eBuS01+3tf/lUhXdr5Y8sC+Vnmpy0gjMwDFfwXdFXAP2HJoCo9eEhhH01fhcp3EXyKCQ6BzUwsFSChIGWFHgLt+bN0C106x74l5jT+11cF3jbsaAVdND/lBZGF3g+WFdJKwfbvBkIKcbKk6fMTN6yYD5jXZ/ZwHNkxeJlVaYae1aJSk5XkbahoKDYZIJ6kY2R2tZjv6+dnY7Oiwo/QxZCWXma3/MGFiOPgnZ9EIaFonv2ShcdNDyWbxA0xwKRtnJYim3y9WTIcdwfj99Ibzj/1O6vx7hLu8QrmgHeNIATZ57/xL5Hrbpgj2sBIYcswaUryCFLJvXxxoG9VpCMA3yMhRh1RL17dxiTDmUIK3CnsPT3mbz/54NiIDZf3lZ3YtzJQs7u4SBQBP2NMHO3TGk1VV+XnmX1zAf6ELlCReIk7l2hGWIkFjkDIvkFG3gr5HRhTPSwZ5HxyRUhyWwGAIHvI/QnKYso=
 
 git:
     depth: 1
@@ -12,7 +12,6 @@ branches:
         - master
 
 language: go
-go_import_path: github.com/bdlm/errors
 go:
     - 1.5.x
     - 1.6.x
@@ -21,14 +20,6 @@ go:
     - 1.9.x
     - 1.10.x
     - tip
-
-before_script:
-    - mkdir -p $GOPATH/src/github.com/bdlm
-    - rm -rf $GOPATH/src/github.com/bdlm/cast
-    - ln -s $(pwd) $GOPATH/src/github.com/bdlm/cast
-    - echo "pwd=$(pwd)"
-    - ls -laF
-    - go list ./...
 
 script:
     - sh .travis.sh
