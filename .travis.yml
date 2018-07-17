@@ -23,13 +23,9 @@ go:
     - tip
 
 before_script:
-    - echo "gopath=$GOPATH, PWD=$(pwd)"
-    - ls -la
     - mkdir -p $GOPATH/src/github.com/bdlm
     - rm -rf $GOPATH/src/github.com/bdlm/cast
     - ln -s $(pwd) $GOPATH/src/github.com/bdlm/cast
-    - ls -la $GOPATH/src/github.com/bdlm/cast
-    - ls -la $GOPATH/src/github.com/bdlm/cast/
 
 script:
     - sh .travis.sh
