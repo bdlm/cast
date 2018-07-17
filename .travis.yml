@@ -23,8 +23,9 @@ go:
     - tip
 
 before_script:
-    - ls -la
-    - pwd
+    - mkdir -p gopath/src/github.com/bdlm
+    - ln -s . gopath/src/github.com/bdlm/cast
+    - export GOPATH=$(pwd)/gopath
 
 script:
     - sh .travis.sh
