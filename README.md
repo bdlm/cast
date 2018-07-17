@@ -47,13 +47,13 @@ cast.ToString(foo)                // "one more time"
 
 `ToInt`
 ```go
-cast.ToInt(8)                  // 8
-cast.ToInt(8.31)               // 8
-cast.ToInt("8")                // 8
-cast.ToInt(true)               // 1
-cast.ToInt(false)              // 0
+cast.ToInt(8)             // 8
+cast.ToInt(8.31)          // 8
+cast.ToInt("8")           // 8
+cast.ToInt(true)          // 1
+cast.ToInt(false)         // 0
 
 var eight interface{} = 8
-cast.ToInt(eight)              // 8
-cast.ToInt(nil)                // 0
+cast.ToInt(eight)         // 8
+cast.ToInt(nil)           // 0
 ```
