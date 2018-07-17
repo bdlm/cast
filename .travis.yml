@@ -22,6 +22,9 @@ go:
     - 1.10.x
     - tip
 
+before_script:
+    - ls -la
+
 script:
     - sh .travis.sh
 
