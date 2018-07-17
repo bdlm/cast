@@ -92,8 +92,8 @@ func TestStringToDate(t *testing.T) {
 		{"2016-03-06 15:28:01 -00:00", time.Date(2016, 3, 6, 15, 28, 1, 0, time.UTC), false},
 		{"2006-01-02", time.Date(2006, 1, 2, 0, 0, 0, 0, time.UTC), false},
 		{"02 Jan 2006", time.Date(2006, 1, 2, 0, 0, 0, 0, time.UTC), false},
-		{"2006", time.Time{}, false},
 		// errors
+		{"2006", time.Time{}, true},
 		{testing.T{}, time.Time{}, true},
 	}
 
