@@ -62,7 +62,7 @@ func StringToDate(s string) (time.Time, error) {
 		time.StampNano,
 		time.UnixDate,
 		TimeString, // Time.String() output
-	}, []string{})
+	})
 }
 
 const (
