@@ -28,6 +28,8 @@ before_script:
     - mkdir -p $GOPATH/src/github.com/bdlm
     - rm -rf $GOPATH/src/github.com/bdlm/cast
     - ln -s . $GOPATH/src/github.com/bdlm/cast
+    - ls -la $GOPATH/src/github.com/bdlm/cast
+    - ls -la $GOPATH/src/github.com/bdlm/cast/
 
 script:
     - sh .travis.sh
