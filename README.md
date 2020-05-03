@@ -35,11 +35,11 @@ If you are taking in data from YAML, TOML or JSON or other formats which lack fu
 
 ## Usage
 
-Cast provides a handful of To_____ methods. These methods will always return the desired type. *If input is provided that will not convert to that type, the 0 or nil value for that type will be returned*. In addition, an error will be returned which tells you if conversion was successful and differentiate between success and the nil value.
+Cast provides a handful of `To<Type>` methods. These methods will always return the desired type. *If input is provided that will not convert to that type, the 0 or nil value for that type will be returned*. In order to differentiate between success and the nil value a set of `To<Type>E` methods are provided that return both the cast value and any error that occurrs.
 
 ### Examples
 
-`ToString`:
+##### `ToString`
 ```go
 cast.ToString("mayonegg")         // "mayonegg"
 cast.ToString(8)                  // "8"
@@ -51,15 +51,21 @@ var foo interface{} = "one more time"
 cast.ToString(foo)                // "one more time"
 ```
 
-`ToInt`
+##### `ToInt`
 ```go
-cast.ToInt(8)             // 8
-cast.ToInt(8.31)          // 8
-cast.ToInt("8")           // 8
-cast.ToInt(true)          // 1
-cast.ToInt(false)         // 0
+intVal := cast.ToInt(8)           // 8
+intVal := cast.ToInt(8.31)        // 8
+intVal := cast.ToInt("8")         // 8
+intVal := cast.ToInt(true)        // 1
+intVal := cast.ToInt(false)       // 0
 
 var eight interface{} = 8
-cast.ToInt(eight)         // 8
-cast.ToInt(nil)           // 0
+intVal := cast.ToInt(eight)         // 8
+intVal := cast.ToInt(nil)           // 0
+```
+
+##### Error checking
+```go
+intVal := cast.ToInt("Hi!")         // 0
+intVal, err := cast.ToIntE("Hi!")   // 0, unable to cast "Hi!" of type string to int
 ```
