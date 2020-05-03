@@ -7,10 +7,14 @@ import (
 	"time"
 )
 
-/*
-ToSlice casts an interface to a []interface{} type.
-*/
-func ToSlice(i interface{}) ([]interface{}, error) {
+// ToSlice casts an interface to a []interface{} type, discarding any errors.
+func ToSlice(i interface{}) []interface{} {
+	ret, _ := ToSliceE(i)
+	return ret
+}
+
+// ToSliceE casts an interface to a []interface{} type.
+func ToSliceE(i interface{}) ([]interface{}, error) {
 	var s []interface{}
 
 	switch t := i.(type) {
@@ -26,10 +30,14 @@ func ToSlice(i interface{}) ([]interface{}, error) {
 	}
 }
 
-/*
-ToBoolSlice casts an interface to a []bool type.
-*/
-func ToBoolSlice(i interface{}) ([]bool, error) {
+// ToBoolSlice casts an interface to a []bool type, discarding any errors.
+func ToBoolSlice(i interface{}) []bool {
+	ret, _ := ToBoolSliceE(i)
+	return ret
+}
+
+// ToBoolSliceE casts an interface to a []bool type.
+func ToBoolSliceE(i interface{}) ([]bool, error) {
 	if i == nil {
 		return []bool{}, fmt.Errorf("unable to cast %#v of type %T to []bool", i, i)
 	}
@@ -45,7 +53,7 @@ func ToBoolSlice(i interface{}) ([]bool, error) {
 		s := reflect.ValueOf(i)
 		a := make([]bool, s.Len())
 		for j := 0; j < s.Len(); j++ {
-			val, err := ToBool(s.Index(j).Interface())
+			val, err := ToBoolE(s.Index(j).Interface())
 			if err != nil {
 				return []bool{}, fmt.Errorf("unable to cast %#v of type %T to []bool", i, i)
 			}
@@ -57,16 +65,21 @@ func ToBoolSlice(i interface{}) ([]bool, error) {
 	}
 }
 
-/*
-ToStringSlice casts an interface to a []string type.
-*/
-func ToStringSlice(i interface{}) ([]string, error) {
+// ToStringSlice casts an interface to a []string type, discarding any
+// errors.
+func ToStringSlice(i interface{}) []string {
+	ret, _ := ToStringSliceE(i)
+	return ret
+}
+
+// ToStringSliceE casts an interface to a []string type.
+func ToStringSliceE(i interface{}) ([]string, error) {
 	var a []string
 
 	switch t := i.(type) {
 	case []interface{}:
 		for _, val := range t {
-			v, _ := ToString(val)
+			v := ToString(val)
 			a = append(a, v)
 		}
 		return a, nil
@@ -75,7 +88,7 @@ func ToStringSlice(i interface{}) ([]string, error) {
 	case string:
 		return strings.Fields(t), nil
 	case interface{}:
-		str, err := ToString(t)
+		str, err := ToStringE(t)
 		if err != nil {
 			return a, fmt.Errorf("unable to cast %#v of type %T to []string", i, i)
 		}
@@ -85,10 +98,14 @@ func ToStringSlice(i interface{}) ([]string, error) {
 	}
 }
 
-/*
-ToIntSlice casts an interface to a []int type.
-*/
-func ToIntSlice(i interface{}) ([]int, error) {
+// ToIntSlice casts an interface to a []int type, discarding any errors.
+func ToIntSlice(i interface{}) []int {
+	ret, _ := ToIntSliceE(i)
+	return ret
+}
+
+// ToIntSliceE casts an interface to a []int type.
+func ToIntSliceE(i interface{}) ([]int, error) {
 	if i == nil {
 		return []int{}, fmt.Errorf("unable to cast %#v of type %T to []int", i, i)
 	}
@@ -104,7 +121,7 @@ func ToIntSlice(i interface{}) ([]int, error) {
 		s := reflect.ValueOf(i)
 		a := make([]int, s.Len())
 		for j := 0; j < s.Len(); j++ {
-			val, err := ToInt(s.Index(j).Interface())
+			val, err := ToIntE(s.Index(j).Interface())
 			if err != nil {
 				return []int{}, fmt.Errorf("unable to cast %#v of type %T to []int", i, i)
 			}
@@ -116,10 +133,15 @@ func ToIntSlice(i interface{}) ([]int, error) {
 	}
 }
 
-/*
-ToDurationSlice casts an interface to a []time.Duration type.
-*/
-func ToDurationSlice(i interface{}) ([]time.Duration, error) {
+// ToDurationSlice casts an interface to a []time.Duration type, discarding
+// any errors.
+func ToDurationSlice(i interface{}) []time.Duration {
+	ret, _ := ToDurationSliceE(i)
+	return ret
+}
+
+// ToDurationSliceE casts an interface to a []time.Duration type.
+func ToDurationSliceE(i interface{}) ([]time.Duration, error) {
 	if i == nil {
 		return []time.Duration{}, fmt.Errorf("unable to cast %#v of type %T to []time.Duration", i, i)
 	}
@@ -135,7 +157,7 @@ func ToDurationSlice(i interface{}) ([]time.Duration, error) {
 		s := reflect.ValueOf(i)
 		a := make([]time.Duration, s.Len())
 		for j := 0; j < s.Len(); j++ {
-			val, err := ToDuration(s.Index(j).Interface())
+			val, err := ToDurationE(s.Index(j).Interface())
 			if err != nil {
 				return []time.Duration{}, fmt.Errorf("unable to cast %#v of type %T to []time.Duration", i, i)
 			}

@@ -5,10 +5,14 @@ import (
 	"strconv"
 )
 
-/*
-ToFloat64 casts an interface to a float64 type.
-*/
-func ToFloat64(i interface{}) (float64, error) {
+// ToFloat64 casts an interface to a float64 type, discarding any errors.
+func ToFloat64(i interface{}) float64 {
+	ret, _ := ToFloat64E(i)
+	return ret
+}
+
+// ToFloat64E casts an interface to a float64 type.
+func ToFloat64E(i interface{}) (float64, error) {
 	i = indirect(i)
 
 	switch s := i.(type) {
@@ -52,10 +56,14 @@ func ToFloat64(i interface{}) (float64, error) {
 	}
 }
 
-/*
-ToFloat32 casts an interface to a float32 type.
-*/
-func ToFloat32(i interface{}) (float32, error) {
+// ToFloat32 casts an interface to a float32 type, discarding any errors.
+func ToFloat32(i interface{}) float32 {
+	ret, _ := ToFloat32E(i)
+	return ret
+}
+
+// ToFloat32E casts an interface to a float32 type.
+func ToFloat32E(i interface{}) (float32, error) {
 	i = indirect(i)
 
 	switch s := i.(type) {

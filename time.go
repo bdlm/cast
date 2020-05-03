@@ -5,17 +5,21 @@ import (
 	"time"
 )
 
-/*
-ToTime casts an interface to a time.Time type.
-*/
-func ToTime(i interface{}) (tim time.Time, err error) {
+// ToTime casts an interface to a time.Time type, discarding any errors.
+func ToTime(i interface{}) time.Time {
+	ret, _ := ToTimeE(i)
+	return ret
+}
+
+// ToTimeE casts an interface to a time.Time type.
+func ToTimeE(i interface{}) (time.Time, error) {
 	i = indirect(i)
 
 	switch v := i.(type) {
 	case time.Time:
 		return v, nil
 	case string:
-		return StringToDate(v)
+		return StringToDateE(v)
 	case int:
 		return time.Unix(int64(v), 0), nil
 	case int64:
@@ -33,12 +37,18 @@ func ToTime(i interface{}) (tim time.Time, err error) {
 	}
 }
 
-/*
-StringToDate attempts to parse a string into a time.Time type using a
-predefined list of formats.  If no suitable format is found, an error is
-returned.
-*/
-func StringToDate(s string) (time.Time, error) {
+// StringToDate attempts to parse a string into a time.Time type using a
+// predefined list of formats. If no suitable format is found, an error is
+// returned. Any errors are discarded
+func StringToDate(s string) time.Time {
+	ret, _ := StringToDateE(s)
+	return ret
+}
+
+// StringToDateE attempts to parse a string into a time.Time type using a
+// predefined list of formats. If no suitable format is found, an error is
+// returned.
+func StringToDateE(s string) (time.Time, error) {
 	return parseDateWith(s, []string{
 		"02 Jan 2006",
 		ISO8601Date,

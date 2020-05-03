@@ -28,7 +28,7 @@ func TestToBoolSlice(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToBoolSlice(test.input)
+		v, err := cast.ToBoolSliceE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
@@ -58,7 +58,7 @@ func TestToIntSlice(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToIntSlice(test.input)
+		v, err := cast.ToIntSliceE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
@@ -85,7 +85,7 @@ func TestToSlice(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToSlice(test.input)
+		v, err := cast.ToSliceE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
@@ -113,7 +113,7 @@ func TestToStringSlice(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToStringSlice(test.input)
+		v, err := cast.ToStringSliceE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
@@ -144,7 +144,7 @@ func TestToDurationSlice(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToDurationSlice(test.input)
+		v, err := cast.ToDurationSliceE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue

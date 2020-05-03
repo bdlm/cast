@@ -12,8 +12,8 @@ func TestIndirectPointers(t *testing.T) {
 	y := &x
 	z := &y
 
-	yInt, _ := cast.ToInt(y)
-	zInt, _ := cast.ToInt(z)
+	yInt := cast.ToInt(y)
+	zInt := cast.ToInt(z)
 
 	assert.Equal(t, yInt, 13)
 	assert.Equal(t, zInt, 13)

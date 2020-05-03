@@ -5,10 +5,14 @@ import (
 	"strconv"
 )
 
-/*
-ToBool casts an interface to a bool type.
-*/
-func ToBool(i interface{}) (bool, error) {
+// ToBool casts an interface to a bool type, discarding any errors.
+func ToBool(i interface{}) bool {
+	ret, _ := ToBoolE(i)
+	return ret
+}
+
+// ToBoolE casts an interface to a bool type.
+func ToBoolE(i interface{}) (bool, error) {
 	i = indirect(i)
 
 	switch b := i.(type) {
