@@ -46,7 +46,7 @@ func TestToDuration(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToDuration(test.input)
+		v, err := cast.ToDurationE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue

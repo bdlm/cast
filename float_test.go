@@ -38,7 +38,7 @@ func TestToFloat64(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToFloat64(test.input)
+		v, err := cast.ToFloat64E(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
@@ -78,7 +78,7 @@ func TestToFloat32(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToFloat32(test.input)
+		v, err := cast.ToFloat32E(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
@@ -130,7 +130,7 @@ func TestToString(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToString(test.input)
+		v, err := cast.ToStringE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue

@@ -40,7 +40,7 @@ func TestToBool(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToBool(test.input)
+		v, err := cast.ToBoolE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
@@ -53,7 +53,7 @@ func TestToBool(t *testing.T) {
 
 func BenchmarkToBool(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		v, _ := cast.ToBool(true)
+		v := cast.ToBool(true)
 		if !v {
 			b.Fatal("ToBool returned false")
 		}

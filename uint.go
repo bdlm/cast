@@ -6,16 +6,18 @@ import (
 	"strconv"
 )
 
-/*
-ErrUintBelowZero defines the error returned when attempting to cast a
-negative value as a uint.
-*/
+// ErrUintBelowZero defines the error returned when attempting to cast a
+// negative value as a uint.
 var ErrUintBelowZero = errors.New("cannot cast negative value as uint")
 
-/*
-ToUint casts an interface to a uint type.
-*/
-func ToUint(i interface{}) (uint, error) {
+// ToUint casts an interface to a uint type, discarding any errors.
+func ToUint(i interface{}) uint {
+	ret, _ := ToUintE(i)
+	return ret
+}
+
+// ToUintE casts an interface to a uint type.
+func ToUintE(i interface{}) (uint, error) {
 	i = indirect(i)
 
 	switch s := i.(type) {
@@ -82,10 +84,14 @@ func ToUint(i interface{}) (uint, error) {
 	}
 }
 
-/*
-ToUint64 casts an interface to a uint64 type.
-*/
-func ToUint64(i interface{}) (uint64, error) {
+// ToUint64 casts an interface to a uint64 type, discarding any errors.
+func ToUint64(i interface{}) uint64 {
+	ret, _ := ToUint64E(i)
+	return ret
+}
+
+// ToUint64E casts an interface to a uint64 type.
+func ToUint64E(i interface{}) (uint64, error) {
 	i = indirect(i)
 
 	switch s := i.(type) {
@@ -152,10 +158,14 @@ func ToUint64(i interface{}) (uint64, error) {
 	}
 }
 
-/*
-ToUint32 casts an interface to a uint32 type.
-*/
-func ToUint32(i interface{}) (uint32, error) {
+// ToUint32 casts an interface to a uint32 type, discarding any errors.
+func ToUint32(i interface{}) uint32 {
+	ret, _ := ToUint32E(i)
+	return ret
+}
+
+// ToUint32E casts an interface to a uint32 type.
+func ToUint32E(i interface{}) (uint32, error) {
 	i = indirect(i)
 
 	switch s := i.(type) {
@@ -222,10 +232,14 @@ func ToUint32(i interface{}) (uint32, error) {
 	}
 }
 
-/*
-ToUint16 casts an interface to a uint16 type.
-*/
-func ToUint16(i interface{}) (uint16, error) {
+// ToUint16 casts an interface to a uint16 type, discarding any errors.
+func ToUint16(i interface{}) uint16 {
+	ret, _ := ToUint16E(i)
+	return ret
+}
+
+// ToUint16E casts an interface to a uint16 type.
+func ToUint16E(i interface{}) (uint16, error) {
 	i = indirect(i)
 
 	switch s := i.(type) {
@@ -292,10 +306,14 @@ func ToUint16(i interface{}) (uint16, error) {
 	}
 }
 
-/*
-ToUint8 casts an interface to a uint type.
-*/
-func ToUint8(i interface{}) (uint8, error) {
+// ToUint8 casts an interface to a uint type, discarding any errors.
+func ToUint8(i interface{}) uint8 {
+	ret, _ := ToUint8E(i)
+	return ret
+}
+
+// ToUint8E casts an interface to a uint type.
+func ToUint8E(i interface{}) (uint8, error) {
 	i = indirect(i)
 
 	switch s := i.(type) {

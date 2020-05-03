@@ -4,10 +4,15 @@ import (
 	"fmt"
 )
 
-/*
-ToStringMapString casts an interface to a map[string]string type.
-*/
-func ToStringMapString(i interface{}) (map[string]string, error) {
+// ToStringMapString casts an interface to a map[string]string type,
+// discarding any errors.
+func ToStringMapString(i interface{}) map[string]string {
+	ret, _ := ToStringMapStringE(i)
+	return ret
+}
+
+// ToStringMapStringE casts an interface to a map[string]string type.
+func ToStringMapStringE(i interface{}) (map[string]string, error) {
 	var m = map[string]string{}
 
 	switch t := i.(type) {
@@ -15,22 +20,22 @@ func ToStringMapString(i interface{}) (map[string]string, error) {
 		return t, nil
 	case map[string]interface{}:
 		for key, val := range t {
-			v, _ := ToString(val)
-			k, _ := ToString(key)
+			v := ToString(val)
+			k := ToString(key)
 			m[k] = v
 		}
 		return m, nil
 	case map[interface{}]string:
 		for key, val := range t {
-			v, _ := ToString(val)
-			k, _ := ToString(key)
+			v := ToString(val)
+			k := ToString(key)
 			m[k] = v
 		}
 		return m, nil
 	case map[interface{}]interface{}:
 		for key, val := range t {
-			v, _ := ToString(val)
-			k, _ := ToString(key)
+			v := ToString(val)
+			k := ToString(key)
 			m[k] = v
 		}
 		return m, nil
@@ -42,10 +47,15 @@ func ToStringMapString(i interface{}) (map[string]string, error) {
 	}
 }
 
-/*
-ToStringMapStringSlice casts an interface to a map[string][]string type.
-*/
-func ToStringMapStringSlice(i interface{}) (map[string][]string, error) {
+// ToStringMapStringSlice casts an interface to a map[string][]string type,
+// discarding any errors.
+func ToStringMapStringSlice(i interface{}) map[string][]string {
+	ret, _ := ToStringMapStringSliceE(i)
+	return ret
+}
+
+// ToStringMapStringSliceE casts an interface to a map[string][]string type.
+func ToStringMapStringSliceE(i interface{}) (map[string][]string, error) {
 	var m = map[string][]string{}
 
 	switch t := i.(type) {
@@ -53,59 +63,59 @@ func ToStringMapStringSlice(i interface{}) (map[string][]string, error) {
 		return t, nil
 	case map[string][]interface{}:
 		for key, val := range t {
-			v, _ := ToStringSlice(val)
-			k, _ := ToString(key)
+			v := ToStringSlice(val)
+			k := ToString(key)
 			m[k] = v
 		}
 		return m, nil
 	case map[string]string:
 		for key, val := range t {
-			k, _ := ToString(key)
+			k := ToString(key)
 			m[k] = []string{val}
 		}
 	case map[string]interface{}:
 		for key, val := range t {
-			k, _ := ToString(key)
+			k := ToString(key)
 			switch vt := val.(type) {
 			case []interface{}:
-				vs, _ := ToStringSlice(vt)
+				vs := ToStringSlice(vt)
 				m[k] = vs
 			case []string:
 				m[k] = vt
 			default:
-				vs, _ := ToString(val)
+				vs := ToString(val)
 				m[k] = []string{vs}
 			}
 		}
 		return m, nil
 	case map[interface{}][]string:
 		for key, val := range t {
-			v, _ := ToStringSlice(val)
-			k, _ := ToString(key)
+			v := ToStringSlice(val)
+			k := ToString(key)
 			m[k] = v
 		}
 		return m, nil
 	case map[interface{}]string:
 		for key, val := range t {
-			v, _ := ToStringSlice(val)
-			k, _ := ToString(key)
+			v := ToStringSlice(val)
+			k := ToString(key)
 			m[k] = v
 		}
 		return m, nil
 	case map[interface{}][]interface{}:
 		for key, val := range t {
-			v, _ := ToStringSlice(val)
-			k, _ := ToString(key)
+			v := ToStringSlice(val)
+			k := ToString(key)
 			m[k] = v
 		}
 		return m, nil
 	case map[interface{}]interface{}:
 		for key, val := range t {
-			k, err := ToString(key)
+			k, err := ToStringE(key)
 			if err != nil {
 				return m, fmt.Errorf("unable to cast %#v of type %T to map[string][]string", i, i)
 			}
-			v, err := ToStringSlice(val)
+			v, err := ToStringSliceE(val)
 			if err != nil {
 				return m, fmt.Errorf("unable to cast %#v of type %T to map[string][]string", i, i)
 			}
@@ -120,24 +130,29 @@ func ToStringMapStringSlice(i interface{}) (map[string][]string, error) {
 	return m, nil
 }
 
-/*
-ToStringMapBool casts an interface to a map[string]bool type.
-*/
-func ToStringMapBool(i interface{}) (map[string]bool, error) {
+// ToStringMapBool casts an interface to a map[string]bool type, discarding
+// any errors.
+func ToStringMapBool(i interface{}) map[string]bool {
+	ret, _ := ToStringMapBoolE(i)
+	return ret
+}
+
+// ToStringMapBoolE casts an interface to a map[string]bool type.
+func ToStringMapBoolE(i interface{}) (map[string]bool, error) {
 	var m = map[string]bool{}
 
 	switch t := i.(type) {
 	case map[interface{}]interface{}:
 		for key, val := range t {
-			k, _ := ToString(key)
-			v, _ := ToBool(val)
+			k := ToString(key)
+			v := ToBool(val)
 			m[k] = v
 		}
 		return m, nil
 	case map[string]interface{}:
 		for key, val := range t {
-			k, _ := ToString(key)
-			v, _ := ToBool(val)
+			k := ToString(key)
+			v := ToBool(val)
 			m[k] = v
 		}
 		return m, nil
@@ -151,16 +166,21 @@ func ToStringMapBool(i interface{}) (map[string]bool, error) {
 	}
 }
 
-/*
-ToStringMap casts an interface to a map[string]interface{} type.
-*/
-func ToStringMap(i interface{}) (map[string]interface{}, error) {
+// ToStringMap casts an interface to a map[string]interface{} type,
+// discarding any errors.
+func ToStringMap(i interface{}) map[string]interface{} {
+	ret, _ := ToStringMapE(i)
+	return ret
+}
+
+// ToStringMapE casts an interface to a map[string]interface{} type.
+func ToStringMapE(i interface{}) (map[string]interface{}, error) {
 	var m = map[string]interface{}{}
 
 	switch t := i.(type) {
 	case map[interface{}]interface{}:
 		for key, val := range t {
-			k, _ := ToString(key)
+			k := ToString(key)
 			m[k] = val
 		}
 		return m, nil

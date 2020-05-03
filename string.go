@@ -6,10 +6,14 @@ import (
 	"strconv"
 )
 
-/*
-ToString casts an interface to a string type.
-*/
-func ToString(i interface{}) (string, error) {
+// ToString casts an interface to a string type, discarding any errors.
+func ToString(i interface{}) string {
+	ret, _ := ToStringE(i)
+	return ret
+}
+
+// ToStringE casts an interface to a string type.
+func ToStringE(i interface{}) (string, error) {
 	i = indirectToStringerOrError(i)
 
 	switch s := i.(type) {

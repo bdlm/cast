@@ -46,7 +46,7 @@ func TestToUint(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToUint(test.input)
+		v, err := cast.ToUintE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
@@ -95,7 +95,7 @@ func TestToUint64(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToUint64(test.input)
+		v, err := cast.ToUint64E(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
@@ -144,7 +144,7 @@ func TestToUint32(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToUint32(test.input)
+		v, err := cast.ToUint32E(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
@@ -193,7 +193,7 @@ func TestToUint16(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToUint16(test.input)
+		v, err := cast.ToUint16E(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
@@ -242,7 +242,7 @@ func TestToUint8(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToUint8(test.input)
+		v, err := cast.ToUint8E(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue

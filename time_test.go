@@ -53,7 +53,7 @@ func TestToTime(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToTime(test.input)
+		v, err := cast.ToTimeE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue

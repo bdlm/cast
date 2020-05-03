@@ -10,14 +10,14 @@ import (
 func TestStringerToString(t *testing.T) {
 	var x foo
 	x.val = "bar"
-	xStr, _ := cast.ToString(x)
+	xStr := cast.ToString(x)
 	assert.Equal(t, "bar", xStr)
 }
 
 func TestErrorToString(t *testing.T) {
 	var x fu
 	x.val = "bar"
-	xStr, _ := cast.ToString(x)
+	xStr := cast.ToString(x)
 	assert.Equal(t, "bar", xStr)
 }
 

@@ -5,10 +5,14 @@ import (
 	"strconv"
 )
 
-/*
-ToInt64 casts an interface to an int64 type.
-*/
-func ToInt64(i interface{}) (int64, error) {
+// ToInt64 casts an interface to an int64 type, discarding any errors.
+func ToInt64(i interface{}) int64 {
+	ret, _ := ToInt64E(i)
+	return ret
+}
+
+// ToInt64E casts an interface to an int64 type.
+func ToInt64E(i interface{}) (int64, error) {
 	i = indirect(i)
 
 	switch s := i.(type) {
@@ -54,10 +58,14 @@ func ToInt64(i interface{}) (int64, error) {
 	}
 }
 
-/*
-ToInt32 casts an interface to an int32 type.
-*/
-func ToInt32(i interface{}) (int32, error) {
+// ToInt32 casts an interface to an int32 type, discarding any errors.
+func ToInt32(i interface{}) int32 {
+	ret, _ := ToInt32E(i)
+	return ret
+}
+
+// ToInt32E casts an interface to an int32 type.
+func ToInt32E(i interface{}) (int32, error) {
 	i = indirect(i)
 
 	switch s := i.(type) {
@@ -103,10 +111,14 @@ func ToInt32(i interface{}) (int32, error) {
 	}
 }
 
-/*
-ToInt16 casts an interface to an int16 type.
-*/
-func ToInt16(i interface{}) (int16, error) {
+// ToInt16 casts an interface to an int16 type, discarding any errors.
+func ToInt16(i interface{}) int16 {
+	ret, _ := ToInt16E(i)
+	return ret
+}
+
+// ToInt16E casts an interface to an int16 type.
+func ToInt16E(i interface{}) (int16, error) {
 	i = indirect(i)
 
 	switch s := i.(type) {
@@ -152,10 +164,14 @@ func ToInt16(i interface{}) (int16, error) {
 	}
 }
 
-/*
-ToInt8 casts an interface to an int8 type.
-*/
-func ToInt8(i interface{}) (int8, error) {
+// ToInt8 casts an interface to an int8 type, discarding any errors.
+func ToInt8(i interface{}) int8 {
+	ret, _ := ToInt8E(i)
+	return ret
+}
+
+// ToInt8E casts an interface to an int8 type.
+func ToInt8E(i interface{}) (int8, error) {
 	i = indirect(i)
 
 	switch s := i.(type) {
@@ -201,10 +217,14 @@ func ToInt8(i interface{}) (int8, error) {
 	}
 }
 
-/*
-ToInt casts an interface to an int type.
-*/
-func ToInt(i interface{}) (int, error) {
+// ToInt casts an interface to an int type, discarding any errors.
+func ToInt(i interface{}) int {
+	ret, _ := ToIntE(i)
+	return ret
+}
+
+// ToIntE casts an interface to an int type.
+func ToIntE(i interface{}) (int, error) {
 	i = indirect(i)
 
 	switch s := i.(type) {

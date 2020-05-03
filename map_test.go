@@ -68,7 +68,7 @@ func TestStringMapStringSlice(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToStringMapStringSlice(test.input)
+		v, err := cast.ToStringMapStringSliceE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
@@ -99,7 +99,7 @@ func TestToStringMap(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToStringMap(test.input)
+		v, err := cast.ToStringMapE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
@@ -130,7 +130,7 @@ func TestToStringMapBool(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToStringMapBool(test.input)
+		v, err := cast.ToStringMapBoolE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
@@ -171,7 +171,7 @@ func TestToStringMapString(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToStringMapString(test.input)
+		v, err := cast.ToStringMapStringE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
