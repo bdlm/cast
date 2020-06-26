@@ -69,6 +69,36 @@ func TestToIntSlice(t *testing.T) {
 	}
 }
 
+func TestToInt64Slice(t *testing.T) {
+	tests := []struct {
+		input  interface{}
+		expect []int64
+		err    bool
+	}{
+		{[]int64{1, 3}, []int64{1, 3}, false},
+		{[]interface{}{1.2, 3.2}, []int64{1, 3}, false},
+		{[]string{"2", "3"}, []int64{2, 3}, false},
+		{[2]string{"2", "3"}, []int64{2, 3}, false},
+		// errors
+		{nil, nil, true},
+		{testing.T{}, nil, true},
+		{[]string{"foo", "bar"}, nil, true},
+	}
+
+	for i, test := range tests {
+		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
+
+		v, err := cast.ToInt64SliceE(test.input)
+		if test.err {
+			assert.Error(t, err, errmsg)
+			continue
+		}
+
+		assert.NoError(t, err, errmsg)
+		assert.Equal(t, test.expect, v, errmsg)
+	}
+}
+
 func TestToSlice(t *testing.T) {
 	tests := []struct {
 		input  interface{}
