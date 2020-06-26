@@ -168,6 +168,41 @@ func ToInt64SliceE(i interface{}) ([]int64, error) {
 	}
 }
 
+// ToUint64Slice casts an interface to a []int type, discarding any errors.
+func ToUint64Slice(i interface{}) []uint64 {
+	ret, _ := ToUint64SliceE(i)
+	return ret
+}
+
+// ToUint64SliceE casts an interface to a []int type.
+func ToUint64SliceE(i interface{}) ([]uint64, error) {
+	if i == nil {
+		return []uint64{}, fmt.Errorf("unable to cast %#v of type %T to []uint64", i, i)
+	}
+
+	switch v := i.(type) {
+	case []uint64:
+		return v, nil
+	}
+
+	kind := reflect.TypeOf(i).Kind()
+	switch kind {
+	case reflect.Slice, reflect.Array:
+		s := reflect.ValueOf(i)
+		a := make([]uint64, s.Len())
+		for j := 0; j < s.Len(); j++ {
+			val, err := ToUint64E(s.Index(j).Interface())
+			if err != nil {
+				return []uint64{}, fmt.Errorf("unable to cast %#v of type %T to []uint64", i, i)
+			}
+			a[j] = val
+		}
+		return a, nil
+	default:
+		return []uint64{}, fmt.Errorf("unable to cast %#v of type %T to []uint64", i, i)
+	}
+}
+
 // ToDurationSlice casts an interface to a []time.Duration type, discarding
 // any errors.
 func ToDurationSlice(i interface{}) []time.Duration {

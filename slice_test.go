@@ -99,6 +99,36 @@ func TestToInt64Slice(t *testing.T) {
 	}
 }
 
+func TestToUint64Slice(t *testing.T) {
+	tests := []struct {
+		input  interface{}
+		expect []uint64
+		err    bool
+	}{
+		{[]uint64{1, 3}, []uint64{1, 3}, false},
+		{[]interface{}{1.2, 3.2}, []uint64{1, 3}, false},
+		{[]string{"2", "3"}, []uint64{2, 3}, false},
+		{[2]string{"2", "3"}, []uint64{2, 3}, false},
+		// errors
+		{nil, nil, true},
+		{testing.T{}, nil, true},
+		{[]string{"foo", "bar"}, nil, true},
+	}
+
+	for i, test := range tests {
+		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
+
+		v, err := cast.ToUint64SliceE(test.input)
+		if test.err {
+			assert.Error(t, err, errmsg)
+			continue
+		}
+
+		assert.NoError(t, err, errmsg)
+		assert.Equal(t, test.expect, v, errmsg)
+	}
+}
+
 func TestToSlice(t *testing.T) {
 	tests := []struct {
 		input  interface{}
