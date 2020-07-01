@@ -1,8 +1,9 @@
 package cast
 
 import (
-	"fmt"
 	"strconv"
+
+	"github.com/bdlm/errors/v2"
 )
 
 // ToBool casts an interface to a bool type, discarding any errors.
@@ -13,21 +14,27 @@ func ToBool(i interface{}) bool {
 
 // ToBoolE casts an interface to a bool type.
 func ToBoolE(i interface{}) (bool, error) {
-	i = indirect(i)
+	var ret bool
+	var err error
 
-	switch b := i.(type) {
+	i = indirect(i)
+	switch t := i.(type) {
 	case bool:
-		return b, nil
+		ret, err = t, nil
 	case nil:
-		return false, nil
+		ret, err = false, nil
 	case int:
 		if i.(int) != 0 {
-			return true, nil
+			ret, err = true, nil
 		}
-		return false, nil
 	case string:
-		return strconv.ParseBool(i.(string))
+		ret, err = strconv.ParseBool(i.(string))
 	default:
-		return false, fmt.Errorf("unable to cast %#v of type %T to bool", i, i)
+		err = errors.Errorf("type %T cannot be cast to bool", i)
 	}
+
+	if nil != err {
+		return false, errors.Wrap(err, "unable to cast %#v of type %T to bool", i, i)
+	}
+	return ret, nil
 }

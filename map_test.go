@@ -8,14 +8,117 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStringMapStringSlice(t *testing.T) {
+func TestToMapStringBool(t *testing.T) {
+	tests := []struct {
+		input  interface{}
+		expect map[string]bool
+		err    bool
+	}{
+		{map[interface{}]interface{}{"v1": true, "v2": false}, map[string]bool{"v1": true, "v2": false}, false},
+		{map[string]interface{}{"v1": true, "v2": false}, map[string]bool{"v1": true, "v2": false}, false},
+		{map[string]bool{"v1": true, "v2": false}, map[string]bool{"v1": true, "v2": false}, false},
+		{`{"v1": true, "v2": false}`, map[string]bool{"v1": true, "v2": false}, false},
+
+		// errors
+		{nil, nil, true},
+		{testing.T{}, nil, true},
+		{"", nil, true},
+	}
+
+	for i, test := range tests {
+		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
+
+		v, err := cast.ToMapStringBoolE(test.input)
+		if test.err {
+			assert.Error(t, err, errmsg)
+			continue
+		}
+
+		assert.NoError(t, err, errmsg)
+		assert.Equal(t, test.expect, v, errmsg)
+	}
+}
+
+func TestToMapStringInterface(t *testing.T) {
+	tests := []struct {
+		input  interface{}
+		expect map[string]interface{}
+		err    bool
+	}{
+		{map[interface{}]interface{}{"tag": "tags", "group": "groups"}, map[string]interface{}{"tag": "tags", "group": "groups"}, false},
+		{map[string]interface{}{"tag": "tags", "group": "groups"}, map[string]interface{}{"tag": "tags", "group": "groups"}, false},
+		{`{"tag": "tags", "group": "groups"}`, map[string]interface{}{"tag": "tags", "group": "groups"}, false},
+		{`{"tag": "tags", "group": true}`, map[string]interface{}{"tag": "tags", "group": true}, false},
+
+		// errors
+		{nil, nil, true},
+		{testing.T{}, nil, true},
+		{"", nil, true},
+	}
+
+	for i, test := range tests {
+		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
+
+		v, err := cast.ToMapStringInterfaceE(test.input)
+		if test.err {
+			assert.Error(t, err, errmsg)
+			continue
+		}
+
+		assert.NoError(t, err, errmsg)
+		assert.Equal(t, test.expect, v, errmsg)
+	}
+}
+
+func TestToMapStringString(t *testing.T) {
+	var stringMapString = map[string]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	var stringMapInterface = map[string]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	var interfaceMapString = map[interface{}]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	var interfaceMapInterface = map[interface{}]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
+	var jsonString = `{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}`
+	var invalidJsonString = `{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"`
+	var emptyString = ""
+
+	tests := []struct {
+		input  interface{}
+		expect map[string]string
+		err    bool
+	}{
+		{stringMapString, stringMapString, false},
+		{stringMapInterface, stringMapString, false},
+		{interfaceMapString, stringMapString, false},
+		{interfaceMapInterface, stringMapString, false},
+		{jsonString, stringMapString, false},
+
+		// errors
+		{nil, nil, true},
+		{testing.T{}, nil, true},
+		{invalidJsonString, nil, true},
+		{emptyString, nil, true},
+	}
+
+	for i, test := range tests {
+		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
+
+		v, err := cast.ToMapStringStringE(test.input)
+		if test.err {
+			assert.Error(t, err, errmsg)
+			continue
+		}
+
+		assert.NoError(t, err, errmsg)
+		assert.Equal(t, test.expect, v, errmsg)
+	}
+}
+
+func TestToMapStringSliceString(t *testing.T) {
 	// ToStringMapString inputs/outputs
 	var stringMapString = map[string]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
 	var stringMapInterface = map[string]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
 	var interfaceMapString = map[interface{}]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
 	var interfaceMapInterface = map[interface{}]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
 
-	// ToStringMapStringSlice inputs/outputs
+	// ToMapStringSliceString inputs/outputs
 	var stringMapStringSlice = map[string][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
 	var stringMapInterfaceSlice = map[string][]interface{}{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
 	var stringMapInterfaceInterfaceSlice = map[string]interface{}{"key 1": []interface{}{"value 1", "value 2", "value 3"}, "key 2": []interface{}{"value 1", "value 2", "value 3"}, "key 3": []interface{}{"value 1", "value 2", "value 3"}}
@@ -68,110 +171,7 @@ func TestStringMapStringSlice(t *testing.T) {
 	for i, test := range tests {
 		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
 
-		v, err := cast.ToStringMapStringSliceE(test.input)
-		if test.err {
-			assert.Error(t, err, errmsg)
-			continue
-		}
-
-		assert.NoError(t, err, errmsg)
-		assert.Equal(t, test.expect, v, errmsg)
-	}
-}
-
-func TestToStringMap(t *testing.T) {
-	tests := []struct {
-		input  interface{}
-		expect map[string]interface{}
-		err    bool
-	}{
-		{map[interface{}]interface{}{"tag": "tags", "group": "groups"}, map[string]interface{}{"tag": "tags", "group": "groups"}, false},
-		{map[string]interface{}{"tag": "tags", "group": "groups"}, map[string]interface{}{"tag": "tags", "group": "groups"}, false},
-		{`{"tag": "tags", "group": "groups"}`, map[string]interface{}{"tag": "tags", "group": "groups"}, false},
-		{`{"tag": "tags", "group": true}`, map[string]interface{}{"tag": "tags", "group": true}, false},
-
-		// errors
-		{nil, nil, true},
-		{testing.T{}, nil, true},
-		{"", nil, true},
-	}
-
-	for i, test := range tests {
-		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
-
-		v, err := cast.ToStringMapE(test.input)
-		if test.err {
-			assert.Error(t, err, errmsg)
-			continue
-		}
-
-		assert.NoError(t, err, errmsg)
-		assert.Equal(t, test.expect, v, errmsg)
-	}
-}
-
-func TestToStringMapBool(t *testing.T) {
-	tests := []struct {
-		input  interface{}
-		expect map[string]bool
-		err    bool
-	}{
-		{map[interface{}]interface{}{"v1": true, "v2": false}, map[string]bool{"v1": true, "v2": false}, false},
-		{map[string]interface{}{"v1": true, "v2": false}, map[string]bool{"v1": true, "v2": false}, false},
-		{map[string]bool{"v1": true, "v2": false}, map[string]bool{"v1": true, "v2": false}, false},
-		{`{"v1": true, "v2": false}`, map[string]bool{"v1": true, "v2": false}, false},
-
-		// errors
-		{nil, nil, true},
-		{testing.T{}, nil, true},
-		{"", nil, true},
-	}
-
-	for i, test := range tests {
-		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
-
-		v, err := cast.ToStringMapBoolE(test.input)
-		if test.err {
-			assert.Error(t, err, errmsg)
-			continue
-		}
-
-		assert.NoError(t, err, errmsg)
-		assert.Equal(t, test.expect, v, errmsg)
-	}
-}
-
-func TestToStringMapString(t *testing.T) {
-	var stringMapString = map[string]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
-	var stringMapInterface = map[string]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
-	var interfaceMapString = map[interface{}]string{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
-	var interfaceMapInterface = map[interface{}]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
-	var jsonString = `{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}`
-	var invalidJsonString = `{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"`
-	var emptyString = ""
-
-	tests := []struct {
-		input  interface{}
-		expect map[string]string
-		err    bool
-	}{
-		{stringMapString, stringMapString, false},
-		{stringMapInterface, stringMapString, false},
-		{interfaceMapString, stringMapString, false},
-		{interfaceMapInterface, stringMapString, false},
-		{jsonString, stringMapString, false},
-
-		// errors
-		{nil, nil, true},
-		{testing.T{}, nil, true},
-		{invalidJsonString, nil, true},
-		{emptyString, nil, true},
-	}
-
-	for i, test := range tests {
-		errmsg := fmt.Sprintf("i = %d", i) // assert helper message
-
-		v, err := cast.ToStringMapStringE(test.input)
+		v, err := cast.ToMapStringSliceStringE(test.input)
 		if test.err {
 			assert.Error(t, err, errmsg)
 			continue
