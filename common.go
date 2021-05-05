@@ -7,22 +7,18 @@ import (
 	"time"
 )
 
-/*
-jsonStringToObject attempts to unmarshall a string as JSON into the object
-passed as pointer.
-*/
+// jsonStringToObject attempts to unmarshall a string as JSON into the object
+// passed as pointer.
 func jsonStringToObject(s string, v interface{}) error {
 	data := []byte(s)
 	return json.Unmarshal(data, v)
 }
 
-/*
-indirect returns the value, after dereferencing as many times as necessary
-to reach the base type (or nil).
-
-From html/template/content.go
-Copyright 2011 The Go Authors. All rights reserved.
-*/
+// indirect returns the value, after dereferencing as many times as necessary
+// to reach the base type (or nil).
+//
+// From html/template/content.go
+// Copyright 2011 The Go Authors. All rights reserved.
 func indirect(a interface{}) interface{} {
 	if a == nil {
 		return nil
@@ -38,14 +34,12 @@ func indirect(a interface{}) interface{} {
 	return v.Interface()
 }
 
-/*
-indirectToStringerOrError returns the value, after dereferencing as many
-times as necessary to reach the base type (or nil) or an implementation of
-fmt.Stringer or error.
-
-From html/template/content.go
-Copyright 2011 The Go Authors. All rights reserved.
-*/
+// indirectToStringerOrError returns the value, after dereferencing as many
+// times as necessary to reach the base type (or nil) or an implementation of
+// fmt.Stringer or error.
+//
+// From html/template/content.go
+// Copyright 2011 The Go Authors. All rights reserved.
 func indirectToStringerOrError(a interface{}) interface{} {
 	if a == nil {
 		return nil
@@ -61,9 +55,7 @@ func indirectToStringerOrError(a interface{}) interface{} {
 	return v.Interface()
 }
 
-/*
-parseDateWith
-*/
+// parseDateWith
 func parseDateWith(s string, dates []string) (time.Time, error) {
 	var t time.Time
 	var err error

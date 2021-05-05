@@ -15,7 +15,9 @@ func ToDuration(i interface{}) time.Duration {
 }
 
 // ToDurationE casts an interface to a time.Duration type.
-func ToDurationE(i interface{}) (d time.Duration, err error) {
+func ToDurationE(i interface{}) (time.Duration, error) {
+	var d time.Duration
+	var err error
 	i = indirect(i)
 
 	switch s := i.(type) {
