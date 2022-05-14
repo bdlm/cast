@@ -18,77 +18,96 @@ type testCase struct {
 
 type testCases map[string][]testCase
 
-func TestTo(t *testing.T) {
-	for name, cases := range tests {
+func TestSimpleTypes(t *testing.T) {
+	for name, cases := range simpleCases {
 		switch name {
 		case "bool":
-			test[bool](t, cases)
+			testSimpleCases[bool](t, cases)
 		case "byte":
-			test[byte](t, cases)
+			testSimpleCases[byte](t, cases)
 		case "rune":
-			test[rune](t, cases)
+			testSimpleCases[rune](t, cases)
 		case "int":
-			test[int](t, cases)
+			testSimpleCases[int](t, cases)
 		case "int8":
-			test[int8](t, cases)
+			testSimpleCases[int8](t, cases)
 		case "int16":
-			test[int16](t, cases)
+			testSimpleCases[int16](t, cases)
 		case "int32":
-			test[int32](t, cases)
+			testSimpleCases[int32](t, cases)
 		case "int64":
-			test[int64](t, cases)
+			testSimpleCases[int64](t, cases)
 		case "uint":
-			test[uint](t, cases)
+			testSimpleCases[uint](t, cases)
 		case "uint8":
-			test[uint8](t, cases)
+			testSimpleCases[uint8](t, cases)
 		case "uint16":
-			test[uint16](t, cases)
+			testSimpleCases[uint16](t, cases)
 		case "uint32":
-			test[uint32](t, cases)
+			testSimpleCases[uint32](t, cases)
 		case "uint64":
-			test[uint64](t, cases)
+			testSimpleCases[uint64](t, cases)
 		case "uintptr":
-			test[uintptr](t, cases)
+			testSimpleCases[uintptr](t, cases)
 		case "float32":
-			test[float32](t, cases)
+			testSimpleCases[float32](t, cases)
 		case "float64":
-			test[float64](t, cases)
+			testSimpleCases[float64](t, cases)
 		case "complex64":
-			test[complex64](t, cases)
+			testSimpleCases[complex64](t, cases)
 		case "complex128":
-			test[complex128](t, cases)
+			testSimpleCases[complex128](t, cases)
 		}
 	}
 }
 
-func test[TTo any](t *testing.T, cases []testCase) {
+func testSimpleCases[TTo any](t *testing.T, cases []testCase) {
 	var typ TTo
 	name := fmt.Sprintf("%T", typ)
 
 	for _, test := range cases {
-		t.Run(fmt.Sprintf("%s:%s", name, test.in), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%s: %v", name, test.in), func(t *testing.T) {
 			actual, err := cast.ToE[TTo](test.in)
+			testInfo := fmt.Sprintf(`
+case: ToE[%s]
+input: %v (%T)
+expect error: %v; actual error: %v
+expected result: %v (%T); actual result: %v (%T)
+test: %#v
+			`,
+				name,
+				test.in,
+				test.in,
+				test.expectErr,
+				err,
+				test.expect,
+				test.expect,
+				actual,
+				actual,
+				test,
+			)
+
 			if err != nil && !test.expectErr {
-				t.Errorf("case %s: input: %v (%T); unexpected error: %+v", name, test.in, test.in, err)
+				t.Error(1, testInfo)
 			} else if err == nil && test.expectErr {
-				t.Errorf("case %s: input: %v (%T); expected error, actual %v (%T)", name, test.in, test.in, actual, actual)
+				t.Error(2, testInfo)
 			} else if err != nil && !errors.Is(err, cast.Error) {
-				t.Errorf("case %s: input: %v (%T); expected error: %v (%T), actual: %v (%T)", name, test.in, test.in, cast.Error, cast.Error, err, err)
+				t.Error(3, testInfo)
 			} else if !reflect.DeepEqual(actual, test.expect) {
-				t.Errorf("case %s: input: %v (%T); expected: %v (%T), actual: %v (%T)", name, test.in, test.in, test.expect, test.expect, actual, actual)
+				t.Error(4, testInfo)
 			}
 		})
 	}
 }
 
-var tests = testCases{
+var simpleCases = testCases{
 	"bool": {
 		{in: true, expect: true, err: nil, expectErr: false},
 		{in: 1, expect: true, err: nil, expectErr: false},
 		{in: 0, expect: false, err: nil, expectErr: false},
 		{in: "hi", expect: false, err: nil, expectErr: true},
 		{in: float64(1.1), expect: true, err: nil, expectErr: false},
-		{in: float64(-1.1), expect: false, err: nil, expectErr: true},
+		{in: float64(-1.1), expect: true, err: nil, expectErr: false},
 	},
 	// int
 	"int": {

@@ -6,7 +6,8 @@ import (
 	"github.com/bdlm/errors/v2"
 )
 
-// ToBool casts an interface to a bool type.
+// toBool casts an interface to a bool type. For numeric values, anything but
+// zero is considered true.
 func toBool[TTo bool](from any) (TTo, error) {
 	switch from.(type) {
 	case bool:

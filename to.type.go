@@ -6,7 +6,7 @@ import (
 
 var (
 	Error                   = errors.Errorf("unable to cast value")
-	ErrorNegativeToUnsigned = errors.Errorf("cannot cast negative value to unsigned integer")
+	ErrorNegativeToUnsigned = errors.Wrap(Error, "cannot cast negative value to unsigned integer")
 )
 
 type Func[TTo Types] func() TTo
