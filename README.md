@@ -46,43 +46,45 @@ Cast provides `To[T any](any) T` and `ToE[T any](any) (T, error)` methods. These
 ##### channels
 Casting to a channel will return a channel of the specified type with a buffer size of 1 containing the typed value.
 ```go
-var intCh chan int
-intCh = cast.To[chan int]("10")  // <-10 (int)
+intCh := cast.To[chan int]("10")
+ten = <-intCh // <-10 (int)
 
 var strCh chan string
-strCh = cast.To[chan string](10) // <-"10" (string)
+strCh = cast.To[chan string](10)
+str := <-strCh // <-"10" (string)
 
-var boolCh chan bool
-boolCh = cast.To[chan bool](1)   // <-true (bool)
+boolval := <-cast.To[chan bool](1) // <-true (bool) - I have no idea why you would do that :) but it works
 ```
 
 ##### func
 Casting to function will return a function that returns the cast value. This requires using the `cast.Func` type
 ```go
 var intFunc cast.Func[int]
-intFunc = cast.ToE[cast.Func[int]]("10")
+intFunc = cast.To[cast.Func[int]]("10")
 fmt.Printf("%#v (%T)\n", intFunc(), intFunc()) // 10 (int)
 
-var strFunc cast.Func[string]
-strFunc = cast.ToE[cast.Func[string]](10)
+strFunc := cast.To[cast.Func[string]](10)
 fmt.Printf("%#v (%T)\n", strFunc(), strFunc()) // "10" (string)
 
 var boolFunc cast.Func[bool]
-boolFunc = cast.ToE[cast.Func[bool]](1)
-fmt.Printf("%#v (%T)\n", boolFunc(), boolFunc()) // true (bool)
-
+boolFunc = cast.To[cast.Func[bool]](1)
+fmt.Printf(
+    "%#v (%T)\n", // true (bool) - why tho?
+    cast.To[cast.Func[bool]](1)(),
+    cast.To[cast.Func[bool]](1)(),
+)
 ```
 
 ##### String
 ```go
-intVal := cast.To[string]("Hi!")              // "Hi!"
-intVal := cast.To[string](8)                  // "8"
-intVal := cast.To[string](8.31)               // "8.31"
-intVal := cast.To[string]([]byte("one time")) // "one time"
-intVal := cast.To[string](nil)                // ""
+strVal := cast.To[string]("Hi!")              // "Hi!"
+strVal := cast.To[string](8)                  // "8"
+strVal := cast.To[string](8.31)               // "8.31"
+strVal := cast.To[string]([]byte("one time")) // "one time"
+strVal := cast.To[string](nil)                // ""
 
 var foo interface{} = "one more time"
-intVal := cast.ToString(foo)                  // "one more time"
+intVal := cast.To[string](foo)                  // "one more time"
 ```
 
 ##### Int
@@ -101,6 +103,7 @@ intVal := cast.To[int](nil)         // 0
 ```
 
 ##### Error checking
+To capture any conversion errors, use the `ToE` method:
 ```go
 intVal := cast.To[int]("Hi!")         // 0
 intVal, err := cast.ToE[int]("Hi!")   // 0, unable to cast "Hi!" of type string to int
