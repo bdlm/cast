@@ -39,7 +39,7 @@ If you are taking in data from YAML, TOML or JSON or other formats which lack fu
 
 Cast provides `To[T any](any) T` and `ToE[T any](any) (T, error)` methods. These methods will always return the desired type `T`. While Cast will accept `any` type, not all conversions are possible or supportable, but several useful and unique conversions are provided.
 
-**If input is provided that will not convert to that type, the 0 or nil value for that type will be returned**. In order to differentiate between success and the `nil` value, the `ToE` method will return both the cast value and any error that occurred during the conversion.
+***If input is provided that will not convert to that type, the 0 or nil value for that type will be returned***. In order to differentiate between success and the `nil` value, the `ToE` method will return both the cast value and any error that occurred during the conversion.
 
 ### Examples
 
