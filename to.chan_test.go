@@ -9,70 +9,68 @@ import (
 	"github.com/bdlm/cast/v2"
 )
 
-type testCase struct {
-	in        any
-	expect    any
-	err       error
-	expectErr bool
-}
-
-type testCases map[string][]testCase
-
-func TestSimpleTypes(t *testing.T) {
-	for name, cases := range simpleCases {
+// toFunc returns a function that casts an interface to the specified
+// type.
+func TestChanTypes(t *testing.T) {
+	for name, cases := range chanCases {
 		switch name {
 		case "bool":
-			testSimpleCases[bool](t, cases)
+			testChanCases[bool](t, cases)
 		case "byte":
-			testSimpleCases[byte](t, cases)
+			testChanCases[byte](t, cases)
 		case "rune":
-			testSimpleCases[rune](t, cases)
+			testChanCases[rune](t, cases)
 		case "int":
-			testSimpleCases[int](t, cases)
+			testChanCases[int](t, cases)
 		case "int8":
-			testSimpleCases[int8](t, cases)
+			testChanCases[int8](t, cases)
 		case "int16":
-			testSimpleCases[int16](t, cases)
+			testChanCases[int16](t, cases)
 		case "int32":
-			testSimpleCases[int32](t, cases)
+			testChanCases[int32](t, cases)
 		case "int64":
-			testSimpleCases[int64](t, cases)
+			testChanCases[int64](t, cases)
 		case "uint":
-			testSimpleCases[uint](t, cases)
+			testChanCases[uint](t, cases)
 		case "uint8":
-			testSimpleCases[uint8](t, cases)
+			testChanCases[uint8](t, cases)
 		case "uint16":
-			testSimpleCases[uint16](t, cases)
+			testChanCases[uint16](t, cases)
 		case "uint32":
-			testSimpleCases[uint32](t, cases)
+			testChanCases[uint32](t, cases)
 		case "uint64":
-			testSimpleCases[uint64](t, cases)
+			testChanCases[uint64](t, cases)
 		case "uintptr":
-			testSimpleCases[uintptr](t, cases)
+			testChanCases[uintptr](t, cases)
 		case "float32":
-			testSimpleCases[float32](t, cases)
+			testChanCases[float32](t, cases)
 		case "float64":
-			testSimpleCases[float64](t, cases)
+			testChanCases[float64](t, cases)
 		case "complex64":
-			testSimpleCases[complex64](t, cases)
+			testChanCases[complex64](t, cases)
 		case "complex128":
-			testSimpleCases[complex128](t, cases)
+			testChanCases[complex128](t, cases)
 		}
 	}
 }
 
-func testSimpleCases[TTo any](t *testing.T, cases []testCase) {
+func testChanCases[TTo any](t *testing.T, cases []testCase) {
 	var typ TTo
 	name := fmt.Sprintf("%T", typ)
 
 	for _, test := range cases {
 		t.Run(fmt.Sprintf("%s: %v", name, test.in), func(t *testing.T) {
-			actual, err := cast.ToE[TTo](test.in)
+			var result TTo
+			actual, err := cast.ToE[chan TTo](test.in)
+			if nil == err {
+				result = <-actual
+			}
 			testInfo := fmt.Sprintf(`
-case: ToE[%s]
+case: ToE[chan %s]
 input: %v (%T)
 expect error: %v; actual error: %v
 expected result: %v (%T); actual result: %v (%T)
+result chan: %#v, (%T)
 test: %#v
 			`,
 				name,
@@ -82,25 +80,27 @@ test: %#v
 				err,
 				test.expect,
 				test.expect,
+				result,
+				result,
 				actual,
 				actual,
 				test,
 			)
-
-			if err != nil && !test.expectErr {
-				t.Error("1. expected nil, got error", testInfo)
-			} else if err == nil && test.expectErr {
-				t.Error("2. expected error, got nil", testInfo)
+			//fmt.Println(testInfo)
+			if !test.expectErr && err != nil {
+				t.Error(1, testInfo)
+			} else if test.expectErr && err == nil {
+				t.Error(2, testInfo)
 			} else if err != nil && !errors.Is(err, cast.Error) {
-				t.Error("3. expected cast.Error, got different error type", testInfo)
-			} else if !reflect.DeepEqual(actual, test.expect) {
-				t.Errorf("4. expected %v to equal %v %s", test.expect, actual, testInfo)
+				t.Error(3, testInfo)
+			} else if !reflect.DeepEqual(result, test.expect.(TTo)) {
+				t.Error(4, testInfo)
 			}
 		})
 	}
 }
 
-var simpleCases = testCases{
+var chanCases = testCases{
 	"bool": {
 		{in: true, expect: true, err: nil, expectErr: false},
 		{in: 1, expect: true, err: nil, expectErr: false},

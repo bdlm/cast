@@ -31,10 +31,10 @@ func TestToFunc(t *testing.T) {
 		var success bool
 		got, err := cast.ToE[cast.Func[int]](test.in)
 		var v interface{}
-		fmt.Printf("got: %T, err: %#+v, ", got, err)
+		t.Logf("got: %T, err: %#+v, ", got, err)
 		if (nil == err && false == test.expectErr) || (nil != err && true == test.expectErr) {
 			v = got()
-			fmt.Printf("returns: %v (%T)\n", v, v)
+			t.Logf("returns: %v (%T)\n", v, v)
 			if v == test.expect || err == test.err {
 				success = true
 			}
@@ -43,11 +43,6 @@ func TestToFunc(t *testing.T) {
 			t.Errorf("input: %#v (%T), expect: %v (%T), actual: %v (%T), error: %# +v", test.in, test.in, test.expect, test.expect, v, v, err)
 		}
 	}
-
-	//fn, err := cast.ToE[cast.Func](1)
-	//fmt.Println(err)
-	//fmt.Println(fn())
-	t.Errorf("stop")
 }
 
 func TestFuncTypes(t *testing.T) {
