@@ -47,13 +47,13 @@ Cast provides `To[T any](any) T` and `ToE[T any](any) (T, error)` methods. These
 Casting to a channel will return a channel of the specified type with a buffer size of 1 containing the typed value.
 ```go
 var intCh chan int
-intCh = cast.To[chan int]("10")  // 10
+intCh = cast.To[chan int]("10")  // <-10 (int)
 
 var strCh chan string
-strCh = cast.To[chan string](10) // "10"
+strCh = cast.To[chan string](10) // <-"10" (string)
 
 var boolCh chan bool
-boolCh = cast.To[chan bool](1)   // true
+boolCh = cast.To[chan bool](1)   // <-true (bool)
 ```
 
 ##### func
