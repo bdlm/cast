@@ -84,7 +84,7 @@ test: %#v
 				t.Error("2. expected error, got nil", testInfo)
 			} else if nil != err && !errors.Is(err, cast.Error) {
 				t.Error("3. expected cast.Error, got different error type", testInfo)
-			} else if nil == err && !reflect.DeepEqual(actual, test.expect) {
+			} else if nil == err && !reflect.DeepEqual(actual, test.expect.(TTo)) {
 				t.Errorf("4. expected %v to equal %v %s", test.expect, actual, testInfo)
 			}
 		})

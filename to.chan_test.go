@@ -93,7 +93,7 @@ test: %#v
 				t.Error(2, testInfo)
 			} else if err != nil && !errors.Is(err, cast.Error) {
 				t.Error(3, testInfo)
-			} else if !reflect.DeepEqual(result, test.expect.(TTo)) {
+			} else if nil == err && !reflect.DeepEqual(result, test.expect.(TTo)) {
 				t.Error(4, testInfo)
 			}
 		})
