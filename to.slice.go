@@ -30,127 +30,145 @@ func toSlice(to reflect.Value, from any, size int) (any, error) {
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]interface{}, size)
-		ret = append(ret.([]interface{}), tval)
+		slice := make([]interface{}, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Bool:
 		tval, err := ToE[bool](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]bool, size)
-		ret = append(ret.([]bool), tval)
+		slice := make([]bool, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Complex64:
 		tval, err := ToE[complex64](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]complex64, size)
-		ret = append(ret.([]complex64), tval)
+		slice := make([]complex64, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Complex128:
 		tval, err := ToE[complex128](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]complex128, size)
-		ret = append(ret.([]complex128), tval)
+		slice := make([]complex128, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Float32:
 		tval, err := ToE[float32](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]float32, size)
-		ret = append(ret.([]float32), tval)
+		slice := make([]float32, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Float64:
 		tval, err := ToE[float64](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]float64, size)
-		ret = append(ret.([]float64), tval)
+		slice := make([]float64, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Int:
 		tval, err := ToE[int](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]int, size)
-		ret = append(ret.([]int), tval)
+		slice := make([]int, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Int8:
 		tval, err := ToE[int8](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]int8, size)
-		ret = append(ret.([]int8), tval)
+		slice := make([]int8, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Int16:
 		tval, err := ToE[int16](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]int16, size)
-		ret = append(ret.([]int16), tval)
+		slice := make([]int16, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Int32:
 		tval, err := ToE[int32](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]int32, size)
-		ret = append(ret.([]int32), tval)
+		slice := make([]int32, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Int64:
 		tval, err := ToE[int64](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]int64, size)
-		ret = append(ret.([]int64), tval)
+		slice := make([]int64, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Uint:
 		tval, err := ToE[uint](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]uint, size)
-		ret = append(ret.([]uint), tval)
+		slice := make([]uint, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Uint8:
 		tval, err := ToE[uint8](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]uint8, size)
-		ret = append(ret.([]uint8), tval)
+		slice := make([]uint8, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Uint16:
 		tval, err := ToE[uint16](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]uint16, size)
-		ret = append(ret.([]uint16), tval)
+		slice := make([]uint16, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Uint32:
 		tval, err := ToE[uint32](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]uint32, size)
-		ret = append(ret.([]uint32), tval)
+		slice := make([]uint32, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Uint64:
 		tval, err := ToE[uint64](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]uint64, size)
-		ret = append(ret.([]uint64), tval)
+		slice := make([]uint64, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.Uintptr:
 		tval, err := ToE[uintptr](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]uintptr, size)
-		ret = append(ret.([]uintptr), tval)
+		slice := make([]uintptr, size)
+		slice[0] = tval
+		ret = slice
 	case reflect.String:
 		tval, err := ToE[string](from)
 		if err != nil {
 			return ret, err
 		}
-		ret = make([]string, size)
-		ret = append(ret.([]string), tval)
+		slice := make([]string, size)
+		slice[0] = tval
+		ret = slice
 
 	}
 
