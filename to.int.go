@@ -32,37 +32,37 @@ func toInt[TTo constraints.Integer](from reflect.Value) (TTo, error) {
 		return TTo(0), nil
 	case int:
 		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorNegativeToUnsigned, errDetail)
+			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
 		return TTo(typ), nil
 	case int64:
 		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorNegativeToUnsigned, errDetail)
+			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
 		return TTo(typ), nil
 	case int32:
 		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorNegativeToUnsigned, errDetail)
+			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
 		return TTo(typ), nil
 	case int16:
 		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorNegativeToUnsigned, errDetail)
+			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
 		return TTo(typ), nil
 	case int8:
 		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorNegativeToUnsigned, errDetail)
+			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
 		return TTo(typ), nil
 	case float64:
 		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorNegativeToUnsigned, errDetail)
+			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
 		return TTo(typ), nil
 	case float32:
 		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorNegativeToUnsigned, errDetail)
+			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
 		return TTo(typ), nil
 	case uint:
@@ -128,7 +128,7 @@ func strToInt[TTo constraints.Integer](to reflect.Value, from string) (TTo, erro
 	// Negative to uint error.
 	ref := reflect.ValueOf(TTo(0))
 	if ref.Kind() == reflect.Uint || ref.Kind() == reflect.Uint8 || ref.Kind() == reflect.Uint16 || ref.Kind() == reflect.Uint32 || ref.Kind() == reflect.Uint64 || ref.Kind() == reflect.Uintptr {
-		return 0, errors.WrapE(ErrorNegativeToUnsigned, errDetail)
+		return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 	}
 
 	return TTo(math.Ceil(val)), nil

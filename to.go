@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/bdlm/errors/v2"
+	std_error "github.com/bdlm/std/v2/errors"
 )
 
 // To casts the value `v` to the given type, ignoring any errors.
@@ -18,16 +19,17 @@ func To[TTo Types](v any) TTo {
 // If the given type is a channel, a channel with a buffer of 1 is created and
 // the cast value `v` is added to the the channel before it is returned.
 //
-// //If the given type is an array, a slice is created with a size matching the
-// //length of the array and the cast value `v` is appended to the slice before it
-// //is returned.
-//
-// If the given type is a slice, a slice with a size of 1 is created and the
-// cast value `v` is appended to the the slice before it is returned.
+// If the given type is an array a slice is created. To create a slice with a
+// backing array with a spcific size, set the first flag to the desired size as
+// an integer: `slice, err := cast.ToE[[]int](v, 10)`. The value `v` is cast to
+// the required type and appended to the returned slice.
 //
 // If the given type is a map, a map is created with a zero-value key containing
 // the cast value `v` which is then returned.
-func ToE[TTo Types](val any) (TTo, error) {
+//
+// flags: optional flags may be used for some type conversions, for example when
+// creating a slice or channel.
+func ToE[TTo Types](val any, flags ...any) (TTo, error) {
 	var err error
 	var reti any
 	var ret TTo
@@ -45,14 +47,23 @@ func ToE[TTo Types](val any) (TTo, error) {
 	to := reflect.Indirect(toRef)
 
 	switch to.Type().Kind() {
-	//case reflect.Array:
-	//case reflect.Invalid:
-	//case reflect.Map:
-	//case reflect.Pointer:
-	//case reflect.Struct:
-	//case reflect.UnsafePointer:
+	// reflect.Array:
+	// reflect.Invalid:
+	// reflect.Map:
+	// reflect.Pointer:
+	// reflect.Struct:
+	// reflect.UnsafePointer:
+	// error
+	// std_error.Error
 	default:
-		return ret, errors.WrapE(Error, errors.Errorf("unable to cast %#v of type %T to %T", from, from, to.Interface()))
+		reti = ret
+		if _, ok := reti.(error); ok {
+			reti = errors.Errorf(To[string](val))
+		} else if _, ok := reti.(std_error.Error); ok {
+			reti = errors.Errorf(To[string](val))
+		} else {
+			return ret, errors.WrapE(Error, errors.Errorf("unable to cast %#v of type %T to %T", from, from, to.Interface()))
+		}
 
 	case reflect.Interface:
 		reti = val
@@ -60,9 +71,23 @@ func ToE[TTo Types](val any) (TTo, error) {
 	case reflect.Bool:
 		reti, err = toBool(val)
 	case reflect.Chan:
-		reti, err = toChan(to, val)
+		var size = 1
+		if len(flags) > 0 {
+			if _, ok = flags[0].(int); ok {
+				size = flags[0].(int)
+			}
+		}
+		reti, err = toChan(to, val, size)
+	case reflect.Array:
+		fallthrough
 	case reflect.Slice:
-		reti, err = toSlice(to, val)
+		var size = 1
+		if len(flags) > 0 {
+			if _, ok = flags[0].(int); ok {
+				size = flags[0].(int)
+			}
+		}
+		reti, err = toSlice(to, val, size)
 	case reflect.Func:
 		reti, err = toFunc[TTo](to, val)
 		//reti, err = toFunc[TTo](from)
