@@ -4,7 +4,7 @@
 
 # cast
 
-Inspired by [`spf13/cast`](https://github.com/spf13/cast). Now with Generics!
+Now with Generics!
 
 <a href="https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#mature"><img src="https://img.shields.io/badge/stability-mature-008000.svg" alt="Mature"></a> This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This package is considered mature, you should expect package stability in <strong>Minor</strong> and <strong>Patch</strong> version releases
 
@@ -24,6 +24,8 @@ Inspired by [`spf13/cast`](https://github.com/spf13/cast). Now with Generics!
     <a href="https://github.com/bdlm/cast/pulls"><img src="https://img.shields.io/github/issues-pr/bdlm/cast.svg" alt="Github pull requests"></a>
     <a href="https://github.com/bdlm/cast/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
 </p>
+
+<sub>inspired by [`spf13/cast`](https://github.com/spf13/cast)</sub>
 
 ## What is Cast?
 
