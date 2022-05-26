@@ -4,7 +4,7 @@
 
 # cast
 
-Now with Generics!
+Inspired by [`spf13/cast`](https://github.com/spf13/cast). Now with Generics!
 
 <a href="https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#mature"><img src="https://img.shields.io/badge/stability-mature-008000.svg" alt="Mature"></a> This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This package is considered mature, you should expect package stability in <strong>Minor</strong> and <strong>Patch</strong> version releases
 
@@ -25,13 +25,11 @@ Now with Generics!
     <a href="https://github.com/bdlm/cast/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
 </p>
 
-`cast` is inspired by [`spf13/cast`](https://github.com/spf13/cast).
-
 ## What is Cast?
 
-Cast is a library to convert between different go types in a consistent and straigntforward way.
+Cast is a library to convert between different `go` data types in a straigntforward and predictable way.
 
-Cast provides a simple function to easily convert a number to a string, an interface into a bool, etc. Cast does this intelligently when an obvious conversion is possible. It doesn’t make any attempts to guess what you meant, for example you can only convert a string to an int when it is a string representation of an int such as “8”. Cast is meant to simplify consumption of untyped or poorly typed data by removing all the typing boilerplate you otherwise need to write.
+Cast provides a simple function to easily convert a number to a string, an interface into a bool, etc. Cast does this intelligently when an obvious conversion is possible and logically when a conversion requires additional work, such as casting a map to a slice or a bool to a channel. It doesn’t make any attempts to guess what you meant, for example you can only convert a string to an int when it is a string representation of an int such as “8”. Cast is meant to simplify consumption of untyped or poorly typed data by removing all the typing boilerplate you otherwise need to write.
 
 ## Why use Cast?
 
@@ -46,6 +44,9 @@ If you are taking in data from YAML, TOML or JSON or other formats which lack fu
 Cast provides `To[T any](any) T` and `ToE[T any](any) (T, error)` methods. These methods will always return the desired type `T`. While Cast will accept `any` type, not all conversions are possible, supportable, or sensible, but several useful and unique conversions are included.
 
 ***If input is provided that will not convert to a specified type, the 0 or nil value for that type will be returned***. In order to differentiate between success and the `nil` value, the `ToE` method will return both the cast value and any [errors](https://github.com/bdlm/errors) that occurred during the conversion.
+
+Some conversions allow for flags for finer grained control. For example, you can pass a default value for impossible conversions or specify the size of the backing array when converting to a slice.
+
 
 ### Examples
 

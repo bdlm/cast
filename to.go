@@ -8,9 +8,21 @@ import (
 	std_error "github.com/bdlm/std/v2/errors"
 )
 
+type flag int
+type Ops map[flag]any
+
+const (
+	LENGTH flag = iota
+	DEFAULT
+)
+
+func parseOps[TTo Types](o ...Ops) {
+
+}
+
 // To casts the value `v` to the given type, ignoring any errors.
-func To[TTo Types](v any) TTo {
-	ret, _ := ToE[TTo](v)
+func To[TTo Types](v any, o ...Ops) TTo {
+	ret, _ := ToE[TTo](v, o...)
 	return ret
 }
 
@@ -20,20 +32,27 @@ func To[TTo Types](v any) TTo {
 // the cast value `v` is added to the the channel before it is returned.
 //
 // If the given type is an array a slice is created. To create a slice with a
-// backing array with a spcific size, set the first flag to the desired size as
-// an integer: `slice, err := cast.ToE[[]int](v, 10)`. The value `v` is cast to
-// the required type and appended to the returned slice.
+// backing array with a spcific size, set the LENGTH flag to the desired size as
+// an integer: `slice, err := cast.ToE[[]int](v, Ops{LENGTH: 10})`. The value `v`
+// is cast to the required type and appended to the returned slice.
 //
 // If the given type is a map, a map is created with a zero-value key containing
 // the cast value `v` which is then returned.
 //
-// flags: optional flags may be used for some type conversions, for example when
-// creating a slice or channel.
-func ToE[TTo Types](val any, flags ...any) (TTo, error) {
+// ops: optional, some flags may be passed to control type conversions, for
+// example when creating a channel the the buffer size can be specified.
+func ToE[TTo Types](val any, o ...Ops) (TTo, error) {
 	var err error
 	var reti any
 	var ret TTo
 	var ok bool
+
+	ops := Ops{}
+	for _, o := range o {
+		for k, v := range o {
+			ops[k] = v
+		}
+	}
 
 	go func() {
 		if e := recover(); e != nil {
@@ -72,20 +91,16 @@ func ToE[TTo Types](val any, flags ...any) (TTo, error) {
 		reti, err = toBool(val)
 	case reflect.Chan:
 		var size = 1
-		if len(flags) > 0 {
-			if _, ok = flags[0].(int); ok {
-				size = flags[0].(int)
-			}
+		if _, ok = ops[LENGTH].(int); ok {
+			size = ops[LENGTH].(int)
 		}
 		reti, err = toChan(to, val, size)
 	case reflect.Array:
 		fallthrough
 	case reflect.Slice:
 		var size = 1
-		if len(flags) > 0 {
-			if _, ok = flags[0].(int); ok {
-				size = flags[0].(int)
-			}
+		if _, ok = ops[LENGTH].(int); ok {
+			size = ops[LENGTH].(int)
 		}
 		reti, err = toSlice(to, val, size)
 	case reflect.Func:
