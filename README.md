@@ -1,6 +1,12 @@
+<p align="center">
+    <img src="https://github.com/bdlm/cast/wiki/assets/images/gopher.png" width="300px"></a>
+</p>
+
 # cast
 
 Now with Generics!
+
+#
 
 <a href="https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#mature"><img src="https://img.shields.io/badge/stability-mature-008000.svg" alt="Mature"></a> This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). This package is considered mature, you should expect package stability in <strong>Minor</strong> and <strong>Patch</strong> version releases
 
@@ -10,14 +16,16 @@ Now with Generics!
 
 **[CHANGELOG](CHANGELOG.md)**<br>
 
-<a href="https://github.com/bdlm/cast/blob/master/CHANGELOG.md"><img src="https://img.shields.io/github/v/release/bdlm/cast" alt="Release"></a>
-<a href="https://pkg.go.dev/github.com/bdlm/cast"><img src="https://godoc.org/github.com/bdlm/cast?status.svg" alt="GoDoc"></a>
-<a href="https://travis-ci.org/bdlm/cast"><img src="https://travis-ci.org/bdlm/cast.svg?branch=master" alt="Build status"></a>
-<a href="https://codecov.io/gh/bdlm/cast"><img src="https://img.shields.io/codecov/c/github/bdlm/cast/master.svg" alt="Coverage status"></a>
-<a href="https://goreportcard.com/report/github.com/bdlm/cast"><img src="https://goreportcard.com/badge/github.com/bdlm/cast" alt="Go Report Card"></a>
-<a href="https://github.com/bdlm/cast/issues"><img src="https://img.shields.io/github/issues-raw/bdlm/cast.svg" alt="Github issues"></a>
-<a href="https://github.com/bdlm/cast/pulls"><img src="https://img.shields.io/github/issues-pr/bdlm/cast.svg" alt="Github pull requests"></a>
-<a href="https://github.com/bdlm/cast/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
+<p align="center">
+    <a href="https://github.com/bdlm/cast/blob/master/CHANGELOG.md"><img src="https://img.shields.io/github/v/release/bdlm/cast" alt="Release"></a>
+    <a href="https://pkg.go.dev/github.com/bdlm/cast"><img src="https://godoc.org/github.com/bdlm/cast?status.svg" alt="GoDoc"></a>
+    <a href="https://travis-ci.org/bdlm/cast"><img src="https://travis-ci.org/bdlm/cast.svg?branch=master" alt="Build status"></a>
+    <a href="https://codecov.io/gh/bdlm/cast"><img src="https://img.shields.io/codecov/c/github/bdlm/cast/master.svg" alt="Coverage status"></a>
+    <a href="https://goreportcard.com/report/github.com/bdlm/cast"><img src="https://goreportcard.com/badge/github.com/bdlm/cast" alt="Go Report Card"></a>
+    <a href="https://github.com/bdlm/cast/issues"><img src="https://img.shields.io/github/issues-raw/bdlm/cast.svg" alt="Github issues"></a>
+    <a href="https://github.com/bdlm/cast/pulls"><img src="https://img.shields.io/github/issues-pr/bdlm/cast.svg" alt="Github pull requests"></a>
+    <a href="https://github.com/bdlm/cast/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
+</p>
 
 `cast` is inspired by [`spf13/cast`](https://github.com/spf13/cast).
 
@@ -37,9 +45,9 @@ If you are taking in data from YAML, TOML or JSON or other formats which lack fu
 
 ## Usage
 
-Cast provides `To[T any](any) T` and `ToE[T any](any) (T, error)` methods. These methods will always return the desired type `T`. While Cast will accept `any` type, not all conversions are possible or supportable, but several useful and unique conversions are provided.
+Cast provides `To[T any](any) T` and `ToE[T any](any) (T, error)` methods. These methods will always return the desired type `T`. While Cast will accept `any` type, not all conversions are possible or supportable, but several useful and unique conversions are included.
 
-***If input is provided that will not convert to that type, the 0 or nil value for that type will be returned***. In order to differentiate between success and the `nil` value, the `ToE` method will return both the cast value and any error that occurred during the conversion.
+***If input is provided that will not convert to a specified type, the 0 or nil value for that type will be returned***. In order to differentiate between success and the `nil` value, the `ToE` method will return both the cast value and any [errors](https://github.com/bdlm/errors) that occurred during the conversion.
 
 ### Examples
 
