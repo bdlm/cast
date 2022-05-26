@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://github.com/bdlm/cast/wiki/assets/images/gopher.png" width="300px"></a>
+    <a href="https://gopherize.me/gopher/0b8aa47b088b43d10817e8a13cb115fdd87c0bcb"><img src="https://github.com/bdlm/cast/wiki/assets/images/gopher.png" width="300px"></a>
 </p>
 
 # cast
@@ -43,7 +43,7 @@ If you are taking in data from YAML, TOML or JSON or other formats which lack fu
 
 ## Usage
 
-Cast provides `To[T any](any) T` and `ToE[T any](any) (T, error)` methods. These methods will always return the desired type `T`. While Cast will accept `any` type, not all conversions are possible or supportable, but several useful and unique conversions are included.
+Cast provides `To[T any](any) T` and `ToE[T any](any) (T, error)` methods. These methods will always return the desired type `T`. While Cast will accept `any` type, not all conversions are possible, supportable, or sensible, but several useful and unique conversions are included.
 
 ***If input is provided that will not convert to a specified type, the 0 or nil value for that type will be returned***. In order to differentiate between success and the `nil` value, the `ToE` method will return both the cast value and any [errors](https://github.com/bdlm/errors) that occurred during the conversion.
 
