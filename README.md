@@ -25,7 +25,7 @@ Now with Generics!
     <a href="https://github.com/bdlm/cast/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
 </p>
 
-<sub>inspired by [`spf13/cast`](https://github.com/spf13/cast)</sub>
+<sub>this project was inspired by [`spf13/cast`](https://github.com/spf13/cast)</sub>
 
 ## What is Cast?
 
