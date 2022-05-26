@@ -1,10 +1,10 @@
-<p align="center">
-    <img src="https://github.com/bdlm/cast/wiki/assets/images/gopher.png" width="300px"></a>
-</p>
-
 # cast
 
 Now with Generics!
+
+<p align="center">
+    <img src="https://github.com/bdlm/cast/wiki/assets/images/gopher.png" width="300px"></a>
+</p>
 
 #
 
