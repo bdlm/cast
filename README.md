@@ -29,26 +29,21 @@ Now with Generics!
 
 ## What is Cast?
 
-Cast is a library to convert between different `go` data types in a straigntforward and predictable way.
+Cast is a library to convert between different data types in a straigntforward and predictable way.
 
-Cast provides a simple function to easily convert a number to a string, an interface into a bool, etc. Cast does this intelligently when an obvious conversion is possible and logically when a conversion requires additional work, such as casting a map to a slice or a bool to a channel. It doesn’t make any attempts to guess what you meant, for example you can only convert a string to an int when it is a string representation of an int such as “8”. Cast is meant to simplify consumption of untyped or poorly typed data by removing all the typing boilerplate you otherwise need to write.
+Cast provides a generic function to easily convert both simple types (number to a string, interface ito a bool, etc.) and complex types (slice to map and vice versa, any to func() any, any to chan any, etc.). Cast does this intelligently when an obvious conversion is possible and logically when a conversion requires a predictable measureable process, such as casting a map to a slice or a bool to a channel. It doesn’t make any attempts to guess what you meant, for example you can only cast a string to an int when it is a string representation of a number, such `"6.789"`. In a case like this, a reliable predictable rule converts that value to `int(6)` by converting it to a `float64` and calling `math.Floor()`. Cast is meant to simplify consumption of untyped or poorly typed data by removing all the boilerplate you would otherwise write for each use-case.
 
 ## Why use Cast?
 
-When working with dynamic data in Go you often need to cast or convert the data from one type into another. Cast goes beyond just using type assertion (though it uses that when possible) to provide a very straightforward and convenient library.
-
-If you are working with interfaces to handle things like dynamic content you need a way to convert an interface into a given type. This is the library for you.
-
-If you are taking in data from YAML, TOML or JSON or other formats which lack full types, then Cast is the library for you.
+When working with dynamic data in Go you often need to cast the data from one type into another (strings to integers is most common). Cast goes beyond just using type assertion (though it uses that whenever possible) to provide a very straightforward and usable API. If you are working with interfaces to handle dynamic content or are taking in data from YAML, TOML or JSON or other formats which lack full types, Cast can be used to get boilerplate out of your line of sight so you can work on your code.
 
 ## Usage
 
-Cast provides `To[T any](any) T` and `ToE[T any](any) (T, error)` methods. These methods will always return the desired type `T`. While Cast will accept `any` type, not all conversions are possible, supportable, or sensible, but several useful and unique conversions are included.
+Cast provides `To[T any](any) T` and `ToE[T any](any) (T, error)` methods. These methods will always return the desired type `T`. While Cast will accept `any` type, not all conversions are possible, supportable, or sensible, but several useful and unique conversions are available.
 
 ***If input is provided that will not convert to a specified type, the 0 or nil value for that type will be returned***. In order to differentiate between success and the `nil` value, the `ToE` method will return both the cast value and any [errors](https://github.com/bdlm/errors) that occurred during the conversion.
 
-Some conversions allow for flags for finer grained control. For example, you can pass a default value for impossible conversions or specify the size of the backing array when converting to a slice.
-
+Some conversions accept flags for finer grained control. For example, you can specify a default value for impossible conversions or specify the size of the backing array when casting to a slice.
 
 ### Examples
 
