@@ -86,34 +86,34 @@ fmt.Printf(
 
 ##### String
 ```go
-strVal := cast.To[string]("Hi!")              // "Hi!"
-strVal := cast.To[string](8)                  // "8"
-strVal := cast.To[string](8.31)               // "8.31"
-strVal := cast.To[string]([]byte("one time")) // "one time"
-strVal := cast.To[string](nil)                // ""
+strVal := cast.To[string]("Hi!")              // "Hi!" (string)
+strVal := cast.To[string](8)                  // "8" (string)
+strVal := cast.To[string](8.31)               // "8.31" (string)
+strVal := cast.To[string]([]byte("one time")) // "one time" (string)
+strVal := cast.To[string](nil)                // "" (string)
 
 var foo interface{} = "one more time"
-intVal := cast.To[string](foo)                  // "one more time"
+strVal := cast.To[string](foo)                // "one more time" (string)
 ```
 
 ##### Int
 ```go
-intVal := cast.To[int](8)           // 8
-intVal := cast.To[int](8.31)        // 8
-intVal := cast.To[int]("8")         // 8
-intVal := cast.To[int]("8.31")      // 8
-intVal := cast.To[int]("8.51")      // 8
-intVal := cast.To[int](true)        // 1
-intVal := cast.To[int](false)       // 0
+intVal := cast.To[int](8)           // 8 (int)
+intVal := cast.To[int](8.31)        // 8 (int)
+intVal := cast.To[int]("8")         // 8 (int)
+intVal := cast.To[int]("8.31")      // 8 (int)
+intVal := cast.To[int]("8.51")      // 8 (int)
+intVal := cast.To[int](true)        // 1 (int)
+intVal := cast.To[int](false)       // 0 (int)
 
 var eight interface{} = 8
-intVal := cast.To[int](eight)       // 8
-intVal := cast.To[int](nil)         // 0
+intVal := cast.To[int](eight)       // 8 (int)
+intVal := cast.To[int](nil)         // 0 (int)
 ```
 
 ##### Error checking
 To capture any conversion errors, use the `ToE` method:
 ```go
-intVal := cast.To[int]("Hi!")         // 0
-intVal, err := cast.ToE[int]("Hi!")   // 0, unable to cast "Hi!" of type string to int
+intVal := cast.To[int]("Hi!")         // 0 (int)
+intVal, err := cast.ToE[int]("Hi!")   // 0, unable to cast "Hi!" of type string to int (int, error)
 ```
