@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Minor**: feature additions
 - **Patch**: bug fixes, backward compatible model and function changes, etc.
 
+# v1.2.0 - 2022-06-??
+This is a full library rewrite for go v1.18 to take advantage of [generic functions and types](https://go.dev/doc/tutorial/generics).
+#### Removed
+- All existing exported cast functions have been removed (`ToString(any) string`, `ToStringE(any) (string, error)`, etc.)
+
+#### Added
+- All previous exported cast functions have replaced with a single generic function (and it's `error` counterpart):
+  ```go
+  To[T any]() T
+
+  ToE[T any]() (T, error)
+  ```
+
+
 # v1.1.0 - 2020-06-27
 #### Changed
 - Refactoring `ToSlice*` and `ToMap` language
