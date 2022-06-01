@@ -31,12 +31,12 @@ func toBool[TTo bool](from any) (TTo, error) {
 		if nil != e {
 			i, e2 := ToE[int](from)
 			if nil != e2 {
-				return false, errors.Wrap(errors.WrapE(e2, e), "unable to cast %#v of type %T to bool", from, from)
+				return false, errors.Wrap(errors.WrapE(e2, e), "unable to cast %#.10v of type %T to bool", from, from)
 			}
 			return i != 0, nil
 		}
 		return r != false, nil
 	}
 
-	return false, errors.Errorf("unable to cast %#v of type %T to %T", from, from, false)
+	return false, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, false)
 }

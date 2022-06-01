@@ -11,7 +11,7 @@ import (
 // toComplex64 casts an interface to a complex number.
 func toComplex[TTo constraints.Complex](from reflect.Value) (TTo, error) {
 	var nilval TTo
-	fmt.Printf("complex from: '%#v' %T\n\n", from, from)
+	fmt.Printf("complex from: '%#.10v' %T\n\n", from, from)
 
 	to := reflect.Indirect(reflect.ValueOf(new(TTo)))
 	switch to.Type().Kind() {
@@ -28,5 +28,5 @@ func toComplex[TTo constraints.Complex](from reflect.Value) (TTo, error) {
 		}
 		return TTo(complex(f, 0)), nil
 	}
-	return TTo(0), errors.Errorf("unable to cast %#v of type %T to complex", from, from)
+	return TTo(0), errors.Errorf("unable to cast %#.10v of type %T to complex", from, from)
 }

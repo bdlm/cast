@@ -12,7 +12,7 @@ import (
 
 // toFloat casts an interface to a float type.
 func toFloat[TTo constraints.Float](from reflect.Value) (TTo, error) {
-	errDetail := errors.Errorf("unable to cast %#v of type %T to %T", from.Interface(), from.Interface(), TTo(0))
+	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from.Interface(), from.Interface(), TTo(0))
 
 	to := reflect.Indirect(reflect.ValueOf(new(TTo)))
 	unsigned := false

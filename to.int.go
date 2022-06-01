@@ -13,7 +13,7 @@ import (
 
 // toInt casts an interface to an int type.
 func toInt[TTo constraints.Integer](from reflect.Value) (TTo, error) {
-	errDetail := errors.Errorf("unable to cast %#v of type %T to %T", from.Interface(), from.Interface(), TTo(0))
+	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from.Interface(), from.Interface(), TTo(0))
 
 	to := reflect.Indirect(reflect.ValueOf(new(TTo)))
 	unsigned := false
@@ -85,13 +85,13 @@ func toInt[TTo constraints.Integer](from reflect.Value) (TTo, error) {
 	//case complex128:
 	//case complex64:
 	default:
-		return toInt[TTo](reflect.ValueOf(fmt.Sprintf("%#v", from.Interface())))
+		return toInt[TTo](reflect.ValueOf(fmt.Sprintf("%#.10v", from.Interface())))
 	}
 }
 
 // strToInt converts a string to an integer type.
 func strToInt[TTo constraints.Integer](to reflect.Value, from string) (TTo, error) {
-	errDetail := errors.Errorf("unable to cast %#v of type %T to %T", from, from, TTo(0))
+	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	var e, err error
 	var val float64
 	if val, e = strconv.ParseFloat(from, 64); e != nil {

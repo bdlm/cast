@@ -148,7 +148,7 @@ func ToE[TTo Types](val any, o ...Ops) (TTo, error) {
 		return ret, nil
 	}
 
-	return ret, errors.WrapE(Error, errors.Errorf("unable to cast %#v of type %T to %T", from, from, to.Interface()))
+	return ret, errors.WrapE(Error, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface()))
 }
 
 //func toType(typ reflect.Type, from any) (reflect.Value, error) {

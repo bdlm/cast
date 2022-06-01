@@ -26,7 +26,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	//case reflect.Struct:
 	//case reflect.UnsafePointer:
 	default:
-		return ret, errors.Errorf("unable to cast %#v of type %T to %T", from, from, to.Interface())
+		return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
 
 	case reflect.Interface:
 		f, err = ToE[interface{}](from)
@@ -223,7 +223,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		//case reflect.Slice:
 		//case reflect.Func:
 		default:
-			return ret, errors.Errorf("unable to cast %#v of type %T to %T", from, from, to.Interface())
+			return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
 		case reflect.Interface:
 			f, err = ToE[chan interface{}](from)
 			if nil != err {

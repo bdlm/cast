@@ -26,7 +26,7 @@ func toChan(to reflect.Value, from any, size int) (any, error) {
 	//case reflect.Pointer:
 	//case reflect.Slice:
 	default:
-		return ret, errors.Errorf("unable to cast %#v of type %T to %T", from, from, to.Interface())
+		return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
 
 	case reflect.Interface:
 		ret = make(chan interface{}, size)
