@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Minor**: feature additions
 - **Patch**: bug fixes, backward compatible model and function changes, etc.
 
-# v1.2.0 - 2022-06-??
+## v1.2.0 - 2022-06-??
 This is a full library rewrite for go v1.18 to take advantage of [generic functions and types](https://go.dev/doc/tutorial/generics).
 #### Removed
 - All existing exported cast functions have been removed (`ToString(any) string`, `ToStringE(any) (string, error)`, etc.)
@@ -20,16 +20,16 @@ This is a full library rewrite for go v1.18 to take advantage of [generic functi
   ```
 
 
-### v1.1.0 - 2020-06-27
+## v1.1.0 - 2020-06-27
 #### Changed
 - Refactoring `ToSlice*` and `ToMap` language
 
-### v1.0.2 - 2020-06-25
+## v1.0.2 - 2020-06-25
 #### Added
 - `ToUint64Slice`
 - `ToUint64SliceE`
 
-### v1.0.1 - 2020-06-25
+## v1.0.1 - 2020-06-25
 #### Added
 - `ToInt64Slice`
 - `ToInt64SliceE`
