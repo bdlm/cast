@@ -39,7 +39,9 @@ Cast is meant to simplify consumption of untyped or poorly typed data by removin
 
 ## Why use Cast?
 
-The primary use-case for `cast` is consuming untyped or poorly/loosly typed data, especially in unpredictable data sources. This can require a lot of repetitive boilerplate for validating and then typing incomming data (string representations of numbers is incredibly common and usually useless except for printing). Cast goes beyond just using type assertion (though it uses that whenever possible) to provide a very straightforward and usable API. If you are working with interfaces to handle dynamic content or are taking in data from YAML, TOML or JSON or other formats which lack full types or reliable producers, `cast` can be used to get the boilerplate out of your line of sight so you can just work on your code.
+The primary use-case for `cast` is consuming untyped or poorly/loosly typed data, especially from unpredictable data sources. This can require a lot of repetitive boilerplate for validating and then typing incomming data (string representations of numbers is incredibly common and usually useless except for printing).
+
+`cast` goes beyond just using type assertion (though it uses that whenever possible) to provide a very straightforward and usable API. If you are working with interfaces to handle dynamic content or are taking in data from YAML, TOML or JSON or other formats which lack full types or reliable producers, `cast` can be used to get the boilerplate out of your line of sight so you can just work on your code.
 
 ## Usage
 
