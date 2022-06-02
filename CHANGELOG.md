@@ -14,9 +14,9 @@ This is a full library rewrite for go v1.18 to take advantage of [generic functi
 #### Added
 - All previous exported cast functions have replaced with a single generic function (and it's `error` counterpart):
   ```go
-  To[T any]() T
+  To[T any](any) T
 
-  ToE[T any]() (T, error)
+  ToE[T any](any) (T, error)
   ```
 
 
