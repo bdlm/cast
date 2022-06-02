@@ -31,11 +31,15 @@ Now with Generics!
 
 Cast is a library to convert between different data types in a straigntforward and predictable way.
 
-Cast provides a generic function to easily convert both simple types (number to a string, interface ito a bool, etc.) and complex types (slice to map and vice versa, any to func() any, any to chan any, etc.). Cast does this intelligently when an obvious conversion is possible and logically when a conversion requires a predictable measureable process, such as casting a map to a slice or a bool to a channel. It doesn’t make any attempts to guess what you meant, for example you can only cast a string to an int when it is a string representation of a number, such `"6.789"`. In a case like this, a reliable predictable rule converts that value to `int(6)` by converting it to a `float64` and calling `math.Floor()`. Cast is meant to simplify consumption of untyped or poorly typed data by removing all the boilerplate you would otherwise write for each use-case.
+Cast provides a generic function to easily convert both simple types (number to a string, interface ito a bool, etc.) and complex types (slice to map and vice versa, any to func() any, any to chan any, etc.). Cast does this intelligently when an obvious conversion is possible and logically when a conversion requires a predictable measureable process, such as casting a map to a slice or a bool to a channel. It doesn’t make any assumptions about how types should be converted but follows simple predictable rules.
+
+For example you can only cast a string to an int when it is a string representation of a number, such `"6.789"`. In a case like this, a reliable predictable rule converts that value to `int(6)` by converting it to a `float64` and calling `math.Floor()`. The reason it does not round is because there is no integer that is almost `7`, but there __is__ a `6` which can be contained within the original `float64`.
+
+Cast is meant to simplify consumption of untyped or poorly typed data by removing all the boilerplate you would otherwise write for each use-case. [More about `cast`](ABOUT.md).
 
 ## Why use Cast?
 
-When working with dynamic data in Go you often need to cast the data from one type into another (strings to integers is most common). Cast goes beyond just using type assertion (though it uses that whenever possible) to provide a very straightforward and usable API. If you are working with interfaces to handle dynamic content or are taking in data from YAML, TOML or JSON or other formats which lack full types, Cast can be used to get boilerplate out of your line of sight so you can work on your code.
+The primary use-case for `cast` is consuming untyped or poorly/loosly typed data, especially in unpredictable data sources. This can require a lot of repetitive boilerplate for validating and then typing incomming data (string representations of numbers is incredibly common and usually useless except for printing). Cast goes beyond just using type assertion (though it uses that whenever possible) to provide a very straightforward and usable API. If you are working with interfaces to handle dynamic content or are taking in data from YAML, TOML or JSON or other formats which lack full types or reliable producers, `cast` can be used to get the boilerplate out of your line of sight so you can just work on your code.
 
 ## Usage
 
