@@ -29,13 +29,13 @@ Now with Generics!
 
 ## What is Cast?
 
-Cast is a library to convert between different data types in a straigntforward and predictable way.
+`cast` is a library to convert between different data types in a straigntforward and predictable way.
 
-Cast provides a generic function to easily convert both simple types (number to a string, interface ito a bool, etc.) and complex types (slice to map and vice versa, any to func() any, any to chan any, etc.). Cast does this intelligently when an obvious conversion is possible and logically when a conversion requires a predictable measureable process, such as casting a map to a slice or a bool to a channel. It doesn’t make any assumptions about how types should be converted but follows simple predictable rules.
+`cast` provides a generic function to easily convert both simple types (number to a string, interface ito a bool, etc.) and complex types (slice to map and vice versa, any to func() any, any to chan any, etc.). Cast does this intelligently when an obvious conversion is possible and logically when a conversion requires a predictable measureable process, such as casting a map to a slice or a bool to a channel. It doesn’t make any assumptions about how types should be converted but follows simple predictable rules.
 
 For example you can only cast a string to an int when it is a string representation of a number, such `"6.789"`. In a case like this, a reliable predictable rule converts that value to `int(6)` by converting it to a `float64` and calling `math.Floor()`. The reason it does not round is because there is no integer that is almost `7`, but there __is__ a `6` which can be contained within the original `float64`.
 
-Cast is meant to simplify consumption of untyped or poorly typed data by removing all the boilerplate you would otherwise write for each use-case. [More about `cast`](ABOUT.md).
+`cast` is meant to simplify consumption of untyped or poorly typed data by removing all the boilerplate you would otherwise write for each use-case. [More about `cast`](ABOUT.md).
 
 ## Why use Cast?
 
@@ -45,7 +45,7 @@ The primary use-case for `cast` is consuming untyped or poorly/loosly typed data
 
 ## Usage
 
-Cast provides `To[T any](any) T` and `ToE[T any](any) (T, error)` methods. These methods will always return the desired type `T`. While Cast will accept `any` type, not all conversions are possible, supportable, or sensible, but several useful and unique conversions are available.
+`cast` provides `To[T any](any) T` and `ToE[T any](any) (T, error)` methods. These methods will always return the desired type `T`. While `To` will accept `any` type, not all conversions are possible, supportable, or sensible, but several useful and unique conversions are available.
 
 ***If input is provided that will not convert to a specified type, the 0 or nil value for that type will be returned***. In order to differentiate between success and the `nil` value, the `ToE` method will return both the cast value and any [errors](https://github.com/bdlm/errors) that occurred during the conversion.
 
