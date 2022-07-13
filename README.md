@@ -27,7 +27,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     <a href="https://github.com/bdlm/cast/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
 </p>
 
-<sub>this project is inspired by [`spf13/cast`](https://github.com/spf13/cast)</sub>
+<sub>This project is inspired by [`spf13/cast`](https://github.com/spf13/cast)</sub>
 
 ## What is Cast?
 
