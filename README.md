@@ -6,13 +6,13 @@
 
 Now with Generics!
 
-<a href="https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#release-candidate"><img src="https://img.shields.io/badge/stability-pre--release-48c9b0.svg" alt="Release Candidate"></a> Code is fairly settled and is in use in production systems. Backwards-compatibility will be mintained unless serious issues are discovered and consensus on a better solution is reached.
-
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). You should expect package stability in <strong>Minor</strong> and <strong>Patch</strong> version releases
 
 - **Major**: backwards incompatible package updates
 - **Minor**: feature additions
 - **Patch**: bug fixes, backward compatible model and function changes, etc.
+
+<a href="https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#release-candidate"><img src="https://img.shields.io/badge/stability-pre--release-48c9b0.svg" alt="Release Candidate"></a> Code is fairly settled and is in use in production systems. Backwards-compatibility will be mintained unless serious issues are discovered and consensus on a better solution is reached.
 
 **[CHANGELOG](CHANGELOG.md)**<br>
 
