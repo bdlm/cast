@@ -14,7 +14,7 @@ import (
 // toInt casts an interface to an int type.
 func toInt[TTo constraints.Integer](from reflect.Value) (TTo, error) {
 	fromVal := reflect.ValueOf(from)
-	if !fromVal.IsValid() || !fromVal.CanInterface() || !(fromVal.Kind() == reflect.Ptr && fromVal.IsNil()) {
+	if !fromVal.IsValid() || !fromVal.CanInterface() {
 		return TTo(0), errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	}
 
