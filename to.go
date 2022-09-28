@@ -41,11 +41,19 @@ func To[TTo Types](v any, o ...Ops) TTo {
 //
 // ops: optional, some flags may be passed to control type conversions, for
 // example when creating a channel the the buffer size can be specified.
-func ToE[TTo Types](val any, o ...Ops) (TTo, error) {
+func ToE[TTo Types](val any, o ...Ops) (panicTo TTo, panicErr error) {
 	var err error
 	var reti any
 	var ret TTo
 	var ok bool
+
+	// Don't panic.
+	defer func() {
+		if err := recover(); err != nil {
+			panicTo = ret
+			panicErr = errors.Wrap(err.(error), "failure casting %T to %T", val, ret)
+		}
+	}()
 
 	ops := Ops{}
 	for _, o := range o {

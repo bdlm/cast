@@ -13,7 +13,7 @@ import (
 
 // toInt casts an interface to an int type.
 func toInt[TTo constraints.Integer](from reflect.Value) (TTo, error) {
-	fromVal := reflect.ValueOf(from)
+	fromVal := reflect.Indirect(from)
 	if !fromVal.IsValid() || !fromVal.CanInterface() {
 		return TTo(0), errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	}
@@ -38,49 +38,56 @@ func toInt[TTo constraints.Integer](from reflect.Value) (TTo, error) {
 		if unsigned && typ < 0 {
 			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(typ), nil
+		return from.Interface().(TTo), nil
 	case int64:
 		if unsigned && typ < 0 {
 			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(typ), nil
+		return from.Interface().(TTo), nil
 	case int32:
 		if unsigned && typ < 0 {
 			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(typ), nil
+		v, e := strToInt[TTo](to, To[string](from.Interface().(TTo)))
+		return TTo(v), e
 	case int16:
 		if unsigned && typ < 0 {
 			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(typ), nil
+		v, e := strToInt[TTo](to, To[string](from.Interface().(TTo)))
+		return TTo(v), e
 	case int8:
 		if unsigned && typ < 0 {
 			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(typ), nil
+		v, e := strToInt[TTo](to, To[string](from.Interface().(TTo)))
+		return TTo(v), e
 	case float64:
 		if unsigned && typ < 0 {
 			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(typ), nil
+		return from.Interface().(TTo), nil
 	case float32:
 		if unsigned && typ < 0 {
 			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(typ), nil
+		v, e := strToInt[TTo](to, To[string](from.Interface().(TTo)))
+		return TTo(v), e
 	case uint:
-		return TTo(typ), nil
+		return from.Interface().(TTo), nil
 	case uintptr:
-		return TTo(typ), nil
+		return from.Interface().(TTo), nil
 	case uint64:
-		return TTo(typ), nil
+		return from.Interface().(TTo), nil
 	case uint32:
-		return TTo(typ), nil
+		v, e := strToInt[TTo](to, To[string](from.Interface().(TTo)))
+		return TTo(v), e
 	case uint16:
-		return TTo(typ), nil
+		v, e := strToInt[TTo](to, To[string](from.Interface().(TTo)))
+		return TTo(v), e
 	case uint8:
-		return TTo(typ), nil
+		v, e := strToInt[TTo](to, To[string](from.Interface().(TTo)))
+		return TTo(v), e
 	case fmt.Stringer:
 		return strToInt[TTo](to, typ.String())
 	case string:
