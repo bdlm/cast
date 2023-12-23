@@ -6,7 +6,7 @@ import (
 	"github.com/bdlm/errors/v2"
 )
 
-// toChan returns a channel of the specified reflect.Value type with a buffer of
+// toArray returns a slice containing the specified reflect.Value type with a length of
 // 1 containing the from value.
 func toArray(to reflect.Value, from any) (any, error) {
 	var ret any
