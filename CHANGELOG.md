@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Patch**: bug fixes, backward compatible model and function changes, etc.
 
 ## v2.0.0 - 2023-12-23
-Public API syntax updated to use [generics syntax](https://go.dev/doc/tutorial/generics).
+This is a full library rewrite for go v1.18+ to take advantage of [generic functions and types](https://go.dev/doc/tutorial/generics).
 
 syntax example:
 ```go
@@ -15,9 +15,6 @@ intVal := cast.To[int]("8.31")      // 8 (int)
 intVal := cast.To[int]("Hi!")       // 0 (int)
 intVal, err := cast.ToE[int]("Hi!") // 0, unable to cast "Hi!" of type string to int (int, error)
 ```
-
-## v1.2.0 - 2022-06-??
-This is a full library rewrite for go v1.18 to take advantage of [generic functions and types](https://go.dev/doc/tutorial/generics).
 #### Removed
 - All existing exported cast functions have been removed (`ToString(any) string`, `ToStringE(any) (string, error)`, etc.)
 
