@@ -26,6 +26,7 @@ func toInt[TTo constraints.Integer](from reflect.Value) (TTo, error) {
 		unsigned = true
 	}
 
+	//fmt.Printf("\n\nto: %v (%T); from: %v (%T)\n\n", to, to.Interface(), from, from.Interface())
 	switch typ := from.Interface().(type) {
 	case nil:
 		return TTo(0), nil
@@ -38,56 +39,41 @@ func toInt[TTo constraints.Integer](from reflect.Value) (TTo, error) {
 		if unsigned && typ < 0 {
 			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return from.Interface().(TTo), nil
+		return TTo(from.Interface().(int)), nil
 	case int64:
 		if unsigned && typ < 0 {
 			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return from.Interface().(TTo), nil
+		return TTo(from.Interface().(int64)), nil
 	case int32:
 		if unsigned && typ < 0 {
 			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		v, e := strToInt[TTo](to, To[string](from.Interface().(TTo)))
-		return TTo(v), e
+		return TTo(from.Interface().(int32)), nil
 	case int16:
 		if unsigned && typ < 0 {
 			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		v, e := strToInt[TTo](to, To[string](from.Interface().(TTo)))
-		return TTo(v), e
+		return TTo(from.Interface().(int16)), nil
 	case int8:
 		if unsigned && typ < 0 {
 			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		v, e := strToInt[TTo](to, To[string](from.Interface().(TTo)))
-		return TTo(v), e
+		return TTo(from.Interface().(int8)), nil
 	case float64:
 		if unsigned && typ < 0 {
 			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return from.Interface().(TTo), nil
+		v, e := strToInt[TTo](to, To[string](from.Interface()))
+		return TTo(v), e
 	case float32:
 		if unsigned && typ < 0 {
 			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		v, e := strToInt[TTo](to, To[string](from.Interface().(TTo)))
+		v, e := strToInt[TTo](to, To[string](from.Interface()))
 		return TTo(v), e
-	case uint:
+	case uint, uintptr, uint64, uint32, uint16, uint8:
 		return from.Interface().(TTo), nil
-	case uintptr:
-		return from.Interface().(TTo), nil
-	case uint64:
-		return from.Interface().(TTo), nil
-	case uint32:
-		v, e := strToInt[TTo](to, To[string](from.Interface().(TTo)))
-		return TTo(v), e
-	case uint16:
-		v, e := strToInt[TTo](to, To[string](from.Interface().(TTo)))
-		return TTo(v), e
-	case uint8:
-		v, e := strToInt[TTo](to, To[string](from.Interface().(TTo)))
-		return TTo(v), e
 	case fmt.Stringer:
 		return strToInt[TTo](to, typ.String())
 	case string:

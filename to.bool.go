@@ -18,7 +18,9 @@ func toBool[TTo bool](from any) (TTo, error) {
 		return from.(complex64) != 0, nil
 	case complex128:
 		return from.(complex128) != 0, nil
-	case float32, float64:
+	case float32:
+		return from.(float32) != 0, nil
+	case float64:
 		return from.(float64) != 0, nil
 	case int, int8, int16, int64:
 		return from.(int) != 0, nil

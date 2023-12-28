@@ -8,10 +8,11 @@ import (
 
 // toChan returns a channel of the specified reflect.Value type with a buffer of
 // 1 containing the from value.
-func toChan(to reflect.Value, from any, size int) (any, error) {
+func toChan(to reflect.Value, from any, ops Ops) (any, error) {
 	var ret any
-	if size < 1 {
-		size = 1
+	size := 1
+	if _, ok := ops[LENGTH]; ok {
+		size = To[int](ops[LENGTH])
 	}
 
 	switch to.Type().Elem().Kind() {
