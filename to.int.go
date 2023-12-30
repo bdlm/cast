@@ -72,8 +72,18 @@ func toInt[TTo constraints.Integer](from reflect.Value) (TTo, error) {
 		}
 		v, e := strToInt[TTo](to, To[string](from.Interface()))
 		return TTo(v), e
-	case uint, uintptr, uint64, uint32, uint16, uint8:
-		return from.Interface().(TTo), nil
+	case uint:
+		return TTo(from.Interface().(uint)), nil
+	case uintptr:
+		return TTo(from.Interface().(uintptr)), nil
+	case uint64:
+		return TTo(from.Interface().(uint64)), nil
+	case uint32:
+		return TTo(from.Interface().(uint32)), nil
+	case uint16:
+		return TTo(from.Interface().(uint16)), nil
+	case uint8:
+		return TTo(from.Interface().(uint8)), nil
 	case fmt.Stringer:
 		return strToInt[TTo](to, typ.String())
 	case string:

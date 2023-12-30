@@ -1,112 +1,126 @@
 package cast_test
 
 import (
-	"reflect"
 	"testing"
-
-	"github.com/bdlm/cast/v2"
-	"github.com/bdlm/errors/v2"
 )
 
-// ToBool casts an interface to a bool type.
 func TestBoolToBool(t *testing.T) {
-	a, err := cast.ToE[bool](true)
-	if err != nil || a != true {
-		t.Errorf("ToE[bool](true) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](true) failed"))
-	}
-	a, err = cast.ToE[bool](false)
-	if err != nil || a != false {
-		t.Errorf("ToE[bool](false) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](false) failed"))
-	}
+	testSimpleCases[bool](t, []testCase{
+		{true, true, nil, false},
+		{false, false, nil, false},
+	})
+}
+
+// ToBool casts an interface to a bool type.
+func TestVariousToBool(t *testing.T) {
+	var nilInterface interface{} = nil
+	testSimpleCases[bool](t, []testCase{
+		{true, true, nil, false},
+		{false, false, nil, false},
+		{"0", false, nil, false},
+		{"-1", true, nil, false},
+		{"1.1", true, nil, false},
+		{"1.4", true, nil, false},
+		{"1.5", true, nil, false},
+		{"1.9", true, nil, false},
+		{"0.0", false, nil, false},
+		{"0.1", true, nil, false},
+		{"-1.1", true, nil, false},
+		{"-1.4", true, nil, false},
+		{"-1.1", true, nil, false},
+		{"-1.1", true, nil, false},
+		{"1,000", true, nil, false},
+		{"1,000,000", true, nil, false},
+		{'a', true, nil, false},
+		{'1', true, nil, false},
+		{'0', false, nil, false},
+		{nilInterface, false, nil, false},
+		{"Hi", false, nil, true},
+	})
 }
 
 func TestByteToBool(t *testing.T) {
-	a, err := cast.ToE[bool](byte(1))
-	if err != nil || a != true || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](byte(1)) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](byte(1)) failed"))
-	}
-	a, err = cast.ToE[bool](byte(0))
-	if err != nil || a != false || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](byte(0)) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](byte(0)) failed"))
-	}
+	testSimpleCases[bool](t, []testCase{
+		{byte(1), true, nil, false},
+		{byte(1), true, nil, false},
+		{byte(2), true, nil, false},
+		{byte(0), false, nil, false},
+		{'a', true, nil, false},
+		{'1', true, nil, false},
+		{'0', false, nil, false},
+	})
 }
 
 func TestComplexToBool(t *testing.T) {
-	a, err := cast.ToE[bool](complex(1, 0))
-	if err != nil || a != true || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](complex(1, 0)) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](complex(1, 0)) failed"))
-	}
-	a, err = cast.ToE[bool](complex(1, 1))
-	if err != nil || a != true || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](complex(1, 1)) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](complex(1, 1)) failed"))
-	}
-	a, err = cast.ToE[bool](complex(0, 0))
-	if err != nil || a != false || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](complex(0, 0)) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](complex(0, 0)) failed"))
-	}
-	a, err = cast.ToE[bool](complex(-1, 0))
-	if err != nil || a != true || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](complex(-1, 0)) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](complex(-1, 0)) failed"))
-	}
-	a, err = cast.ToE[bool](complex(-1, -1))
-	if err != nil || a != true || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](complex(-1, -1)) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](complex(-1, -1)) failed"))
-	}
+	testSimpleCases[bool](t, []testCase{
+		{complex(1, 0), true, nil, false},
+		{complex(1, 1), true, nil, false},
+		{complex(0, 0), false, nil, false},
+		{complex(-1, 0), true, nil, false},
+		{complex(-1, -1), true, nil, false},
+		{complex64(float32(1.1)), true, nil, false},
+		{complex64(float32(-1.1)), true, nil, false},
+		{complex64(float32(0.0)), false, nil, false},
+		{complex128(float32(1.1)), true, nil, false},
+		{complex128(float32(-1.1)), true, nil, false},
+		{complex128(float32(0.0)), false, nil, false},
+		{complex64(float64(1.1)), true, nil, false},
+		{complex64(float64(-1.1)), true, nil, false},
+		{complex64(float64(0.0)), false, nil, false},
+		{complex128(float64(1.1)), true, nil, false},
+		{complex128(float64(-1.1)), true, nil, false},
+		{complex128(float64(0.0)), false, nil, false},
+	})
 }
 
 func TestFloatToBool(t *testing.T) {
-	a, err := cast.ToE[bool](1.0)
-	if err != nil || a != true || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](1.0) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](1.0) failed"))
-	}
-	a, err = cast.ToE[bool](1.1)
-	if err != nil || a != true || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](1.1) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](1.1) failed"))
-	}
-	a, err = cast.ToE[bool](0.0)
-	if err != nil || a != false || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](0.0) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](0.0) failed"))
-	}
-	a, err = cast.ToE[bool](-1.0)
-	if err != nil || a != true || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](-1.0) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](-1.0) failed"))
-	}
-	a, err = cast.ToE[bool](-1.1)
-	if err != nil || a != true || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](-1.1) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](-1.1) failed"))
-	}
+	testSimpleCases[bool](t, []testCase{
+		{1.0, true, nil, false},
+		{1.1, true, nil, false},
+		{0.0, false, nil, false},
+		{-1.0, true, nil, false},
+		{-1.1, true, nil, false},
+		{float32(1.0), true, nil, false},
+		{float32(1.1), true, nil, false},
+		{float32(0.0), false, nil, false},
+		{float32(-1.0), true, nil, false},
+		{float32(-1.1), true, nil, false},
+		{float64(1.0), true, nil, false},
+		{float64(1.1), true, nil, false},
+		{float64(0.0), false, nil, false},
+		{float64(-1.0), true, nil, false},
+		{float64(-1.1), true, nil, false},
+	})
 }
 
 func TestIntToBool(t *testing.T) {
-	a, err := cast.ToE[bool](1)
-	if err != nil || a != true || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](1) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](1) failed"))
-	}
-	a, err = cast.ToE[bool](0)
-	if err != nil || a != false || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](0) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](0) failed"))
-	}
-	a, err = cast.ToE[bool](-1)
-	if err != nil || a != true || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool](-1) failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool](-1) failed"))
-	}
+	testSimpleCases[bool](t, []testCase{
+		{int(1), true, nil, false},
+		{int(0), false, nil, false},
+		{int(-1), true, nil, false},
+		{int8(1), true, nil, false},
+		{int8(0), false, nil, false},
+		{int8(-1), true, nil, false},
+		{int16(1), true, nil, false},
+		{int16(0), false, nil, false},
+		{int16(-1), true, nil, false},
+		{int32(1), true, nil, false},
+		{int32(0), false, nil, false},
+		{int32(-1), true, nil, false},
+		{int64(1), true, nil, false},
+		{int64(0), false, nil, false},
+		{int64(-1), true, nil, false},
+	})
 }
 
 func TestStringToBool(t *testing.T) {
-	a, err := cast.ToE[bool]("1")
-	if err != nil || a != true || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool]('1') failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool]('1') failed"))
-	}
-	a, err = cast.ToE[bool]("0")
-	if err != nil || a != false || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool]('0') failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool]('0') failed"))
-	}
-	a, err = cast.ToE[bool]("-1")
-	if err != nil || a != true || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool]('-1') failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool]('-1') failed"))
-	}
-	a, err = cast.ToE[bool]("Hi!")
-	if err == nil || a != false || reflect.TypeOf(a).Kind() != reflect.Bool {
-		t.Errorf("ToE[bool]('-1') failed: %#v, %#v", err, errors.Wrap(err, "ToE[bool]('-1') failed"))
-	}
+	testSimpleCases[bool](t, []testCase{
+		{"1", true, nil, false},
+		{"0", false, nil, false},
+		{"-1", true, nil, false},
+		{"Hi!", false, nil, true},
+		{'a', true, nil, false},
+		{'1', true, nil, false},
+		{'0', false, nil, false},
+	})
 }

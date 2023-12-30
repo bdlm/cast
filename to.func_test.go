@@ -9,47 +9,232 @@ import (
 	"github.com/bdlm/cast/v2"
 )
 
-func TestFuncTypes(t *testing.T) {
-	for name, cases := range funcCases {
-		switch name {
-		case "bool":
-			testFuncCases[bool](t, cases)
-		case "byte":
-			testFuncCases[byte](t, cases)
-		case "rune":
-			testFuncCases[rune](t, cases)
-		case "int":
-			testFuncCases[int](t, cases)
-		case "int8":
-			testFuncCases[int8](t, cases)
-		case "int16":
-			testFuncCases[int16](t, cases)
-		case "int32":
-			testFuncCases[int32](t, cases)
-		case "int64":
-			testFuncCases[int64](t, cases)
-		case "uint":
-			testFuncCases[uint](t, cases)
-		case "uint8":
-			testFuncCases[uint8](t, cases)
-		case "uint16":
-			testFuncCases[uint16](t, cases)
-		case "uint32":
-			testFuncCases[uint32](t, cases)
-		case "uint64":
-			testFuncCases[uint64](t, cases)
-		case "uintptr":
-			testFuncCases[uintptr](t, cases)
-		case "float32":
-			testFuncCases[float32](t, cases)
-		case "float64":
-			testFuncCases[float64](t, cases)
-		case "complex64":
-			testFuncCases[complex64](t, cases)
-		case "complex128":
-			testFuncCases[complex128](t, cases)
-		}
-	}
+func TestToFuncBool(t *testing.T) {
+	testFuncCases[bool](t, []testCase{
+		{in: true, expect: true, err: nil, expectErr: false},
+		{in: 1, expect: true, err: nil, expectErr: false},
+		{in: 0, expect: false, err: nil, expectErr: false},
+		{in: "hi", expect: false, err: nil, expectErr: true},
+		{in: float64(1.1), expect: true, err: nil, expectErr: false},
+		{in: float64(-1.1), expect: true, err: nil, expectErr: false},
+	})
+}
+
+func TestToFuncByte(t *testing.T) {
+	testFuncCases[byte](t, []testCase{
+		{in: "a", expect: byte(0), err: nil, expectErr: true},
+		{in: byte(1), expect: byte(1), err: nil, expectErr: false},
+		{in: byte(0), expect: byte(0), err: nil, expectErr: false},
+		{in: "hi", expect: byte(0), err: nil, expectErr: true},
+		{in: float64(1.1), expect: byte(1), err: nil, expectErr: false},
+		{in: float64(-1.1), expect: byte(0), err: nil, expectErr: true},
+	})
+}
+
+func TestToFuncInt(t *testing.T) {
+	testFuncCases[int](t, []testCase{
+		{in: 1, expect: int(1), err: nil, expectErr: false},
+		{in: "1", expect: int(1), err: nil, expectErr: false},
+		{in: 1.1, expect: int(1), err: nil, expectErr: false},
+		{in: "1.1", expect: int(1), err: nil, expectErr: false},
+		{in: 1.9, expect: int(1), err: nil, expectErr: false},
+		{in: "1.9", expect: int(1), err: nil, expectErr: false},
+		{in: -1, expect: int(-1), err: nil, expectErr: false},
+		{in: "-1", expect: int(-1), err: nil, expectErr: false},
+		{in: -1.9, expect: int(-1), err: nil, expectErr: false},
+		{in: "-1.9", expect: int(-1), err: nil, expectErr: false},
+		{in: "Hi!", expect: int(0), err: nil, expectErr: true},
+	})
+	testFuncCases[int8](t, []testCase{
+		{in: 1, expect: int8(1), err: nil, expectErr: false},
+		{in: "1", expect: int8(1), err: nil, expectErr: false},
+		{in: 1.1, expect: int8(1), err: nil, expectErr: false},
+		{in: "1.1", expect: int8(1), err: nil, expectErr: false},
+		{in: 1.9, expect: int8(1), err: nil, expectErr: false},
+		{in: "1.9", expect: int8(1), err: nil, expectErr: false},
+		{in: -1, expect: int8(-1), err: nil, expectErr: false},
+		{in: "-1", expect: int8(-1), err: nil, expectErr: false},
+		{in: -1.9, expect: int8(-1), err: nil, expectErr: false},
+		{in: "-1.9", expect: int8(-1), err: nil, expectErr: false},
+		{in: "Hi!", expect: int8(0), err: nil, expectErr: true},
+	})
+	testFuncCases[int16](t, []testCase{
+		{in: 1, expect: int16(1), err: nil, expectErr: false},
+		{in: "1", expect: int16(1), err: nil, expectErr: false},
+		{in: 1.1, expect: int16(1), err: nil, expectErr: false},
+		{in: "1.1", expect: int16(1), err: nil, expectErr: false},
+		{in: 1.9, expect: int16(1), err: nil, expectErr: false},
+		{in: "1.9", expect: int16(1), err: nil, expectErr: false},
+		{in: -1, expect: int16(-1), err: nil, expectErr: false},
+		{in: "-1", expect: int16(-1), err: nil, expectErr: false},
+		{in: -1.9, expect: int16(-1), err: nil, expectErr: false},
+		{in: "-1.9", expect: int16(-1), err: nil, expectErr: false},
+		{in: "Hi!", expect: int16(0), err: nil, expectErr: true},
+	})
+	testFuncCases[int32](t, []testCase{
+		{in: 1, expect: int32(1), err: nil, expectErr: false},
+		{in: "1", expect: int32(1), err: nil, expectErr: false},
+		{in: 1.1, expect: int32(1), err: nil, expectErr: false},
+		{in: "1.1", expect: int32(1), err: nil, expectErr: false},
+		{in: 1.9, expect: int32(1), err: nil, expectErr: false},
+		{in: "1.9", expect: int32(1), err: nil, expectErr: false},
+		{in: -1, expect: int32(-1), err: nil, expectErr: false},
+		{in: "-1", expect: int32(-1), err: nil, expectErr: false},
+		{in: -1.9, expect: int32(-1), err: nil, expectErr: false},
+		{in: "-1.9", expect: int32(-1), err: nil, expectErr: false},
+		{in: "Hi!", expect: int32(0), err: nil, expectErr: true},
+	})
+	testFuncCases[int64](t, []testCase{
+		{in: 1, expect: int64(1), err: nil, expectErr: false},
+		{in: "1", expect: int64(1), err: nil, expectErr: false},
+		{in: 1.1, expect: int64(1), err: nil, expectErr: false},
+		{in: "1.1", expect: int64(1), err: nil, expectErr: false},
+		{in: 1.9, expect: int64(1), err: nil, expectErr: false},
+		{in: "1.9", expect: int64(1), err: nil, expectErr: false},
+		{in: -1, expect: int64(-1), err: nil, expectErr: false},
+		{in: "-1", expect: int64(-1), err: nil, expectErr: false},
+		{in: -1.9, expect: int64(-1), err: nil, expectErr: false},
+		{in: "-1.9", expect: int64(-1), err: nil, expectErr: false},
+		{in: "Hi!", expect: int64(0), err: nil, expectErr: true},
+	})
+}
+
+func TestToFuncUint(t *testing.T) {
+	testFuncCases[uint](t, []testCase{
+		{in: 1, expect: uint(1), err: nil, expectErr: false},
+		{in: "1", expect: uint(1), err: nil, expectErr: false},
+		{in: 1.1, expect: uint(1), err: nil, expectErr: false},
+		{in: "1.1", expect: uint(1), err: nil, expectErr: false},
+		{in: 1.9, expect: uint(1), err: nil, expectErr: false},
+		{in: "1.9", expect: uint(1), err: nil, expectErr: false},
+		{in: -1, expect: uint(0), err: nil, expectErr: true},
+		{in: "-1", expect: uint(0), err: nil, expectErr: true},
+		{in: -1.9, expect: uint(0), err: nil, expectErr: true},
+		{in: "-1.9", expect: uint(0), err: nil, expectErr: true},
+		{in: "Hi!", expect: uint(0), err: nil, expectErr: true},
+	})
+	testFuncCases[uint8](t, []testCase{
+		{in: 1, expect: uint8(1), err: nil, expectErr: false},
+		{in: "1", expect: uint8(1), err: nil, expectErr: false},
+		{in: 1.1, expect: uint8(1), err: nil, expectErr: false},
+		{in: "1.1", expect: uint8(1), err: nil, expectErr: false},
+		{in: 1.9, expect: uint8(1), err: nil, expectErr: false},
+		{in: "1.9", expect: uint8(1), err: nil, expectErr: false},
+		{in: -1, expect: uint8(0), err: nil, expectErr: true},
+		{in: "-1", expect: uint8(0), err: nil, expectErr: true},
+		{in: -1.9, expect: uint8(0), err: nil, expectErr: true},
+		{in: "-1.9", expect: uint8(0), err: nil, expectErr: true},
+		{in: "Hi!", expect: uint8(0), err: nil, expectErr: true},
+	})
+	testFuncCases[uint16](t, []testCase{
+		{in: 1, expect: uint16(1), err: nil, expectErr: false},
+		{in: "1", expect: uint16(1), err: nil, expectErr: false},
+		{in: 1.1, expect: uint16(1), err: nil, expectErr: false},
+		{in: "1.1", expect: uint16(1), err: nil, expectErr: false},
+		{in: 1.9, expect: uint16(1), err: nil, expectErr: false},
+		{in: "1.9", expect: uint16(1), err: nil, expectErr: false},
+		{in: -1, expect: uint16(0), err: nil, expectErr: true},
+		{in: "-1", expect: uint16(0), err: nil, expectErr: true},
+		{in: -1.9, expect: uint16(0), err: nil, expectErr: true},
+		{in: "-1.9", expect: uint16(0), err: nil, expectErr: true},
+		{in: "Hi!", expect: uint16(0), err: nil, expectErr: true},
+	})
+	testFuncCases[uint32](t, []testCase{
+		{in: 1, expect: uint32(1), err: nil, expectErr: false},
+		{in: "1", expect: uint32(1), err: nil, expectErr: false},
+		{in: 1.1, expect: uint32(1), err: nil, expectErr: false},
+		{in: "1.1", expect: uint32(1), err: nil, expectErr: false},
+		{in: 1.9, expect: uint32(1), err: nil, expectErr: false},
+		{in: "1.9", expect: uint32(1), err: nil, expectErr: false},
+		{in: -1, expect: uint32(0), err: nil, expectErr: true},
+		{in: "-1", expect: uint32(0), err: nil, expectErr: true},
+		{in: -1.9, expect: uint32(0), err: nil, expectErr: true},
+		{in: "-1.9", expect: uint32(0), err: nil, expectErr: true},
+		{in: "Hi!", expect: uint32(0), err: nil, expectErr: true},
+	})
+	testFuncCases[uint64](t, []testCase{
+		{in: 1, expect: uint64(1), err: nil, expectErr: false},
+		{in: "1", expect: uint64(1), err: nil, expectErr: false},
+		{in: 1.1, expect: uint64(1), err: nil, expectErr: false},
+		{in: "1.1", expect: uint64(1), err: nil, expectErr: false},
+		{in: 1.9, expect: uint64(1), err: nil, expectErr: false},
+		{in: "1.9", expect: uint64(1), err: nil, expectErr: false},
+		{in: -1, expect: uint64(0), err: nil, expectErr: true},
+		{in: "-1", expect: uint64(0), err: nil, expectErr: true},
+		{in: -1.9, expect: uint64(0), err: nil, expectErr: true},
+		{in: "-1.9", expect: uint64(0), err: nil, expectErr: true},
+		{in: "Hi!", expect: uint64(0), err: nil, expectErr: true},
+	})
+	testFuncCases[uintptr](t, []testCase{
+		{in: 1, expect: uintptr(1), err: nil, expectErr: false},
+		{in: "1", expect: uintptr(1), err: nil, expectErr: false},
+		{in: 1.1, expect: uintptr(1), err: nil, expectErr: false},
+		{in: "1.1", expect: uintptr(1), err: nil, expectErr: false},
+		{in: 1.9, expect: uintptr(1), err: nil, expectErr: false},
+		{in: "1.9", expect: uintptr(1), err: nil, expectErr: false},
+		{in: -1, expect: uintptr(0), err: nil, expectErr: true},
+		{in: "-1", expect: uintptr(0), err: nil, expectErr: true},
+		{in: -1.9, expect: uintptr(0), err: nil, expectErr: true},
+		{in: "-1.9", expect: uintptr(0), err: nil, expectErr: true},
+	})
+}
+
+func TestToFuncFloat(t *testing.T) {
+	testFuncCases[float32](t, []testCase{
+		{in: 1, expect: float32(1), err: nil, expectErr: false},
+		{in: "1", expect: float32(1), err: nil, expectErr: false},
+		{in: 1.1, expect: float32(1.1), err: nil, expectErr: false},
+		{in: "1.1", expect: float32(1.1), err: nil, expectErr: false},
+		{in: 1.9, expect: float32(1.9), err: nil, expectErr: false},
+		{in: "1.9", expect: float32(1.9), err: nil, expectErr: false},
+		{in: -1, expect: float32(-1), err: nil, expectErr: false},
+		{in: "-1", expect: float32(-1), err: nil, expectErr: false},
+		{in: -1.9, expect: float32(-1.9), err: nil, expectErr: false},
+		{in: "-1.9", expect: float32(-1.9), err: nil, expectErr: false},
+		{in: "Hi!", expect: float32(0), err: nil, expectErr: true},
+	})
+	testFuncCases[float64](t, []testCase{
+		{in: 1, expect: float64(1), err: nil, expectErr: false},
+		{in: "1", expect: float64(1), err: nil, expectErr: false},
+		{in: 1.1, expect: float64(1.1), err: nil, expectErr: false},
+		{in: "1.1", expect: float64(1.1), err: nil, expectErr: false},
+		{in: 1.9, expect: float64(1.9), err: nil, expectErr: false},
+		{in: "1.9", expect: float64(1.9), err: nil, expectErr: false},
+		{in: -1, expect: float64(-1), err: nil, expectErr: false},
+		{in: "-1", expect: float64(-1), err: nil, expectErr: false},
+		{in: -1.9, expect: float64(-1.9), err: nil, expectErr: false},
+		{in: "-1.9", expect: float64(-1.9), err: nil, expectErr: false},
+		{in: "Hi!", expect: float64(0), err: nil, expectErr: true},
+	})
+}
+
+func TestToFuncComplex(t *testing.T) {
+	testFuncCases[complex64](t, []testCase{
+		{in: 1, expect: complex64(1), err: nil, expectErr: false},
+		{in: "1", expect: complex64(1), err: nil, expectErr: false},
+		{in: 1.1, expect: complex64(1.1), err: nil, expectErr: false},
+		{in: "1.1", expect: complex64(1.1), err: nil, expectErr: false},
+		{in: 1.9, expect: complex64(1.9), err: nil, expectErr: false},
+		{in: "1.9", expect: complex64(1.9), err: nil, expectErr: false},
+		{in: -1, expect: complex64(-1), err: nil, expectErr: false},
+		{in: "-1", expect: complex64(-1), err: nil, expectErr: false},
+		{in: -1.9, expect: complex64(-1.9), err: nil, expectErr: false},
+		{in: "-1.9", expect: complex64(-1.9), err: nil, expectErr: false},
+		{in: "Hi!", expect: complex64(0), err: nil, expectErr: true},
+	})
+	testFuncCases[complex128](t, []testCase{
+		{in: 1, expect: complex128(1), err: nil, expectErr: false},
+		{in: "1", expect: complex128(1), err: nil, expectErr: false},
+		{in: 1.1, expect: complex128(1.1), err: nil, expectErr: false},
+		{in: "1.1", expect: complex128(1.1), err: nil, expectErr: false},
+		{in: 1.9, expect: complex128(1.9), err: nil, expectErr: false},
+		{in: "1.9", expect: complex128(1.9), err: nil, expectErr: false},
+		{in: -1, expect: complex128(-1), err: nil, expectErr: false},
+		{in: "-1", expect: complex128(-1), err: nil, expectErr: false},
+		{in: -1.9, expect: complex128(-1.9), err: nil, expectErr: false},
+		{in: "-1.9", expect: complex128(-1.9), err: nil, expectErr: false},
+		{in: "Hi!", expect: complex128(0), err: nil, expectErr: true},
+	})
 }
 
 func testFuncCases[TTo any](t *testing.T, cases []testCase) {
@@ -96,150 +281,4 @@ test: %#v
 			}
 		})
 	}
-}
-
-var funcCases = testCases{
-	"bool": {
-		{in: true, expect: true, err: nil, expectErr: false},
-		{in: 1, expect: true, err: nil, expectErr: false},
-		{in: 0, expect: false, err: nil, expectErr: false},
-		{in: "hi", expect: false, err: nil, expectErr: true},
-		{in: float64(1.1), expect: true, err: nil, expectErr: false},
-		{in: float64(-1.1), expect: true, err: nil, expectErr: false},
-	},
-	// int
-	"int": {
-		{in: 1, expect: int(1), err: nil, expectErr: false},
-		{in: "1", expect: int(1), err: nil, expectErr: false},
-		{in: 1.1, expect: int(1), err: nil, expectErr: false},
-		{in: "1.1", expect: int(1), err: nil, expectErr: false},
-		{in: 1.9, expect: int(1), err: nil, expectErr: false},
-		{in: "1.9", expect: int(1), err: nil, expectErr: false},
-		{in: -1, expect: int(-1), err: nil, expectErr: false},
-		{in: "-1", expect: int(-1), err: nil, expectErr: false},
-		{in: -1.9, expect: int(-1), err: nil, expectErr: false},
-		{in: "-1.9", expect: int(-1), err: nil, expectErr: false},
-	},
-	"int8": {
-		{in: 1, expect: int8(1), err: nil, expectErr: false},
-		{in: "1", expect: int8(1), err: nil, expectErr: false},
-		{in: 1.1, expect: int8(1), err: nil, expectErr: false},
-		{in: "1.1", expect: int8(1), err: nil, expectErr: false},
-		{in: 1.9, expect: int8(1), err: nil, expectErr: false},
-		{in: "1.9", expect: int8(1), err: nil, expectErr: false},
-		{in: -1, expect: int8(-1), err: nil, expectErr: false},
-		{in: "-1", expect: int8(-1), err: nil, expectErr: false},
-		{in: -1.9, expect: int8(-1), err: nil, expectErr: false},
-		{in: "-1.9", expect: int8(-1), err: nil, expectErr: false},
-	},
-	"int16": {
-		{in: 1, expect: int16(1), err: nil, expectErr: false},
-		{in: "1", expect: int16(1), err: nil, expectErr: false},
-		{in: 1.1, expect: int16(1), err: nil, expectErr: false},
-		{in: "1.1", expect: int16(1), err: nil, expectErr: false},
-		{in: 1.9, expect: int16(1), err: nil, expectErr: false},
-		{in: "1.9", expect: int16(1), err: nil, expectErr: false},
-		{in: -1, expect: int16(-1), err: nil, expectErr: false},
-		{in: "-1", expect: int16(-1), err: nil, expectErr: false},
-		{in: -1.9, expect: int16(-1), err: nil, expectErr: false},
-		{in: "-1.9", expect: int16(-1), err: nil, expectErr: false},
-	},
-	"int32": {
-		{in: 1, expect: int32(1), err: nil, expectErr: false},
-		{in: "1", expect: int32(1), err: nil, expectErr: false},
-		{in: 1.1, expect: int32(1), err: nil, expectErr: false},
-		{in: "1.1", expect: int32(1), err: nil, expectErr: false},
-		{in: 1.9, expect: int32(1), err: nil, expectErr: false},
-		{in: "1.9", expect: int32(1), err: nil, expectErr: false},
-		{in: -1, expect: int32(-1), err: nil, expectErr: false},
-		{in: "-1", expect: int32(-1), err: nil, expectErr: false},
-		{in: -1.9, expect: int32(-1), err: nil, expectErr: false},
-		{in: "-1.9", expect: int32(-1), err: nil, expectErr: false},
-	},
-	"int64": {
-		{in: 1, expect: int64(1), err: nil, expectErr: false},
-		{in: "1", expect: int64(1), err: nil, expectErr: false},
-		{in: 1.1, expect: int64(1), err: nil, expectErr: false},
-		{in: "1.1", expect: int64(1), err: nil, expectErr: false},
-		{in: 1.9, expect: int64(1), err: nil, expectErr: false},
-		{in: "1.9", expect: int64(1), err: nil, expectErr: false},
-		{in: -1, expect: int64(-1), err: nil, expectErr: false},
-		{in: "-1", expect: int64(-1), err: nil, expectErr: false},
-		{in: -1.9, expect: int64(-1), err: nil, expectErr: false},
-		{in: "-1.9", expect: int64(-1), err: nil, expectErr: false},
-	},
-
-	// uint
-	"uint": {
-		{in: 1, expect: uint(1), err: nil, expectErr: false},
-		{in: "1", expect: uint(1), err: nil, expectErr: false},
-		{in: 1.1, expect: uint(1), err: nil, expectErr: false},
-		{in: "1.1", expect: uint(1), err: nil, expectErr: false},
-		{in: 1.9, expect: uint(1), err: nil, expectErr: false},
-		{in: "1.9", expect: uint(1), err: nil, expectErr: false},
-		{in: -1, expect: uint(0), err: nil, expectErr: true},
-		{in: "-1", expect: uint(0), err: nil, expectErr: true},
-		{in: -1.9, expect: uint(0), err: nil, expectErr: true},
-		{in: "-1.9", expect: uint(0), err: nil, expectErr: true},
-	},
-	"uint8": {
-		{in: 1, expect: uint8(1), err: nil, expectErr: false},
-		{in: "1", expect: uint8(1), err: nil, expectErr: false},
-		{in: 1.1, expect: uint8(1), err: nil, expectErr: false},
-		{in: "1.1", expect: uint8(1), err: nil, expectErr: false},
-		{in: 1.9, expect: uint8(1), err: nil, expectErr: false},
-		{in: "1.9", expect: uint8(1), err: nil, expectErr: false},
-		{in: -1, expect: uint8(0), err: nil, expectErr: true},
-		{in: "-1", expect: uint8(0), err: nil, expectErr: true},
-		{in: -1.9, expect: uint8(0), err: nil, expectErr: true},
-		{in: "-1.9", expect: uint8(0), err: nil, expectErr: true},
-	},
-	"uint16": {
-		{in: 1, expect: uint16(1), err: nil, expectErr: false},
-		{in: "1", expect: uint16(1), err: nil, expectErr: false},
-		{in: 1.1, expect: uint16(1), err: nil, expectErr: false},
-		{in: "1.1", expect: uint16(1), err: nil, expectErr: false},
-		{in: 1.9, expect: uint16(1), err: nil, expectErr: false},
-		{in: "1.9", expect: uint16(1), err: nil, expectErr: false},
-		{in: -1, expect: uint16(0), err: nil, expectErr: true},
-		{in: "-1", expect: uint16(0), err: nil, expectErr: true},
-		{in: -1.9, expect: uint16(0), err: nil, expectErr: true},
-		{in: "-1.9", expect: uint16(0), err: nil, expectErr: true},
-	},
-	"uint32": {
-		{in: 1, expect: uint32(1), err: nil, expectErr: false},
-		{in: "1", expect: uint32(1), err: nil, expectErr: false},
-		{in: 1.1, expect: uint32(1), err: nil, expectErr: false},
-		{in: "1.1", expect: uint32(1), err: nil, expectErr: false},
-		{in: 1.9, expect: uint32(1), err: nil, expectErr: false},
-		{in: "1.9", expect: uint32(1), err: nil, expectErr: false},
-		{in: -1, expect: uint32(0), err: nil, expectErr: true},
-		{in: "-1", expect: uint32(0), err: nil, expectErr: true},
-		{in: -1.9, expect: uint32(0), err: nil, expectErr: true},
-		{in: "-1.9", expect: uint32(0), err: nil, expectErr: true},
-	},
-	"uint64": {
-		{in: 1, expect: uint64(1), err: nil, expectErr: false},
-		{in: "1", expect: uint64(1), err: nil, expectErr: false},
-		{in: 1.1, expect: uint64(1), err: nil, expectErr: false},
-		{in: "1.1", expect: uint64(1), err: nil, expectErr: false},
-		{in: 1.9, expect: uint64(1), err: nil, expectErr: false},
-		{in: "1.9", expect: uint64(1), err: nil, expectErr: false},
-		{in: -1, expect: uint64(0), err: nil, expectErr: true},
-		{in: "-1", expect: uint64(0), err: nil, expectErr: true},
-		{in: -1.9, expect: uint64(0), err: nil, expectErr: true},
-		{in: "-1.9", expect: uint64(0), err: nil, expectErr: true},
-	},
-	"uintptr": {
-		{in: 1, expect: uintptr(1), err: nil, expectErr: false},
-		{in: "1", expect: uintptr(1), err: nil, expectErr: false},
-		{in: 1.1, expect: uintptr(1), err: nil, expectErr: false},
-		{in: "1.1", expect: uintptr(1), err: nil, expectErr: false},
-		{in: 1.9, expect: uintptr(1), err: nil, expectErr: false},
-		{in: "1.9", expect: uintptr(1), err: nil, expectErr: false},
-		{in: -1, expect: uintptr(0), err: nil, expectErr: true},
-		{in: "-1", expect: uintptr(0), err: nil, expectErr: true},
-		{in: -1.9, expect: uintptr(0), err: nil, expectErr: true},
-		{in: "-1.9", expect: uintptr(0), err: nil, expectErr: true},
-	},
 }

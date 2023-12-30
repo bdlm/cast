@@ -86,7 +86,7 @@ func toFloat[TTo constraints.Float](from reflect.Value) (TTo, error) {
 
 	ret, err := toFloat[TTo](reflect.ValueOf(fmt.Sprintf("%v", from.Interface())))
 	if nil != err {
-		return 0, errors.Wrap(err, "unable to cast %T to %T", from.Interface(), to.Interface())
+		return 0, errors.Wrap(err, ErrorStrUnableToCast, from.Interface(), from.Interface(), to.Interface())
 	}
 	return ret, nil
 }
@@ -116,7 +116,7 @@ func strToFloat[TTo constraints.Float](to reflect.Value, from string) (TTo, erro
 			if e != nil {
 				err = errors.WrapE(err, e)
 			} else {
-				err = errors.Wrap(err, "unable to cast %v (%T) to %T", from, from, to.Interface())
+				err = errors.Wrap(err, ErrorStrUnableToCast, from, from, to.Interface())
 				val = float64(0)
 			}
 		} else {

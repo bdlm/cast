@@ -19,7 +19,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 	slice := reflect.ValueOf(val)
 	for a := 0; a < slice.Len(); a++ {
 		elm := slice.Index(a).Interface()
-		switch to.Type().String() {
+		switch to.Interface().(type) {
 		//case reflect.Invalid:
 		//case reflect.Array:
 		//case reflect.Func:
@@ -33,7 +33,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 		default:
 			return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", val, val, to.Interface())
 
-		case "[]interface":
+		case []interface{}:
 			if nil == ret {
 				ret = []any{}
 			}
@@ -42,7 +42,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]any), tval)
-		case "[]bool":
+		case []bool:
 			if nil == ret {
 				ret = []bool{}
 			}
@@ -51,7 +51,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]bool), tval)
-		case "[]complex64":
+		case []complex64:
 			if nil == ret {
 				ret = []complex64{}
 			}
@@ -60,7 +60,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]complex64), tval)
-		case "[]complex128":
+		case []complex128:
 			if nil == ret {
 				ret = []complex128{}
 			}
@@ -69,7 +69,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]complex128), tval)
-		case "[]float32":
+		case []float32:
 			if nil == ret {
 				ret = []float32{}
 			}
@@ -79,7 +79,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 			}
 			ret = append(ret.([]float32), tval)
 
-		case "[]float64":
+		case []float64:
 			if nil == ret {
 				ret = []float64{}
 			}
@@ -88,7 +88,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]float64), tval)
-		case "[]int":
+		case []int:
 			if nil == ret {
 				ret = []int{}
 			}
@@ -97,7 +97,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]int), tval)
-		case "[]int8":
+		case []int8:
 			if nil == ret {
 				ret = []int8{}
 			}
@@ -106,7 +106,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]int8), tval)
-		case "[]int16":
+		case []int16:
 			if nil == ret {
 				ret = []int16{}
 			}
@@ -115,7 +115,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]int16), tval)
-		case "[]int32":
+		case []int32:
 			if nil == ret {
 				ret = []int32{}
 			}
@@ -124,7 +124,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]int32), tval)
-		case "[]int64":
+		case []int64:
 			if nil == ret {
 				ret = []int64{}
 			}
@@ -133,7 +133,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]int64), tval)
-		case "[]uint":
+		case []uint:
 			if nil == ret {
 				ret = []uint{}
 			}
@@ -142,7 +142,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]uint), tval)
-		case "[]uint8":
+		case []uint8:
 			if nil == ret {
 				ret = []uint8{}
 			}
@@ -151,7 +151,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]uint8), tval)
-		case "[]uint16":
+		case []uint16:
 			if nil == ret {
 				ret = []uint16{}
 			}
@@ -160,7 +160,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]uint16), tval)
-		case "[]uint32":
+		case []uint32:
 			if nil == ret {
 				ret = []uint32{}
 			}
@@ -169,7 +169,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]uint32), tval)
-		case "[]uint64":
+		case []uint64:
 			if nil == ret {
 				ret = []uint64{}
 			}
@@ -178,7 +178,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]uint64), tval)
-		case "[]uintptr":
+		case []uintptr:
 			if nil == ret {
 				ret = []uintptr{}
 			}
@@ -187,7 +187,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 				return ret, err
 			}
 			ret = append(ret.([]uintptr), tval)
-		case "[]string":
+		case []string:
 			if nil == ret {
 				ret = []string{}
 			}
