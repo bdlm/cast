@@ -8,26 +8,6 @@ import (
 	std_error "github.com/bdlm/std/v2/errors"
 )
 
-type Flag int
-type Op [2]any
-type Ops map[Flag]any
-
-const (
-	DEFAULT Flag = iota
-	LENGTH
-	SIZE
-)
-
-func parseOps(o []Ops) Ops {
-	ops := Ops{}
-	for _, iops := range o {
-		for k, v := range iops {
-			ops[k] = v
-		}
-	}
-	return ops
-}
-
 // To casts the value `v` to the given type, ignoring any errors.
 func To[TTo Types](v any, o ...Ops) TTo {
 	ret, _ := ToE[TTo](v, o...)

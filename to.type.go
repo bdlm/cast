@@ -11,6 +11,31 @@ var (
 	ErrorStrErrorCastingFunc = "error casting %T to %T during function generation"
 )
 
+type Flag int
+
+type Ops map[Flag]any
+
+const (
+	DEFAULT             Flag = iota // TTo,  default return value on error
+	DUPLICATE_KEY_ERROR             // bool, error on duplicate map key
+	LENGTH                          // int,  number of elements in result
+	SIZE                            // int,  context specific
+	UNIQUE_VALUES                   // bool, dedupe slice values
+	JSON                            // bool, encode strings as JSON
+)
+
+func parseOps(o []Ops) Ops {
+	ops := Ops{}
+	for _, iops := range o {
+		for k, v := range iops {
+			ops[k] = v
+		}
+	}
+	return ops
+}
+
+//////////////////////////////
+
 type Func[TTo Types] func() TTo
 
 type Types interface {
