@@ -120,3 +120,29 @@ To capture any conversion errors, use the `ToE` method:
 intVal := cast.To[int]("Hi!")         // 0 (int)
 intVal, err := cast.ToE[int]("Hi!")   // 0, unable to cast "Hi!" of type string to int (int, error)
 ```
+
+### Supported Conversions
+| | To | `bool` | `complex64` | `complex128` | `float32` | `float64` | `int` | `int8` | `int16` | `int32` | `int64` | `uint` | `uint8` | `uint16` | `uint32` | `uint64` | `string` | `slice` | `map` | `func` | `chan` |
+|:---------|-----------------:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| **From** | **`any`**        | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y |
+|          | **`bool`**       | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`complex64`**  | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`complex128`** | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`float32`**    | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`float64`**    | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`int`**        | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`int8`**       | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`int16`**      | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`int32`**      | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`int64`**      | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`uint`**       | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`uint8`**      | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`uint16`**     | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`uint32`**     | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`uint64`**     | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`string`**     | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
+|          | **`slice`**      | n | n | n | n | n | n | n | n | n | n | n | n | n | n | n | y | y | n | y | y |
+|          | **`map`**        | n | n | n | n | n | n | n | n | n | n | n | n | n | n | n | y | n | n | y | y |
+|          | **`func`**       | n | n | n | n | n | n | n | n | n | n | n | n | n | n | n | y | n | n | n | n |
+|          | **`chan`**       | n | n | n | n | n | n | n | n | n | n | n | n | n | n | n | y | n | n | n | n |
+

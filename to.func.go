@@ -6,13 +6,9 @@ import (
 	"github.com/bdlm/errors/v2"
 )
 
-//func ToFunc[TTo Func[Typ], Typ Types](to reflect.Kind, from reflect.Value) (TTo, error) {
-//	return toFunc[TTo, Typ](to, from)
-//}
-
 // toFunc returns a function that casts an interface to the specified
 // type and returns the result.
-func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
+func toFunc[TTo any](to reflect.Value, from interface{}, ops Ops) (TTo, error) {
 	var err error
 	var ret TTo
 	var reti interface{}
@@ -26,12 +22,12 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	//case reflect.Struct:
 	//case reflect.UnsafePointer:
 	default:
-		return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
+		return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 
 	case reflect.Interface:
 		f, err = ToE[interface{}](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[interface{}]
 		fn = func() interface{} {
@@ -41,7 +37,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Bool:
 		f, err = ToE[bool](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[bool]
 		fn = func() bool {
@@ -51,7 +47,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Complex64:
 		f, err = ToE[complex64](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[complex64]
 		fn = func() complex64 {
@@ -61,7 +57,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Complex128:
 		f, err = ToE[complex128](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[complex128]
 		fn = func() complex128 {
@@ -71,7 +67,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Float32:
 		f, err = ToE[float32](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[float32]
 		fn = func() float32 {
@@ -81,7 +77,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Float64:
 		f, err = ToE[float64](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[float64]
 		fn = func() float64 {
@@ -91,7 +87,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Int:
 		f, err = ToE[int](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[int]
 		fn = func() int {
@@ -101,7 +97,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Int8:
 		f, err = ToE[int8](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[int8]
 		fn = func() int8 {
@@ -111,7 +107,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Int16:
 		f, err = ToE[int16](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[int16]
 		fn = func() int16 {
@@ -121,7 +117,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Int32:
 		f, err = ToE[int32](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[int32]
 		fn = func() int32 {
@@ -131,7 +127,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Int64:
 		f, err = ToE[int64](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[int64]
 		fn = func() int64 {
@@ -141,7 +137,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Uint:
 		f, err = ToE[uint](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[uint]
 		fn = func() uint {
@@ -151,7 +147,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Uint8:
 		f, err = ToE[uint8](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[uint8]
 		fn = func() uint8 {
@@ -161,7 +157,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Uint16:
 		f, err = ToE[uint16](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[uint16]
 		fn = func() uint16 {
@@ -171,7 +167,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Uint32:
 		f, err = ToE[uint32](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[uint32]
 		fn = func() uint32 {
@@ -181,7 +177,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Uint64:
 		f, err = ToE[uint64](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[uint64]
 		fn = func() uint64 {
@@ -191,7 +187,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.Uintptr:
 		f, err = ToE[uintptr](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[uintptr]
 		fn = func() uintptr {
@@ -201,7 +197,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	case reflect.String:
 		f, err = ToE[string](from)
 		if nil != err {
-			return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 		}
 		var fn Func[string]
 		fn = func() string {
@@ -223,11 +219,11 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		//case reflect.Slice:
 		//case reflect.Func:
 		default:
-			return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
+			return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 		case reflect.Interface:
 			f, err = ToE[chan interface{}](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan interface{}]
 			fn = func() chan interface{} {
@@ -237,7 +233,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Bool:
 			f, err = ToE[chan bool](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan bool]
 			fn = func() chan bool {
@@ -247,7 +243,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Complex64:
 			f, err = ToE[chan complex64](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan complex64]
 			fn = func() chan complex64 {
@@ -257,7 +253,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Complex128:
 			f, err = ToE[chan complex128](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan complex128]
 			fn = func() chan complex128 {
@@ -267,7 +263,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Float32:
 			f, err = ToE[chan float32](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan float32]
 			fn = func() chan float32 {
@@ -277,7 +273,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Float64:
 			f, err = ToE[chan float64](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan float64]
 			fn = func() chan float64 {
@@ -287,7 +283,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Int:
 			f, err = ToE[chan int](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan int]
 			fn = func() chan int {
@@ -297,7 +293,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Int8:
 			f, err = ToE[chan int8](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan int8]
 			fn = func() chan int8 {
@@ -307,7 +303,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Int16:
 			f, err = ToE[chan int16](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan int16]
 			fn = func() chan int16 {
@@ -317,7 +313,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Int32:
 			f, err = ToE[chan int32](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan int32]
 			fn = func() chan int32 {
@@ -327,7 +323,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Int64:
 			f, err = ToE[chan int64](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan int64]
 			fn = func() chan int64 {
@@ -337,7 +333,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Uint:
 			f, err = ToE[chan uint](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan uint]
 			fn = func() chan uint {
@@ -347,7 +343,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Uint8:
 			f, err = ToE[chan uint8](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan uint8]
 			fn = func() chan uint8 {
@@ -357,7 +353,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Uint16:
 			f, err = ToE[chan uint16](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan uint16]
 			fn = func() chan uint16 {
@@ -367,7 +363,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Uint32:
 			f, err = ToE[chan uint32](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan uint32]
 			fn = func() chan uint32 {
@@ -377,7 +373,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Uint64:
 			f, err = ToE[chan uint64](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan uint64]
 			fn = func() chan uint64 {
@@ -387,7 +383,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.Uintptr:
 			f, err = ToE[chan uintptr](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan uintptr]
 			fn = func() chan uintptr {
@@ -397,7 +393,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 		case reflect.String:
 			f, err = ToE[chan string](from)
 			if nil != err {
-				return ret, errors.Wrap(err, "error casting %T to %T during function generation", from, ret)
+				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
 			}
 			var fn Func[chan string]
 			fn = func() chan string {
@@ -417,5 +413,5 @@ func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
 	if ret, ok := reti.(TTo); ok {
 		return ret, nil
 	}
-	return ret, errors.Errorf("error casting %T to %T during function generation", reti, ret)
+	return ret, errors.Errorf(ErrorStrErrorCastingFunc, reti, ret)
 }

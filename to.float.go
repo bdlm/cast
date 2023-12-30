@@ -11,7 +11,7 @@ import (
 )
 
 // toFloat casts an interface to a float type.
-func toFloat[TTo constraints.Float](from reflect.Value) (TTo, error) {
+func toFloat[TTo constraints.Float](from reflect.Value, ops Ops) (TTo, error) {
 	fromVal := reflect.ValueOf(from)
 	if !fromVal.IsValid() || !fromVal.CanInterface() {
 		return TTo(0), errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
@@ -84,9 +84,9 @@ func toFloat[TTo constraints.Float](from reflect.Value) (TTo, error) {
 		return strToFloat[TTo](to, typ)
 	}
 
-	ret, err := toFloat[TTo](reflect.ValueOf(fmt.Sprintf("%v", from.Interface())))
+	ret, err := toFloat[TTo](reflect.ValueOf(fmt.Sprintf("%v", from.Interface())), ops)
 	if nil != err {
-		return 0, errors.Wrap(err, "unable to cast %T to %T", from.Interface(), to.Interface())
+		return 0, errors.Wrap(err, ErrorStrUnableToCast, from.Interface(), from.Interface(), to.Interface())
 	}
 	return ret, nil
 }
@@ -116,7 +116,7 @@ func strToFloat[TTo constraints.Float](to reflect.Value, from string) (TTo, erro
 			if e != nil {
 				err = errors.WrapE(err, e)
 			} else {
-				err = errors.Wrap(err, "unable to cast %v (%T) to %T", from, from, to.Interface())
+				err = errors.Wrap(err, ErrorStrUnableToCast, from, from, to.Interface())
 				val = float64(0)
 			}
 		} else {
