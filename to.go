@@ -41,7 +41,7 @@ func ToE[TTo Types](val any, o ...Ops) (panicTo TTo, panicErr error) {
 	defer func() {
 		if err := recover(); err != nil {
 			panicTo = ret
-			panicErr = errors.Wrap(err.(error), "failure casting %T to %T", val, ret)
+			panicErr = errors.Wrap(err.(error), "failure casting %T to %T (panic)", val, ret)
 			fmt.Printf("% +#v", panicErr)
 		}
 	}()
