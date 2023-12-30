@@ -37,7 +37,7 @@ func toBool[TTo bool](from any, ops Ops) (TTo, error) {
 	case string:
 		r, e := strconv.ParseBool(from.(string))
 		if nil != e {
-			i, e2 := ToE[float64](from)
+			i, e2 := ToE[int](from)
 			if nil != e2 {
 				return false, errors.Wrap(errors.WrapE(e2, e), ErrorStrUnableToCast, from, from, false)
 			}
