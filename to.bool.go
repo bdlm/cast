@@ -8,7 +8,7 @@ import (
 
 // toBool casts an interface to a bool type. For numeric values, anything but
 // zero is considered true.
-func toBool[TTo bool](from any) (TTo, error) {
+func toBool[TTo bool](from any, ops Ops) (TTo, error) {
 	switch from.(type) {
 	case bool:
 		return from.(bool) != false, nil

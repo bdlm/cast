@@ -8,19 +8,19 @@ import (
 )
 
 // toComplex64 casts an interface to a complex number.
-func toComplex[TTo constraints.Complex](from reflect.Value) (TTo, error) {
+func toComplex[TTo constraints.Complex](from reflect.Value, ops Ops) (TTo, error) {
 	var nilval TTo
 
 	to := reflect.Indirect(reflect.ValueOf(new(TTo)))
 	switch to.Type().Kind() {
 	case reflect.Complex64:
-		f, err := toFloat[float32](from)
+		f, err := toFloat[float32](from, ops)
 		if nil != err {
 			return nilval, err
 		}
 		return TTo(complex(f, 0)), nil
 	case reflect.Complex128:
-		f, err := toFloat[float64](from)
+		f, err := toFloat[float64](from, ops)
 		if nil != err {
 			return nilval, err
 		}

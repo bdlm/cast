@@ -8,7 +8,7 @@ import (
 
 // toFunc returns a function that casts an interface to the specified
 // type and returns the result.
-func toFunc[TTo any](to reflect.Value, from interface{}) (TTo, error) {
+func toFunc[TTo any](to reflect.Value, from interface{}, ops Ops) (TTo, error) {
 	var err error
 	var ret TTo
 	var reti interface{}
