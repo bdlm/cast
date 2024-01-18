@@ -69,7 +69,7 @@ boolval := <-cast.To[chan bool](1) // <-true (bool) - I have no idea why you wou
 ```
 
 ##### func
-Casting to function will return a function that returns the cast value. This requires using the `cast.Func` builtin type
+Casting to function will return a function that returns the cast value. This requires using the [`cast.Func`](https://github.com/bdlm/cast/blob/main/to.type.go#L39) custom type
 ```go
 var intFunc cast.Func[int]
 intFunc = cast.To[cast.Func[int]]("10")
