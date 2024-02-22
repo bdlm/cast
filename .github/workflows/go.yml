@@ -25,10 +25,10 @@ jobs:
       run: go get -u ./...
 
     - name: Tidy
-      run: go mod tidy
+      run: go mod tidy -v
 
     - name: Vendor
-      run: go mod vendor
+      run: go mod vendor -v
 
     - name: Build
       run: go build -v ./...
