@@ -83,11 +83,11 @@ func ToE[TTo Types](val any, o ...Ops) (panicTo TTo, panicErr error) {
 		reti, err = toBool(val, ops)
 	case reflect.Chan:
 		reti, err = toChan(to, val, ops)
-	case reflect.Map: // TODO
-		if reflect.Map != from.Type().Kind() {
-			return ret, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, from, from.Interface(), to.Interface()))
-		}
-		reti, err = toMap(to, val, ops)
+	//case reflect.Map: // TODO
+	//	if reflect.Map != from.Type().Kind() {
+	//		return ret, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, from, from.Interface(), to.Interface()))
+	//	}
+	//	reti, err = toMap(to, val, ops)
 	case reflect.Array: // TODO
 		fallthrough
 	case reflect.Slice:
