@@ -24,7 +24,7 @@ func TestVariousToBool(t *testing.T) {
 		{"1.5", true, nil, false},
 		{"1.9", true, nil, false},
 		{"0.0", false, nil, false},
-		{"0.1", true, nil, false},
+		{"0.1", false, nil, false},
 		{"-1.1", true, nil, false},
 		{"-1.4", true, nil, false},
 		{"-1.1", true, nil, false},

@@ -1,6 +1,6 @@
 module github.com/bdlm/cast/v2
 
-go 1.18
+go 1.21
 
 require (
 	github.com/bdlm/errors/v2 v2.1.2
