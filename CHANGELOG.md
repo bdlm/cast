@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Minor**: feature additions
 - **Patch**: bug fixes, backward compatible model and function changes, etc.
 
+
+## v2.0.3 - 2024-02-22
+* GitHub action definition for builds and tests
+* Related bug fixes and cleanup
+
+
+## v2.0.2 - 2023-12-30
+* Added test coverage
+* Related bug fixes and cleanup
+
+
+## v2.0.1 - 2023-12-28
+* Additional examples
+* Improved slice support
+* Various bugfixes
+* Added tests
+
+
 ## v2.0.0 - 2023-12-23
 This is a full library rewrite for go v1.18+ to take advantage of [generic functions and types](https://go.dev/doc/tutorial/generics).
 
