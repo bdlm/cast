@@ -141,6 +141,10 @@ func ToE[TTo Types](val any, o ...Ops) (panicTo TTo, panicErr error) {
 		reti, err = toString(from, ops)
 	}
 
+	if ret, ok = reti.(TTo); !ok {
+		return *new(TTo), errors.WrapE(Error, errors.Errorf("unable to cast %#.10v of type %T to %T (%#.10v %T)", from, from.Interface(), to.Interface(), ret, ret))
+	}
+
 	if err != nil {
 		return ret, errors.WrapE(Error, err)
 	}

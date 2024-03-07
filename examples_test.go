@@ -11,10 +11,10 @@ func ExampleToE_string() {
 	fmt.Printf("%#v (%T), %v", v, v, e)
 	// Output: "1" (string), <nil>
 }
-func ExampleToE_error() {
-	v, e := cast.ToE[int]("H!")
+func ExampleToE_error_with_default() {
+	v, e := cast.ToE[int]("Hi!", cast.Ops{cast.DEFAULT: 10})
 	fmt.Printf("%#v (%T), %v", v, v, e)
-	// Output: 0 (int), unable to cast "H!" of type string to int
+	// Output: 10 (int), unable to cast "Hi!" of type string to int
 }
 
 func ExampleTo_string() {

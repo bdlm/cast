@@ -102,17 +102,15 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 			}
 			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		v, e := strToInt[TTo](To[string](from.Interface()))
-		return TTo(v), e
+		return strToInt[TTo](To[string](from.Interface()), ops)
 	case float32:
 		if unsigned && typ < 0 {
 			if abs {
-				return strToInt[TTo](To[string](-typ))
+				return strToInt[TTo](To[string](-typ), ops)
 			}
 			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		v, e := strToInt[TTo](To[string](typ))
-		return TTo(v), e
+		return strToInt[TTo](To[string](typ), ops)
 	case uint:
 		return TTo(typ), nil
 	case uintptr:
@@ -126,9 +124,9 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 	case uint8:
 		return TTo(typ), nil
 	case fmt.Stringer:
-		return strToInt[TTo](typ.String())
+		return strToInt[TTo](typ.String(), ops)
 	case string:
-		return strToInt[TTo](typ)
+		return strToInt[TTo](typ, ops)
 
 	//case complex128:
 	//case complex64:
@@ -138,7 +136,27 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 }
 
 // strToInt converts a string to an integer type.
-func strToInt[TTo constraints.Integer](from string) (TTo, error) {
+//
+// Options:
+//   - DEFAULT: constraints.Integer, default 0. Default return value on error.
+//   - ABS: bool, default false. Return the absolute value of negative integers
+//     when casting to unsigned integers.
+func strToInt[TTo constraints.Integer](from string, ops Ops) (TTo, error) {
+	var ret TTo
+	var ok bool
+	var abs bool
+
+	if _, ok = ops[DEFAULT]; ok {
+		if ret, ok = ops[DEFAULT].(TTo); !ok {
+			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+		}
+	}
+	if _, ok = ops[ABS]; ok {
+		if abs, ok = ops[ABS].(bool); !ok {
+			return ret, errors.Errorf(ErrorInvalidOption, "ABS", ops[ABS])
+		}
+	}
+
 	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	var e, err error
 	var val float64
@@ -165,9 +183,8 @@ func strToInt[TTo constraints.Integer](from string) (TTo, error) {
 		}
 	}
 
-	//fmt.Printf("to: %T, from: %v (%v), val: %d (%T)\n", TTo(0), from, from.Type().Kind(), int(math.Floor(val)), int(math.Floor(val)))
 	if err != nil {
-		return 0, errors.WrapE(err, errDetail)
+		return ret, errors.WrapE(err, errDetail)
 	}
 	if val >= 0 {
 		return TTo(math.Floor(val)), nil
@@ -175,8 +192,8 @@ func strToInt[TTo constraints.Integer](from string) (TTo, error) {
 
 	// Negative to uint error.
 	ref := reflect.ValueOf(TTo(0))
-	if ref.Kind() == reflect.Uint || ref.Kind() == reflect.Uint8 || ref.Kind() == reflect.Uint16 || ref.Kind() == reflect.Uint32 || ref.Kind() == reflect.Uint64 || ref.Kind() == reflect.Uintptr {
-		return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+	if abs || ref.Kind() == reflect.Uint || ref.Kind() == reflect.Uint8 || ref.Kind() == reflect.Uint16 || ref.Kind() == reflect.Uint32 || ref.Kind() == reflect.Uint64 || ref.Kind() == reflect.Uintptr {
+		return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 	}
 
 	return TTo(math.Ceil(val)), nil
