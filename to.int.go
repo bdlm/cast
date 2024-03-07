@@ -12,10 +12,30 @@ import (
 )
 
 // toInt casts an interface to an int type.
+//
+// Options:
+//   - DEFAULT: constraints.Integer, default 0. Default return value on error.
+//   - ABS: bool, default false. Return the absolute value of negative integers
+//     when casting to unsigned integers.
 func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
+	var ret TTo
+	var ok bool
+	var abs bool
+
+	if _, ok = ops[DEFAULT]; ok {
+		if ret, ok = ops[DEFAULT].(TTo); !ok {
+			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+		}
+	}
+	if _, ok = ops[ABS]; ok {
+		if abs, ok = ops[ABS].(bool); !ok {
+			return ret, errors.Errorf(ErrorInvalidOption, "ABS", ops[ABS])
+		}
+	}
+
 	fromVal := reflect.Indirect(from)
 	if !fromVal.IsValid() || !fromVal.CanInterface() {
-		return TTo(0), errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
+		return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	}
 
 	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from.Interface(), from.Interface(), TTo(0))
@@ -37,57 +57,78 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 		return TTo(0), nil
 	case int:
 		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			if abs {
+				return TTo(-typ), nil
+			}
+			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(from.Interface().(int)), nil
+		return TTo(typ), nil
 	case int64:
 		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			if abs {
+				return TTo(-typ), nil
+			}
+			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(from.Interface().(int64)), nil
+		return TTo(typ), nil
 	case int32:
 		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			if abs {
+				return TTo(-typ), nil
+			}
+			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(from.Interface().(int32)), nil
+		return TTo(typ), nil
 	case int16:
 		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			if abs {
+				return TTo(-typ), nil
+			}
+			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(from.Interface().(int16)), nil
+		return TTo(typ), nil
 	case int8:
 		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			if abs {
+				return TTo(-typ), nil
+			}
+			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(from.Interface().(int8)), nil
+		return TTo(typ), nil
 	case float64:
 		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			if abs {
+				return TTo(-typ), nil
+			}
+			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		v, e := strToInt[TTo](to, To[string](from.Interface()))
+		v, e := strToInt[TTo](To[string](from.Interface()))
 		return TTo(v), e
 	case float32:
 		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			if abs {
+				return strToInt[TTo](To[string](-typ))
+			}
+			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		v, e := strToInt[TTo](to, To[string](from.Interface()))
+		v, e := strToInt[TTo](To[string](typ))
 		return TTo(v), e
 	case uint:
-		return TTo(from.Interface().(uint)), nil
+		return TTo(typ), nil
 	case uintptr:
-		return TTo(from.Interface().(uintptr)), nil
+		return TTo(typ), nil
 	case uint64:
-		return TTo(from.Interface().(uint64)), nil
+		return TTo(typ), nil
 	case uint32:
-		return TTo(from.Interface().(uint32)), nil
+		return TTo(typ), nil
 	case uint16:
-		return TTo(from.Interface().(uint16)), nil
+		return TTo(typ), nil
 	case uint8:
-		return TTo(from.Interface().(uint8)), nil
+		return TTo(typ), nil
 	case fmt.Stringer:
-		return strToInt[TTo](to, typ.String())
+		return strToInt[TTo](typ.String())
 	case string:
-		return strToInt[TTo](to, typ)
+		return strToInt[TTo](typ)
 
 	//case complex128:
 	//case complex64:
@@ -97,7 +138,7 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 }
 
 // strToInt converts a string to an integer type.
-func strToInt[TTo constraints.Integer](to reflect.Value, from string) (TTo, error) {
+func strToInt[TTo constraints.Integer](from string) (TTo, error) {
 	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	var e, err error
 	var val float64

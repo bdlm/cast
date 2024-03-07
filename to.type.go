@@ -7,8 +7,9 @@ import (
 var (
 	Error                    = errors.Errorf("unable to cast value")
 	ErrorSignedToUnsigned    = errors.Wrap(Error, "cannot cast signed value to unsigned integer")
-	ErrorStrUnableToCast     = "unable to cast %#.10v of type %T to %T"
+	ErrorInvalidOption       = "invalid %s value '%v'"
 	ErrorStrErrorCastingFunc = "error casting %T to %T during function generation"
+	ErrorStrUnableToCast     = "unable to cast %#.10v of type %T to %T"
 )
 
 type Flag int
@@ -16,18 +17,19 @@ type Flag int
 type Ops map[Flag]any
 
 const (
-	DEFAULT             Flag = iota // TTo,  default return value on error
-	DUPLICATE_KEY_ERROR             // bool, error on duplicate map key
-	LENGTH                          // int,  number of elements in result
-	SIZE                            // int,  context specific
-	UNIQUE_VALUES                   // bool, dedupe slice values
-	JSON                            // bool, encode strings as JSON
+	DEFAULT Flag = iota // TTo,  default return value on error, default zero value
+
+	ABS                 // bool, use absolute value during uint conversion, default false
+	DUPLICATE_KEY_ERROR // bool, error on duplicate map key, default false
+	LENGTH              // int,  number of elements in result, default 1
+	UNIQUE_VALUES       // bool, dedupe slice values, default false
+	JSON                // bool, encode strings as JSON, default false
 )
 
 func parseOps(o []Ops) Ops {
 	ops := Ops{}
-	for _, iops := range o {
-		for k, v := range iops {
+	for _, opMap := range o {
+		for k, v := range opMap {
 			ops[k] = v
 		}
 	}

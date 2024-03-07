@@ -11,19 +11,25 @@ import (
 )
 
 // toFloat casts an interface to a float type.
+//
+// Options:
+//   - DEFAULT: float32 or float64, default 0.0. Default return value on error.
 func toFloat[TTo constraints.Float](from reflect.Value, ops Ops) (TTo, error) {
-	fromVal := reflect.ValueOf(from)
-	if !fromVal.IsValid() || !fromVal.CanInterface() {
-		return TTo(0), errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
+	var ret TTo
+	var ok bool
+
+	if _, ok = ops[DEFAULT]; ok {
+		if ret, ok = ops[DEFAULT].(TTo); !ok {
+			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+		}
 	}
 
-	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from.Interface(), from.Interface(), TTo(0))
-	to := reflect.Indirect(reflect.ValueOf(new(TTo)))
-	unsigned := false
-	switch to.Interface().(type) {
-	case uint, uint8, uint16, uint32, uint64, uintptr:
-		unsigned = true
+	fromVal := reflect.ValueOf(from)
+	if !fromVal.IsValid() || !fromVal.CanInterface() {
+		return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	}
+
+	to := reflect.Indirect(reflect.ValueOf(new(TTo)))
 
 	switch typ := from.Interface().(type) {
 	case nil:
@@ -34,39 +40,18 @@ func toFloat[TTo constraints.Float](from reflect.Value, ops Ops) (TTo, error) {
 		}
 		return TTo(0), nil
 	case float64:
-		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
-		}
 		return TTo(typ), nil
 	case float32:
-		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
-		}
 		return TTo(typ), nil
 	case int:
-		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
-		}
 		return TTo(typ), nil
 	case int64:
-		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
-		}
 		return TTo(typ), nil
 	case int32:
-		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
-		}
 		return TTo(typ), nil
 	case int16:
-		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
-		}
 		return TTo(typ), nil
 	case int8:
-		if unsigned && typ < 0 {
-			return 0, errors.WrapE(ErrorSignedToUnsigned, errDetail)
-		}
 		return TTo(typ), nil
 	case uint:
 		return TTo(typ), nil
@@ -86,7 +71,7 @@ func toFloat[TTo constraints.Float](from reflect.Value, ops Ops) (TTo, error) {
 
 	ret, err := toFloat[TTo](reflect.ValueOf(fmt.Sprintf("%v", from.Interface())), ops)
 	if nil != err {
-		return 0, errors.Wrap(err, ErrorStrUnableToCast, from.Interface(), from.Interface(), to.Interface())
+		return ret, errors.Wrap(err, ErrorStrUnableToCast, from.Interface(), from.Interface(), to.Interface())
 	}
 	return ret, nil
 }

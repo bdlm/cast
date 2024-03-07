@@ -6,13 +6,22 @@ import (
 	"github.com/bdlm/errors/v2"
 )
 
-// toFunc returns a function that casts an interface to the specified
-// type and returns the result.
+// toFunc returns a function that casts an interface to the specified type and
+// returns the result.
+//
+// Options:
 func toFunc[TTo any](to reflect.Value, from interface{}, ops Ops) (TTo, error) {
 	var err error
 	var ret TTo
 	var reti interface{}
 	var f interface{}
+	var ok bool
+
+	if _, ok = ops[DEFAULT]; ok {
+		if ret, ok = ops[DEFAULT].(TTo); !ok {
+			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+		}
+	}
 
 	switch to.Type().Out(0).Kind() {
 	//case reflect.Array:
@@ -31,7 +40,7 @@ func toFunc[TTo any](to reflect.Value, from interface{}, ops Ops) (TTo, error) {
 		}
 		var fn Func[interface{}]
 		fn = func() interface{} {
-			return f.(interface{})
+			return f
 		}
 		reti = fn
 	case reflect.Bool:

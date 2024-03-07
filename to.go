@@ -8,27 +8,37 @@ import (
 	std_error "github.com/bdlm/std/v2/errors"
 )
 
-// To casts the value `v` to the given type, ignoring any errors.
+// To casts the value v to the given type, ignoring any errors. See the ToE
+// documentation more information.
 func To[TTo Types](v any, o ...Ops) TTo {
 	ret, _ := ToE[TTo](v, o...)
 	return ret
 }
 
-// ToE casts the value `v` to the given type, returning any errors.
+// ToE casts the value v to the given type, returning any errors.
 //
-// If the given type is a channel, a channel with a buffer of 1 is created and
-// the cast value `v` is added to the the channel before it is returned.
+// o (Ops) is an optional parameter providing flags that can be used to modify
+// the default type conversion behavior. If ops is not provided, the default
+// conversion behavior for a given type is used. Available options depend on the
+// target type, see the documentation for the specific type conversion function
+// for more information.
 //
-// If the given type is an array a slice is created. To create a slice with a
-// backing array with a spcific size, set the LENGTH flag to the desired size as
-// an integer: `slice, err := cast.ToE[[]int](v, Ops{LENGTH: 10})`. The value `v`
-// is cast to the required type and appended to the returned slice.
+// Complex types have specific default behaviors, for example:
 //
-// If the given type is a map, a map is created with a zero-value key containing
-// the cast value `v` which is then returned.
+//   - If the given type is a channel, a channel with a buffer of 1 is created
+//     and the cast value `v` is added to the the channel before it is returned.
 //
-// ops: optional, some flags may be passed to control type conversions, for
-// example when creating a channel the the buffer size can be specified.
+//   - If the given type is an array a slice is created. To create a slice with
+//     a backing array with a spcific size, set the LENGTH flag to the desired
+//     size as an integer: `slice, err := cast.ToE[[]int](v, Ops{LENGTH: 10})`.
+//     The value `v` is cast to the required type and appended to the returned
+//     slice.
+//
+//   - If the given type is a map, a map is created with a zero-value key
+//     containing the cast value `v` which is then returned.
+//
+// See the documentation for the specific type conversion function for more
+// information.
 func ToE[TTo Types](val any, o ...Ops) (panicTo TTo, panicErr error) {
 	ops := parseOps(o)
 

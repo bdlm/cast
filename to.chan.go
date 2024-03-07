@@ -7,12 +7,26 @@ import (
 )
 
 // toChan returns a channel of the specified reflect.Value type with a buffer of
-// 1 containing the from value.
+// LENGTH containing the from value.
+//
+// Options:
+//   - DEFAULT: channel, default return value on error.
+//   - LENGTH: int, channel buffer size, default 1. Must be greater than or
+//     equal to 0.
 func toChan(to reflect.Value, from any, ops Ops) (any, error) {
 	var ret any
+	var ok bool
+
+	if _, ok = ops[DEFAULT]; ok {
+		ret = ops[DEFAULT]
+	}
+
 	size := 1
-	if _, ok := ops[LENGTH]; ok {
+	if _, ok = ops[LENGTH]; ok {
 		size = To[int](ops[LENGTH])
+	}
+	if size < 1 {
+		return ret, errors.Errorf("invalid channel buffer size %d", size)
 	}
 
 	switch to.Type().Elem().Kind() {
