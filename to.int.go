@@ -182,7 +182,9 @@ func strToInt[TTo constraints.Integer](from string, ops Ops) (TTo, error) {
 			err = nil
 		}
 	}
-
+	if val < 0 && abs {
+		val = -val
+	}
 	if err != nil {
 		return ret, errors.WrapE(err, errDetail)
 	}
@@ -192,7 +194,7 @@ func strToInt[TTo constraints.Integer](from string, ops Ops) (TTo, error) {
 
 	// Negative to uint error.
 	ref := reflect.ValueOf(TTo(0))
-	if abs || ref.Kind() == reflect.Uint || ref.Kind() == reflect.Uint8 || ref.Kind() == reflect.Uint16 || ref.Kind() == reflect.Uint32 || ref.Kind() == reflect.Uint64 || ref.Kind() == reflect.Uintptr {
+	if ref.Kind() == reflect.Uint || ref.Kind() == reflect.Uint8 || ref.Kind() == reflect.Uint16 || ref.Kind() == reflect.Uint32 || ref.Kind() == reflect.Uint64 || ref.Kind() == reflect.Uintptr {
 		return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 	}
 

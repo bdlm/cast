@@ -17,13 +17,13 @@ type Flag int
 type Ops map[Flag]any
 
 const (
-	DEFAULT Flag = iota // TTo,  default return value on error, default zero value
+	DEFAULT Flag = iota // TTo,  default: TTo zero value, value to return on error
 
-	ABS                 // bool, use absolute value during uint conversion, default false
-	DUPLICATE_KEY_ERROR // bool, error on duplicate map key, default false
-	LENGTH              // int,  number of elements in result, default 1
-	UNIQUE_VALUES       // bool, dedupe slice values, default false
-	JSON                // bool, encode strings as JSON, default false
+	ABS                 // bool, default: false, use absolute value during uint conversion
+	DUPLICATE_KEY_ERROR // bool, default: false, error on duplicate map key
+	LENGTH              // int,  default: 1,     number of elements in result
+	UNIQUE_VALUES       // bool, default: false, dedupe slice values
+	JSON                // bool, default: false, encode strings as JSON
 )
 
 func parseOps(o []Ops) Ops {

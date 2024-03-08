@@ -35,6 +35,18 @@ func ExampleToE_int() {
 	// Output: 1 (int), <nil>
 }
 
+func ExampleToE_uint_err() {
+	v, e := cast.ToE[uint]("-1")
+	fmt.Printf("%v (%T), %v", v, v, e)
+	// Output: 0 (uint), unable to cast "-1" of type string to uint
+}
+
+func ExampleToE_uint_abs() {
+	v, e := cast.ToE[uint]("-1", cast.Ops{cast.ABS: true})
+	fmt.Printf("%v (%T), %v", v, v, e)
+	// Output: 1 (uint), <nil>
+}
+
 func ExampleTo_float64() {
 	v := cast.To[float64]("1.234")
 	fmt.Printf("%#v (%T)", v, v)
