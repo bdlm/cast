@@ -15,27 +15,26 @@ import (
 //
 // Options:
 //   - DEFAULT: constraints.Integer, default 0. Default return value on error.
-//   - ABS: bool, default false. Return the absolute value of negative integers
-//     when casting to unsigned integers.
+//   - ABS: bool, default false. Return the absolute value of integers.
 func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
-	var ret TTo
+	var default_val TTo
 	var ok bool
 	var abs bool
 
 	if _, ok = ops[DEFAULT]; ok {
-		if ret, ok = ops[DEFAULT].(TTo); !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+		if default_val, ok = ops[DEFAULT].(TTo); !ok {
+			return default_val, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
 		}
 	}
 	if _, ok = ops[ABS]; ok {
 		if abs, ok = ops[ABS].(bool); !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "ABS", ops[ABS])
+			return default_val, errors.Errorf(ErrorInvalidOption, "ABS", ops[ABS])
 		}
 	}
 
 	fromVal := reflect.Indirect(from)
 	if !fromVal.IsValid() || !fromVal.CanInterface() {
-		return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
+		return default_val, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	}
 
 	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from.Interface(), from.Interface(), TTo(0))
@@ -47,86 +46,86 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 	}
 
 	//fmt.Printf("\n\nto: %v (%T); from: %v (%T)\n\n", to, to.Interface(), from, from.Interface())
-	switch typ := from.Interface().(type) {
+	switch val := from.Interface().(type) {
 	case nil:
 		return TTo(0), nil
 	case bool:
-		if typ {
+		if val {
 			return TTo(1), nil
 		}
 		return TTo(0), nil
 	case int:
-		if unsigned && typ < 0 {
+		if unsigned && val < 0 {
 			if abs {
-				return TTo(-typ), nil
+				return TTo(-val), nil
 			}
-			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(typ), nil
+		return TTo(val), nil
 	case int64:
-		if unsigned && typ < 0 {
+		if unsigned && val < 0 {
 			if abs {
-				return TTo(-typ), nil
+				return TTo(-val), nil
 			}
-			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(typ), nil
+		return TTo(val), nil
 	case int32:
-		if unsigned && typ < 0 {
+		if unsigned && val < 0 {
 			if abs {
-				return TTo(-typ), nil
+				return TTo(-val), nil
 			}
-			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(typ), nil
+		return TTo(val), nil
 	case int16:
-		if unsigned && typ < 0 {
+		if unsigned && val < 0 {
 			if abs {
-				return TTo(-typ), nil
+				return TTo(-val), nil
 			}
-			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(typ), nil
+		return TTo(val), nil
 	case int8:
-		if unsigned && typ < 0 {
+		if unsigned && val < 0 {
 			if abs {
-				return TTo(-typ), nil
+				return TTo(-val), nil
 			}
-			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return TTo(typ), nil
+		return TTo(val), nil
 	case float64:
-		if unsigned && typ < 0 {
+		if unsigned && val < 0 {
 			if abs {
-				return TTo(-typ), nil
+				return TTo(-val), nil
 			}
-			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
 		return strToInt[TTo](To[string](from.Interface()), ops)
 	case float32:
-		if unsigned && typ < 0 {
+		if unsigned && val < 0 {
 			if abs {
-				return strToInt[TTo](To[string](-typ), ops)
+				return strToInt[TTo](To[string](-val), ops)
 			}
-			return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return strToInt[TTo](To[string](typ), ops)
+		return strToInt[TTo](To[string](val), ops)
 	case uint:
-		return TTo(typ), nil
+		return TTo(val), nil
 	case uintptr:
-		return TTo(typ), nil
+		return TTo(val), nil
 	case uint64:
-		return TTo(typ), nil
+		return TTo(val), nil
 	case uint32:
-		return TTo(typ), nil
+		return TTo(val), nil
 	case uint16:
-		return TTo(typ), nil
+		return TTo(val), nil
 	case uint8:
-		return TTo(typ), nil
+		return TTo(val), nil
 	case fmt.Stringer:
-		return strToInt[TTo](typ.String(), ops)
+		return strToInt[TTo](val.String(), ops)
 	case string:
-		return strToInt[TTo](typ, ops)
+		return strToInt[TTo](val, ops)
 
 	//case complex128:
 	//case complex64:
@@ -142,18 +141,18 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 //   - ABS: bool, default false. Return the absolute value of negative integers
 //     when casting to unsigned integers.
 func strToInt[TTo constraints.Integer](from string, ops Ops) (TTo, error) {
-	var ret TTo
+	var default_val TTo
 	var ok bool
 	var abs bool
 
 	if _, ok = ops[DEFAULT]; ok {
-		if ret, ok = ops[DEFAULT].(TTo); !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+		if default_val, ok = ops[DEFAULT].(TTo); !ok {
+			return default_val, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
 		}
 	}
 	if _, ok = ops[ABS]; ok {
 		if abs, ok = ops[ABS].(bool); !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "ABS", ops[ABS])
+			return default_val, errors.Errorf(ErrorInvalidOption, "ABS", ops[ABS])
 		}
 	}
 
@@ -176,7 +175,7 @@ func strToInt[TTo constraints.Integer](from string, ops Ops) (TTo, error) {
 				err = errors.WrapE(err, e)
 			} else {
 				err = errors.Wrap(err, "unable to cast complex to int")
-				val = 0
+				val = float64(default_val)
 			}
 		} else {
 			err = nil
@@ -186,7 +185,7 @@ func strToInt[TTo constraints.Integer](from string, ops Ops) (TTo, error) {
 		val = -val
 	}
 	if err != nil {
-		return ret, errors.WrapE(err, errDetail)
+		return default_val, errors.WrapE(err, errDetail)
 	}
 	if val >= 0 {
 		return TTo(math.Floor(val)), nil
@@ -194,8 +193,11 @@ func strToInt[TTo constraints.Integer](from string, ops Ops) (TTo, error) {
 
 	// Negative to uint error.
 	ref := reflect.ValueOf(TTo(0))
-	if ref.Kind() == reflect.Uint || ref.Kind() == reflect.Uint8 || ref.Kind() == reflect.Uint16 || ref.Kind() == reflect.Uint32 || ref.Kind() == reflect.Uint64 || ref.Kind() == reflect.Uintptr {
-		return ret, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+	switch ref.Interface().(type) {
+	case uint, uint8, uint16, uint32, uint64, uintptr:
+		if val < 0 {
+			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+		}
 	}
 
 	return TTo(math.Ceil(val)), nil

@@ -12,7 +12,7 @@ func ExampleToE_string() {
 	// Output: "1" (string), <nil>
 }
 func ExampleToE_error_with_default() {
-	v, e := cast.ToE[int]("Hi!", cast.Ops{cast.DEFAULT: 10})
+	v, e := cast.ToE[int]("Hi!", cast.Op{cast.DEFAULT, 10})
 	fmt.Printf("%#v (%T), %v", v, v, e)
 	// Output: 10 (int), unable to cast "Hi!" of type string to int
 }
@@ -42,7 +42,7 @@ func ExampleToE_uint_err() {
 }
 
 func ExampleToE_uint_abs() {
-	v, e := cast.ToE[uint]("-1", cast.Ops{cast.ABS: true})
+	v, e := cast.ToE[uint]("-1", cast.Op{cast.ABS, true})
 	fmt.Printf("%v (%T), %v", v, v, e)
 	// Output: 1 (uint), <nil>
 }

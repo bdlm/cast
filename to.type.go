@@ -15,6 +15,10 @@ var (
 type Flag int
 
 type Ops map[Flag]any
+type Op struct {
+	Flag Flag
+	Val  any
+}
 
 const (
 	DEFAULT Flag = iota // TTo,  default: TTo zero value, value to return on error
@@ -26,12 +30,10 @@ const (
 	JSON                // bool, default: false, encode strings as JSON
 )
 
-func parseOps(o []Ops) Ops {
+func parseOps(o []Op) Ops {
 	ops := Ops{}
-	for _, opMap := range o {
-		for k, v := range opMap {
-			ops[k] = v
-		}
+	for _, op := range o {
+		ops[op.Flag] = op.Val
 	}
 	return ops
 }

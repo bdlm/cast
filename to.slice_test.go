@@ -256,16 +256,17 @@ func testSliceCases[TTo any](t *testing.T, cases []testCase) {
 	var typ TTo
 	name := fmt.Sprintf("%T", typ)
 
-	for _, test := range cases {
+	for k, test := range cases {
 		t.Run(fmt.Sprintf("%s: %v", name, test.in), func(t *testing.T) {
 			actual, err := cast.ToE[TTo](test.in)
 			testInfo := fmt.Sprintf(`
-case: ToE[%s]
+case #%d: ToE[%s]
 input: %v (%T)
 expect error: %v; actual error: % #+v
 expected result: %v (%T); actual result: %v (%T)
 test: %#v
 			`,
+				k,
 				name,
 				test.in,
 				test.in,

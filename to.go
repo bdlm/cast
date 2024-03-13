@@ -10,7 +10,7 @@ import (
 
 // To casts the value v to the given type, ignoring any errors. See the ToE
 // documentation more information.
-func To[TTo Types](v any, o ...Ops) TTo {
+func To[TTo Types](v any, o ...Op) TTo {
 	ret, _ := ToE[TTo](v, o...)
 	return ret
 }
@@ -25,33 +25,33 @@ func To[TTo Types](v any, o ...Ops) TTo {
 //
 // Complex types have specific default behaviors, for example:
 //
-//   - If the given type is a channel, a channel with a buffer of 1 is created
+//   - If the target type is a channel, a channel with a buffer of 1 is created
 //     and the cast value `v` is added to the the channel before it is returned.
 //
-//   - If the given type is an array a slice is created. To create a slice with
+//   - If the target type is an array a slice is created. To create a slice with
 //     a backing array with a spcific size, set the LENGTH flag to the desired
 //     size as an integer: `slice, err := cast.ToE[[]int](v, Ops{LENGTH: 10})`.
 //     The value `v` is cast to the required type and appended to the returned
 //     slice.
 //
-//   - If the given type is a map, a map is created with a zero-value key
+//   - If the target type is a map, a map is created with a zero-value key
 //     containing the cast value `v` which is then returned.
 //
 // See the documentation for the specific type conversion function for more
 // information.
-func ToE[TTo Types](val any, o ...Ops) (panicTo TTo, panicErr error) {
-	ops := parseOps(o)
+func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 
 	var err error
-	var reti any
-	var ret TTo
 	var ok bool
+	var retIface any
+	var ret0Val TTo
+	var retVal TTo
 
 	// Don't panic.
 	defer func() {
 		if err := recover(); err != nil {
-			panicTo = ret
-			panicErr = errors.Wrap(err.(error), "failure casting %T to %T (panic)", val, ret)
+			panicTo = ret0Val
+			panicErr = errors.Wrap(err.(error), "failure casting %T to %T (panic)", val, ret0Val)
 			fmt.Printf("% +#v", panicErr)
 		}
 	}()
@@ -60,6 +60,8 @@ func ToE[TTo Types](val any, o ...Ops) (panicTo TTo, panicErr error) {
 			err = errors.WrapE(err, e.(error))
 		}
 	}()
+
+	options := parseOps(ops)
 
 	// Collapse reflection values.
 	from := reflect.ValueOf(val)
@@ -75,87 +77,87 @@ func ToE[TTo Types](val any, o ...Ops) (panicTo TTo, panicErr error) {
 	// error
 	// std_error.Error
 	default:
-		reti = ret
-		if _, ok := reti.(error); ok {
-			reti = errors.Errorf(To[string](val, ops))
-		} else if _, ok := reti.(std_error.Error); ok {
-			reti = errors.Errorf(To[string](val, ops))
-		} else if _, ok := reti.(fmt.Stringer); ok {
-			reti = errors.Errorf(To[string](val, ops))
+		retIface = ret0Val
+		if _, ok := retIface.(error); ok {
+			retIface = errors.Errorf(To[string](val, ops...))
+		} else if _, ok := retIface.(std_error.Error); ok {
+			retIface = errors.Errorf(To[string](val, ops...))
+		} else if _, ok := retIface.(fmt.Stringer); ok {
+			retIface = errors.Errorf(To[string](val, ops...))
 		} else {
-			return ret, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, from, from.Interface(), to.Interface()))
+			return ret0Val, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, from, from.Interface(), to.Interface()))
 		}
 
 	case reflect.Interface:
-		reti = val
+		retIface = val
 
 	case reflect.Bool:
-		reti, err = toBool(val, ops)
+		retIface, err = toBool(val, options)
 	case reflect.Chan:
-		reti, err = toChan(to, val, ops)
+		retIface, err = toChan(to, val, options)
 	//case reflect.Map: // TODO
 	//	if reflect.Map != from.Type().Kind() {
-	//		return ret, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, from, from.Interface(), to.Interface()))
+	//		return ret0Val, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, from, from.Interface(), to.Interface()))
 	//	}
-	//	reti, err = toMap(to, val, ops)
+	//	retIface, err = toMap(to, val, options)
 	case reflect.Array: // TODO
 		fallthrough
 	case reflect.Slice:
 		if reflect.Slice != from.Type().Kind() {
-			return ret, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, from, from.Interface(), to.Interface()))
+			return ret0Val, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, from, from.Interface(), to.Interface()))
 		}
-		reti, err = toSlice(to, val, ops)
+		retIface, err = toSlice(to, val, options)
 	case reflect.Func:
-		reti, err = toFunc[TTo](to, val, ops)
+		retIface, err = toFunc[TTo](to, val, options)
 	case reflect.Complex64:
-		reti, err = toComplex[complex64](from, ops)
+		retIface, err = toComplex[complex64](from, options)
 	case reflect.Complex128:
-		reti, err = toComplex[complex128](from, ops)
+		retIface, err = toComplex[complex128](from, options)
 	case reflect.Float32:
-		reti, err = toFloat[float32](from, ops)
+		retIface, err = toFloat[float32](from, options)
 	case reflect.Float64:
-		reti, err = toFloat[float64](from, ops)
+		retIface, err = toFloat[float64](from, options)
 	case reflect.Int:
-		reti, err = toInt[int](from, ops)
+		retIface, err = toInt[int](from, options)
 	case reflect.Int8:
-		reti, err = toInt[int8](from, ops)
+		retIface, err = toInt[int8](from, options)
 	case reflect.Int16:
-		reti, err = toInt[int16](from, ops)
+		retIface, err = toInt[int16](from, options)
 	case reflect.Int32:
-		reti, err = toInt[int32](from, ops)
+		retIface, err = toInt[int32](from, options)
 	case reflect.Int64:
-		reti, err = toInt[int64](from, ops)
+		retIface, err = toInt[int64](from, options)
 	case reflect.Uint:
-		reti, err = toInt[uint](from, ops)
+		retIface, err = toInt[uint](from, options)
 	case reflect.Uint8:
-		reti, err = toInt[uint8](from, ops)
+		retIface, err = toInt[uint8](from, options)
 	case reflect.Uint16:
-		reti, err = toInt[uint16](from, ops)
+		retIface, err = toInt[uint16](from, options)
 	case reflect.Uint32:
-		reti, err = toInt[uint32](from, ops)
+		retIface, err = toInt[uint32](from, options)
 	case reflect.Uint64:
-		reti, err = toInt[uint64](from, ops)
+		retIface, err = toInt[uint64](from, options)
 	case reflect.Uintptr:
-		reti, err = toInt[uintptr](from, ops)
+		retIface, err = toInt[uintptr](from, options)
 	case reflect.String:
-		reti, err = toString(from, ops)
+		retIface, err = toString(from, options)
 	}
 
-	if ret, ok = reti.(TTo); !ok {
-		return *new(TTo), errors.WrapE(Error, errors.Errorf("unable to cast %#.10v of type %T to %T (%#.10v %T)", from, from.Interface(), to.Interface(), ret, ret))
+	if retVal, ok = retIface.(TTo); !ok && retIface != nil {
+		return ret0Val, errors.WrapE(Error, errors.Errorf("unable to cast %#.10v of type %T to %T (%#.10v %T)", from, from.Interface(), *new(TTo), retVal, retVal))
 	}
 
 	if err != nil {
-		return ret, errors.WrapE(Error, err)
+		return retVal, errors.WrapE(Error, err)
 	}
 
-	if ret, ok = reti.(TTo); ok {
-		return ret, nil
+	if retVal, ok = retIface.(TTo); ok {
+		return retVal, nil
 	}
 
-	if nil == reti {
-		return *new(TTo), nil
+	if nil == retIface {
+		return ret0Val, nil
 	}
 
-	return ret, errors.WrapE(Error, errors.Errorf("unable to cast %#.10v of type %T to %T (%#.10v %T)", from, from.Interface(), to.Interface(), ret, ret))
+	return retVal, errors.WrapE(Error, errors.Errorf("unable to cast %#.10v of type %T to %T (%#.10v %T)", from, from.Interface(), to.Interface(), retVal, retVal))
 }
