@@ -52,7 +52,6 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 		if err := recover(); err != nil {
 			panicTo = ret0Val
 			panicErr = errors.Wrap(err.(error), "failure casting %T to %T (panic)", val, ret0Val)
-			fmt.Printf("% +#v", panicErr)
 		}
 	}()
 	go func() {
