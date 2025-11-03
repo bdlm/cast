@@ -52,7 +52,6 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 		if err := recover(); err != nil {
 			panicTo = ret0Val
 			panicErr = errors.Wrap(err.(error), "failure casting %T to %T (panic)", val, ret0Val)
-			fmt.Printf("% +#v", panicErr)
 		}
 	}()
 	go func() {
@@ -79,11 +78,11 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 	default:
 		retIface = ret0Val
 		if _, ok := retIface.(error); ok {
-			retIface = errors.Errorf(To[string](val, ops...))
+			retIface = errors.Errorf("%s", To[string](val, ops...))
 		} else if _, ok := retIface.(std_error.Error); ok {
-			retIface = errors.Errorf(To[string](val, ops...))
+			retIface = errors.Errorf("%s", To[string](val, ops...))
 		} else if _, ok := retIface.(fmt.Stringer); ok {
-			retIface = errors.Errorf(To[string](val, ops...))
+			retIface = errors.Errorf("%s", To[string](val, ops...))
 		} else {
 			return ret0Val, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, from, from.Interface(), to.Interface()))
 		}
