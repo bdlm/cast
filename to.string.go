@@ -8,6 +8,19 @@ import (
 	"github.com/bdlm/errors/v2"
 )
 
+func toStringDefaultCase(from reflect.Value, ops Ops) (any, error) {
+	var err error
+	var ret any
+	if s, ok := from.Interface().(fmt.Stringer); ok || nil == from.Interface() {
+		ret = fmt.Sprintf("%v", s)
+	} else {
+		var b = []byte{}
+		b, _ = json.Marshal(from.Interface())
+		ret = string(b)
+	}
+	return ret, err
+}
+
 // toString casts an interface to a string type.
 //
 // Options:
@@ -30,17 +43,17 @@ func toString(from reflect.Value, ops Ops) (any, error) {
 		reflect.Float32, reflect.Float64,
 		reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8,
 		reflect.String,
-		reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8, reflect.Uintptr,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr,
 		reflect.Chan:
 		ret = fmt.Sprintf("%v", from.Interface())
-	default:
-		if s, ok := from.Interface().(fmt.Stringer); ok || nil == from.Interface() {
-			ret = fmt.Sprintf("%v", s)
+	case reflect.Slice:
+		if _, ok = from.Interface().([]byte); ok {
+			ret = string(from.Interface().([]byte))
 		} else {
-			var b = []byte{}
-			b, err = json.Marshal(from.Interface())
-			ret = string(b)
+			ret, err = toStringDefaultCase(from, ops)
 		}
+	default:
+		ret, err = toStringDefaultCase(from, ops)
 	}
 
 	if err != nil {
