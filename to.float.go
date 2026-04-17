@@ -2,7 +2,6 @@ package cast
 
 import (
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 
@@ -14,7 +13,7 @@ import (
 //
 // Options:
 //   - DEFAULT: float32 or float64, default 0.0. Default return value on error.
-func toFloat[TTo constraints.Float](from reflect.Value, ops Ops) (TTo, error) {
+func toFloat[TTo constraints.Float](from any, ops Ops) (TTo, error) {
 	var ret TTo
 	var ok bool
 
@@ -24,14 +23,7 @@ func toFloat[TTo constraints.Float](from reflect.Value, ops Ops) (TTo, error) {
 		}
 	}
 
-	fromVal := reflect.ValueOf(from)
-	if !fromVal.IsValid() || !fromVal.CanInterface() {
-		return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
-	}
-
-	to := reflect.Indirect(reflect.ValueOf(new(TTo)))
-
-	switch typ := from.Interface().(type) {
+	switch typ := from.(type) {
 	case nil:
 		return TTo(0), nil
 	case bool:
@@ -64,25 +56,26 @@ func toFloat[TTo constraints.Float](from reflect.Value, ops Ops) (TTo, error) {
 	case uint8:
 		return TTo(typ), nil
 	case fmt.Stringer:
-		return strToFloat[TTo](to, typ.String())
+		return strToFloat[TTo](typ.String())
 	case string:
-		return strToFloat[TTo](to, typ)
+		return strToFloat[TTo](typ)
 	}
 
-	ret, err := toFloat[TTo](reflect.ValueOf(fmt.Sprintf("%v", from.Interface())), ops)
+	ret, err := toFloat[TTo](fmt.Sprintf("%v", from), ops)
 	if nil != err {
-		return ret, errors.Wrap(err, ErrorStrUnableToCast, from.Interface(), from.Interface(), to.Interface())
+		return ret, errors.Wrap(err, ErrorStrUnableToCast, from, from, TTo(0))
 	}
 	return ret, nil
 }
 
 // strToFloat converts a string to a float type.
-func strToFloat[TTo constraints.Float](to reflect.Value, from string) (TTo, error) {
+func strToFloat[TTo constraints.Float](from string) (TTo, error) {
 	var e, err error
 	var val any
 	var bitSize = 64
 
-	if to.Type().Kind() == reflect.Float32 {
+	switch any(TTo(0)).(type) {
+	case float32:
 		bitSize = 32
 	}
 
@@ -97,18 +90,19 @@ func strToFloat[TTo constraints.Float](to reflect.Value, from string) (TTo, erro
 		)
 		if val, e = strconv.ParseFloat(from, bitSize); e != nil {
 			err = errors.WrapE(err, e)
-			_, e := strconv.ParseComplex(from, bitSize)
+			_, e := strconv.ParseComplex(from, 64)
 			if e != nil {
 				err = errors.WrapE(err, e)
 			} else {
-				err = errors.Wrap(err, ErrorStrUnableToCast, from, from, to.Interface())
+				err = errors.Wrap(err, ErrorStrUnableToCast, from, from, TTo(0))
 				val = float64(0)
 			}
 		} else {
 			err = nil
 		}
 	}
-	if to.Type().Kind() == reflect.Float32 {
+	switch any(TTo(0)).(type) {
+	case float32:
 		val = float32(val.(float64))
 	}
 	return val.(TTo), err

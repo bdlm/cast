@@ -44,6 +44,16 @@ func toBool[TTo bool](from any, ops Ops) (TTo, error) {
 		return from != 0 && from != '0', nil
 	case int64:
 		return from != 0, nil
+	case uint:
+		return from != 0, nil
+	case uint16:
+		return from != 0, nil
+	case uint32:
+		return from != 0, nil
+	case uint64:
+		return from != 0, nil
+	case uintptr:
+		return from != 0, nil
 	case nil:
 		return false, nil
 	case string:

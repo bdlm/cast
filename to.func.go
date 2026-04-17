@@ -10,11 +10,11 @@ import (
 // returns the result.
 //
 // Options:
+//   - DEFAULT: Func[T], default return value on error.
 func toFunc[TTo any](to reflect.Value, from interface{}, ops Ops) (TTo, error) {
 	var err error
 	var ret TTo
 	var reti interface{}
-	var f interface{}
 	var ok bool
 
 	if _, ok = ops[DEFAULT]; ok {
@@ -24,403 +24,298 @@ func toFunc[TTo any](to reflect.Value, from interface{}, ops Ops) (TTo, error) {
 	}
 
 	switch to.Type().Out(0).Kind() {
-	//case reflect.Array:
-	//case reflect.Invalid:
-	//case reflect.Map:
-	//case reflect.Pointer:
 	//case reflect.Struct:
 	//case reflect.UnsafePointer:
+	//case reflect.Map:
+	//case reflect.Pointer:
 	default:
 		return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 
 	case reflect.Interface:
-		f, err = ToE[interface{}](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[interface{}]
-		fn = func() interface{} {
-			return f
-		}
-		reti = fn
+		reti, err = makeFunc[interface{}](from, ret)
 	case reflect.Bool:
-		f, err = ToE[bool](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[bool]
-		fn = func() bool {
-			return f.(bool)
-		}
-		reti = fn
+		reti, err = makeFunc[bool](from, ret)
 	case reflect.Complex64:
-		f, err = ToE[complex64](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[complex64]
-		fn = func() complex64 {
-			return f.(complex64)
-		}
-		reti = fn
+		reti, err = makeFunc[complex64](from, ret)
 	case reflect.Complex128:
-		f, err = ToE[complex128](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[complex128]
-		fn = func() complex128 {
-			return f.(complex128)
-		}
-		reti = fn
+		reti, err = makeFunc[complex128](from, ret)
 	case reflect.Float32:
-		f, err = ToE[float32](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[float32]
-		fn = func() float32 {
-			return f.(float32)
-		}
-		reti = fn
+		reti, err = makeFunc[float32](from, ret)
 	case reflect.Float64:
-		f, err = ToE[float64](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[float64]
-		fn = func() float64 {
-			return f.(float64)
-		}
-		reti = fn
+		reti, err = makeFunc[float64](from, ret)
 	case reflect.Int:
-		f, err = ToE[int](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[int]
-		fn = func() int {
-			return f.(int)
-		}
-		reti = fn
+		reti, err = makeFunc[int](from, ret)
 	case reflect.Int8:
-		f, err = ToE[int8](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[int8]
-		fn = func() int8 {
-			return f.(int8)
-		}
-		reti = fn
+		reti, err = makeFunc[int8](from, ret)
 	case reflect.Int16:
-		f, err = ToE[int16](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[int16]
-		fn = func() int16 {
-			return f.(int16)
-		}
-		reti = fn
+		reti, err = makeFunc[int16](from, ret)
 	case reflect.Int32:
-		f, err = ToE[int32](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[int32]
-		fn = func() int32 {
-			return f.(int32)
-		}
-		reti = fn
+		reti, err = makeFunc[int32](from, ret)
 	case reflect.Int64:
-		f, err = ToE[int64](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[int64]
-		fn = func() int64 {
-			return f.(int64)
-		}
-		reti = fn
+		reti, err = makeFunc[int64](from, ret)
 	case reflect.Uint:
-		f, err = ToE[uint](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[uint]
-		fn = func() uint {
-			return f.(uint)
-		}
-		reti = fn
+		reti, err = makeFunc[uint](from, ret)
 	case reflect.Uint8:
-		f, err = ToE[uint8](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[uint8]
-		fn = func() uint8 {
-			return f.(uint8)
-		}
-		reti = fn
+		reti, err = makeFunc[uint8](from, ret)
 	case reflect.Uint16:
-		f, err = ToE[uint16](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[uint16]
-		fn = func() uint16 {
-			return f.(uint16)
-		}
-		reti = fn
+		reti, err = makeFunc[uint16](from, ret)
 	case reflect.Uint32:
-		f, err = ToE[uint32](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[uint32]
-		fn = func() uint32 {
-			return f.(uint32)
-		}
-		reti = fn
+		reti, err = makeFunc[uint32](from, ret)
 	case reflect.Uint64:
-		f, err = ToE[uint64](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[uint64]
-		fn = func() uint64 {
-			return f.(uint64)
-		}
-		reti = fn
+		reti, err = makeFunc[uint64](from, ret)
 	case reflect.Uintptr:
-		f, err = ToE[uintptr](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[uintptr]
-		fn = func() uintptr {
-			return f.(uintptr)
-		}
-		reti = fn
+		reti, err = makeFunc[uintptr](from, ret)
 	case reflect.String:
-		f, err = ToE[string](from)
-		if nil != err {
-			return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-		}
-		var fn Func[string]
-		fn = func() string {
-			return f.(string)
-		}
-		reti = fn
+		reti, err = makeFunc[string](from, ret)
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	// Channels
+	// Slices — Func[[]T]
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	case reflect.Chan:
+	case reflect.Slice:
 		switch to.Type().Out(0).Elem().Kind() {
-		//case reflect.Array:
-		//case reflect.Invalid:
-		//case reflect.Map:
-		//case reflect.Pointer:
-		//case reflect.Struct:
-		//case reflect.UnsafePointer:
-		//case reflect.Slice:
-		//case reflect.Func:
 		default:
 			return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 		case reflect.Interface:
-			f, err = ToE[chan interface{}](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan interface{}]
-			fn = func() chan interface{} {
-				return f.(chan interface{})
-			}
-			reti = fn
+			reti, err = makeFunc[[]any](from, ret)
 		case reflect.Bool:
-			f, err = ToE[chan bool](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan bool]
-			fn = func() chan bool {
-				return f.(chan bool)
-			}
-			reti = fn
+			reti, err = makeFunc[[]bool](from, ret)
 		case reflect.Complex64:
-			f, err = ToE[chan complex64](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan complex64]
-			fn = func() chan complex64 {
-				return f.(chan complex64)
-			}
-			reti = fn
+			reti, err = makeFunc[[]complex64](from, ret)
 		case reflect.Complex128:
-			f, err = ToE[chan complex128](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan complex128]
-			fn = func() chan complex128 {
-				return f.(chan complex128)
-			}
-			reti = fn
+			reti, err = makeFunc[[]complex128](from, ret)
 		case reflect.Float32:
-			f, err = ToE[chan float32](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan float32]
-			fn = func() chan float32 {
-				return f.(chan float32)
-			}
-			reti = fn
+			reti, err = makeFunc[[]float32](from, ret)
 		case reflect.Float64:
-			f, err = ToE[chan float64](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan float64]
-			fn = func() chan float64 {
-				return f.(chan float64)
-			}
-			reti = fn
+			reti, err = makeFunc[[]float64](from, ret)
 		case reflect.Int:
-			f, err = ToE[chan int](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan int]
-			fn = func() chan int {
-				return f.(chan int)
-			}
-			reti = fn
+			reti, err = makeFunc[[]int](from, ret)
 		case reflect.Int8:
-			f, err = ToE[chan int8](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan int8]
-			fn = func() chan int8 {
-				return f.(chan int8)
-			}
-			reti = fn
+			reti, err = makeFunc[[]int8](from, ret)
 		case reflect.Int16:
-			f, err = ToE[chan int16](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan int16]
-			fn = func() chan int16 {
-				return f.(chan int16)
-			}
-			reti = fn
+			reti, err = makeFunc[[]int16](from, ret)
 		case reflect.Int32:
-			f, err = ToE[chan int32](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan int32]
-			fn = func() chan int32 {
-				return f.(chan int32)
-			}
-			reti = fn
+			reti, err = makeFunc[[]int32](from, ret)
 		case reflect.Int64:
-			f, err = ToE[chan int64](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan int64]
-			fn = func() chan int64 {
-				return f.(chan int64)
-			}
-			reti = fn
+			reti, err = makeFunc[[]int64](from, ret)
 		case reflect.Uint:
-			f, err = ToE[chan uint](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan uint]
-			fn = func() chan uint {
-				return f.(chan uint)
-			}
-			reti = fn
+			reti, err = makeFunc[[]uint](from, ret)
 		case reflect.Uint8:
-			f, err = ToE[chan uint8](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan uint8]
-			fn = func() chan uint8 {
-				return f.(chan uint8)
-			}
-			reti = fn
+			reti, err = makeFunc[[]uint8](from, ret)
 		case reflect.Uint16:
-			f, err = ToE[chan uint16](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan uint16]
-			fn = func() chan uint16 {
-				return f.(chan uint16)
-			}
-			reti = fn
+			reti, err = makeFunc[[]uint16](from, ret)
 		case reflect.Uint32:
-			f, err = ToE[chan uint32](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan uint32]
-			fn = func() chan uint32 {
-				return f.(chan uint32)
-			}
-			reti = fn
+			reti, err = makeFunc[[]uint32](from, ret)
 		case reflect.Uint64:
-			f, err = ToE[chan uint64](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan uint64]
-			fn = func() chan uint64 {
-				return f.(chan uint64)
-			}
-			reti = fn
+			reti, err = makeFunc[[]uint64](from, ret)
 		case reflect.Uintptr:
-			f, err = ToE[chan uintptr](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan uintptr]
-			fn = func() chan uintptr {
-				return f.(chan uintptr)
-			}
-			reti = fn
+			reti, err = makeFunc[[]uintptr](from, ret)
 		case reflect.String:
-			f, err = ToE[chan string](from)
-			if nil != err {
-				return ret, errors.Wrap(err, ErrorStrErrorCastingFunc, from, ret)
-			}
-			var fn Func[chan string]
-			fn = func() chan string {
-				return f.(chan string)
-			}
-			reti = fn
+			reti, err = makeFunc[[]string](from, ret)
 		}
-		//	case reflect.Slice:
-		//		reti = func() chan string {
-		//			return f.(chan string)
-		//		}
-		//	case reflect.Func:
-		//		reti = func() chan string {
-		//			return f.(chan string)
-		//		}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// Arrays — Func[[N]T] (reflection path, N is not known at compile time)
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	case reflect.Array:
+		reti, err = makeArrayFunc(to.Type(), from)
+
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// Channels — Func[chan T], Func[chan []T], Func[chan chan T], Func[chan [N]T]
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	case reflect.Chan:
+		switch to.Type().Out(0).Elem().Kind() {
+		//case reflect.Struct:
+		//case reflect.UnsafePointer:
+		//case reflect.Map:
+		//case reflect.Pointer:
+		default:
+			return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+
+		case reflect.Interface:
+			reti, err = makeFunc[chan interface{}](from, ret)
+		case reflect.Bool:
+			reti, err = makeFunc[chan bool](from, ret)
+		case reflect.Complex64:
+			reti, err = makeFunc[chan complex64](from, ret)
+		case reflect.Complex128:
+			reti, err = makeFunc[chan complex128](from, ret)
+		case reflect.Float32:
+			reti, err = makeFunc[chan float32](from, ret)
+		case reflect.Float64:
+			reti, err = makeFunc[chan float64](from, ret)
+		case reflect.Int:
+			reti, err = makeFunc[chan int](from, ret)
+		case reflect.Int8:
+			reti, err = makeFunc[chan int8](from, ret)
+		case reflect.Int16:
+			reti, err = makeFunc[chan int16](from, ret)
+		case reflect.Int32:
+			reti, err = makeFunc[chan int32](from, ret)
+		case reflect.Int64:
+			reti, err = makeFunc[chan int64](from, ret)
+		case reflect.Uint:
+			reti, err = makeFunc[chan uint](from, ret)
+		case reflect.Uint8:
+			reti, err = makeFunc[chan uint8](from, ret)
+		case reflect.Uint16:
+			reti, err = makeFunc[chan uint16](from, ret)
+		case reflect.Uint32:
+			reti, err = makeFunc[chan uint32](from, ret)
+		case reflect.Uint64:
+			reti, err = makeFunc[chan uint64](from, ret)
+		case reflect.Uintptr:
+			reti, err = makeFunc[chan uintptr](from, ret)
+		case reflect.String:
+			reti, err = makeFunc[chan string](from, ret)
+
+		// Func[chan []T]
+		case reflect.Slice:
+			switch to.Type().Out(0).Elem().Elem().Kind() {
+			default:
+				return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+			case reflect.Interface:
+				reti, err = makeFunc[chan []any](from, ret)
+			case reflect.Bool:
+				reti, err = makeFunc[chan []bool](from, ret)
+			case reflect.Complex64:
+				reti, err = makeFunc[chan []complex64](from, ret)
+			case reflect.Complex128:
+				reti, err = makeFunc[chan []complex128](from, ret)
+			case reflect.Float32:
+				reti, err = makeFunc[chan []float32](from, ret)
+			case reflect.Float64:
+				reti, err = makeFunc[chan []float64](from, ret)
+			case reflect.Int:
+				reti, err = makeFunc[chan []int](from, ret)
+			case reflect.Int8:
+				reti, err = makeFunc[chan []int8](from, ret)
+			case reflect.Int16:
+				reti, err = makeFunc[chan []int16](from, ret)
+			case reflect.Int32:
+				reti, err = makeFunc[chan []int32](from, ret)
+			case reflect.Int64:
+				reti, err = makeFunc[chan []int64](from, ret)
+			case reflect.Uint:
+				reti, err = makeFunc[chan []uint](from, ret)
+			case reflect.Uint8:
+				reti, err = makeFunc[chan []uint8](from, ret)
+			case reflect.Uint16:
+				reti, err = makeFunc[chan []uint16](from, ret)
+			case reflect.Uint32:
+				reti, err = makeFunc[chan []uint32](from, ret)
+			case reflect.Uint64:
+				reti, err = makeFunc[chan []uint64](from, ret)
+			case reflect.Uintptr:
+				reti, err = makeFunc[chan []uintptr](from, ret)
+			case reflect.String:
+				reti, err = makeFunc[chan []string](from, ret)
+			}
+
+		// Func[chan Func[T]]
+		case reflect.Func:
+			switch to.Type().Out(0).Elem().Out(0).Kind() {
+			default:
+				return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+			case reflect.Interface:
+				reti, err = makeFunc[chan Func[any]](from, ret)
+			case reflect.Bool:
+				reti, err = makeFunc[chan Func[bool]](from, ret)
+			case reflect.Complex64:
+				reti, err = makeFunc[chan Func[complex64]](from, ret)
+			case reflect.Complex128:
+				reti, err = makeFunc[chan Func[complex128]](from, ret)
+			case reflect.Float32:
+				reti, err = makeFunc[chan Func[float32]](from, ret)
+			case reflect.Float64:
+				reti, err = makeFunc[chan Func[float64]](from, ret)
+			case reflect.Int:
+				reti, err = makeFunc[chan Func[int]](from, ret)
+			case reflect.Int8:
+				reti, err = makeFunc[chan Func[int8]](from, ret)
+			case reflect.Int16:
+				reti, err = makeFunc[chan Func[int16]](from, ret)
+			case reflect.Int32:
+				reti, err = makeFunc[chan Func[int32]](from, ret)
+			case reflect.Int64:
+				reti, err = makeFunc[chan Func[int64]](from, ret)
+			case reflect.Uint:
+				reti, err = makeFunc[chan Func[uint]](from, ret)
+			case reflect.Uint8:
+				reti, err = makeFunc[chan Func[uint8]](from, ret)
+			case reflect.Uint16:
+				reti, err = makeFunc[chan Func[uint16]](from, ret)
+			case reflect.Uint32:
+				reti, err = makeFunc[chan Func[uint32]](from, ret)
+			case reflect.Uint64:
+				reti, err = makeFunc[chan Func[uint64]](from, ret)
+			case reflect.Uintptr:
+				reti, err = makeFunc[chan Func[uintptr]](from, ret)
+			case reflect.String:
+				reti, err = makeFunc[chan Func[string]](from, ret)
+			}
+
+		// Func[chan chan T]
+		case reflect.Chan:
+			switch to.Type().Out(0).Elem().Elem().Kind() {
+			default:
+				return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+			case reflect.Interface:
+				reti, err = makeFunc[chan chan any](from, ret)
+			case reflect.Bool:
+				reti, err = makeFunc[chan chan bool](from, ret)
+			case reflect.Complex64:
+				reti, err = makeFunc[chan chan complex64](from, ret)
+			case reflect.Complex128:
+				reti, err = makeFunc[chan chan complex128](from, ret)
+			case reflect.Float32:
+				reti, err = makeFunc[chan chan float32](from, ret)
+			case reflect.Float64:
+				reti, err = makeFunc[chan chan float64](from, ret)
+			case reflect.Int:
+				reti, err = makeFunc[chan chan int](from, ret)
+			case reflect.Int8:
+				reti, err = makeFunc[chan chan int8](from, ret)
+			case reflect.Int16:
+				reti, err = makeFunc[chan chan int16](from, ret)
+			case reflect.Int32:
+				reti, err = makeFunc[chan chan int32](from, ret)
+			case reflect.Int64:
+				reti, err = makeFunc[chan chan int64](from, ret)
+			case reflect.Uint:
+				reti, err = makeFunc[chan chan uint](from, ret)
+			case reflect.Uint8:
+				reti, err = makeFunc[chan chan uint8](from, ret)
+			case reflect.Uint16:
+				reti, err = makeFunc[chan chan uint16](from, ret)
+			case reflect.Uint32:
+				reti, err = makeFunc[chan chan uint32](from, ret)
+			case reflect.Uint64:
+				reti, err = makeFunc[chan chan uint64](from, ret)
+			case reflect.Uintptr:
+				reti, err = makeFunc[chan chan uintptr](from, ret)
+			case reflect.String:
+				reti, err = makeFunc[chan chan string](from, ret)
+			}
+
+		// Func[chan [N]T] (reflection path)
+		case reflect.Array:
+			reti, err = makeArrayChanFunc(to.Type(), from)
+		}
+	}
+	if err != nil {
+		return ret, err
 	}
 	if ret, ok := reti.(TTo); ok {
 		return ret, nil
 	}
 	return ret, errors.Errorf(ErrorStrErrorCastingFunc, reti, ret)
+}
+
+// makeFunc casts from to T and returns a Func[T] closure capturing the result.
+func makeFunc[T Types](from any, orig any) (any, error) {
+	val, err := ToE[T](from)
+	if err != nil {
+		return nil, errors.Wrap(err, ErrorStrErrorCastingFunc, from, orig)
+	}
+	return Func[T](func() T { return val }), nil
 }

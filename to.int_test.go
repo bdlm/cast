@@ -5,31 +5,69 @@ import (
 )
 
 func TestComplexToInt(t *testing.T) {
-	var tests = []testCase{
-		{complex64(1), 0, nil, true},
-		{complex64(-1), 0, nil, true},
-		{complex128(1), 0, nil, true},
-		{complex128(-1), 0, nil, true},
-	}
-	testSimpleCases[int](t, tests)
-	testSimpleCases[int8](t, tests)
-	testSimpleCases[int16](t, tests)
-	testSimpleCases[int32](t, tests)
-	testSimpleCases[int64](t, tests)
+	testSimpleCases[int](t, []testCase{
+		{complex64(1), int(1), nil, false},
+		{complex64(-1), int(-1), nil, false},
+		{complex128(1), int(1), nil, false},
+		{complex128(-1), int(-1), nil, false},
+	})
+	testSimpleCases[int8](t, []testCase{
+		{complex64(1), int8(1), nil, false},
+		{complex64(-1), int8(-1), nil, false},
+		{complex128(1), int8(1), nil, false},
+		{complex128(-1), int8(-1), nil, false},
+	})
+	testSimpleCases[int16](t, []testCase{
+		{complex64(1), int16(1), nil, false},
+		{complex64(-1), int16(-1), nil, false},
+		{complex128(1), int16(1), nil, false},
+		{complex128(-1), int16(-1), nil, false},
+	})
+	testSimpleCases[int32](t, []testCase{
+		{complex64(1), int32(1), nil, false},
+		{complex64(-1), int32(-1), nil, false},
+		{complex128(1), int32(1), nil, false},
+		{complex128(-1), int32(-1), nil, false},
+	})
+	testSimpleCases[int64](t, []testCase{
+		{complex64(1), int64(1), nil, false},
+		{complex64(-1), int64(-1), nil, false},
+		{complex128(1), int64(1), nil, false},
+		{complex128(-1), int64(-1), nil, false},
+	})
 }
 
 func TestComplexToUint(t *testing.T) {
-	var tests = []testCase{
-		{complex64(1), 0, nil, true},
-		{complex64(-1), 0, nil, true},
-		{complex128(1), 0, nil, true},
-		{complex128(-1), 0, nil, true},
-	}
-	testSimpleCases[uint](t, tests)
-	testSimpleCases[uint8](t, tests)
-	testSimpleCases[uint16](t, tests)
-	testSimpleCases[uint32](t, tests)
-	testSimpleCases[uint64](t, tests)
+	testSimpleCases[uint](t, []testCase{
+		{complex64(1), uint(1), nil, false},
+		{complex64(-1), uint(0), nil, true},
+		{complex128(1), uint(1), nil, false},
+		{complex128(-1), uint(0), nil, true},
+	})
+	testSimpleCases[uint8](t, []testCase{
+		{complex64(1), uint8(1), nil, false},
+		{complex64(-1), uint8(0), nil, true},
+		{complex128(1), uint8(1), nil, false},
+		{complex128(-1), uint8(0), nil, true},
+	})
+	testSimpleCases[uint16](t, []testCase{
+		{complex64(1), uint16(1), nil, false},
+		{complex64(-1), uint16(0), nil, true},
+		{complex128(1), uint16(1), nil, false},
+		{complex128(-1), uint16(0), nil, true},
+	})
+	testSimpleCases[uint32](t, []testCase{
+		{complex64(1), uint32(1), nil, false},
+		{complex64(-1), uint32(0), nil, true},
+		{complex128(1), uint32(1), nil, false},
+		{complex128(-1), uint32(0), nil, true},
+	})
+	testSimpleCases[uint64](t, []testCase{
+		{complex64(1), uint64(1), nil, false},
+		{complex64(-1), uint64(0), nil, true},
+		{complex128(1), uint64(1), nil, false},
+		{complex128(-1), uint64(0), nil, true},
+	})
 }
 
 func TestSliceToInt(t *testing.T) {

@@ -3,7 +3,6 @@ package cast
 import (
 	"fmt"
 	"math"
-	"reflect"
 	"strconv"
 	"strings"
 
@@ -16,7 +15,7 @@ import (
 // Options:
 //   - DEFAULT: constraints.Integer, default 0. Default return value on error.
 //   - ABS: bool, default false. Return the absolute value of integers.
-func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
+func toInt[TTo constraints.Integer](from any, ops Ops) (TTo, error) {
 	var default_val TTo
 	var ok bool
 	var abs bool
@@ -32,21 +31,14 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 		}
 	}
 
-	fromVal := reflect.Indirect(from)
-	if !fromVal.IsValid() || !fromVal.CanInterface() {
-		return default_val, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
-	}
-
-	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from.Interface(), from.Interface(), TTo(0))
-	to := reflect.Indirect(reflect.ValueOf(new(TTo)))
+	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	unsigned := false
-	switch to.Interface().(type) {
+	switch any(TTo(0)).(type) {
 	case uint, uint8, uint16, uint32, uint64, uintptr:
 		unsigned = true
 	}
 
-	//fmt.Printf("\n\nto: %v (%T); from: %v (%T)\n\n", to, to.Interface(), from, from.Interface())
-	switch val := from.Interface().(type) {
+	switch val := from.(type) {
 	case nil:
 		return TTo(0), nil
 	case bool:
@@ -101,7 +93,7 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 			}
 			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
-		return strToInt[TTo](To[string](from.Interface()), ops)
+		return strToInt[TTo](To[string](val), ops)
 	case float32:
 		if unsigned && val < 0 {
 			if abs {
@@ -126,11 +118,12 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 		return strToInt[TTo](val.String(), ops)
 	case string:
 		return strToInt[TTo](val, ops)
-
-	//case complex128:
-	//case complex64:
+	case complex64:
+		return toInt[TTo](float32(real(val)), ops)
+	case complex128:
+		return toInt[TTo](float64(real(val)), ops)
 	default:
-		return toInt[TTo](reflect.ValueOf(fmt.Sprintf("%#.10v", from.Interface())), ops)
+		return toInt[TTo](fmt.Sprintf("%#.10v", from), ops)
 	}
 }
 
@@ -191,9 +184,7 @@ func strToInt[TTo constraints.Integer](from string, ops Ops) (TTo, error) {
 		return TTo(math.Floor(val)), nil
 	}
 
-	// Negative to uint error.
-	ref := reflect.ValueOf(TTo(0))
-	switch ref.Interface().(type) {
+	switch any(TTo(0)).(type) {
 	case uint, uint8, uint16, uint32, uint64, uintptr:
 		if val < 0 {
 			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)

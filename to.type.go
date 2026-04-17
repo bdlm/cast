@@ -25,9 +25,11 @@ const (
 
 	ABS                 // bool, default: false, use absolute value during uint conversion
 	DUPLICATE_KEY_ERROR // bool, default: false, error on duplicate map key
-	LENGTH              // int,  default: 1,     number of elements in result
-	UNIQUE_VALUES       // bool, default: false, dedupe slice values
 	JSON                // bool, default: false, encode strings as JSON
+	LENGTH              // int,  default: 1,     number of elements in result
+	PRIVATE             // bool, default: false, include unexported struct fields in map output
+	STRICT              // bool, default: false, return error instead of skipping unconvertible fields
+	UNIQUE_VALUES       // bool, default: false, dedupe slice values
 )
 
 func parseOps(o []Op) Ops {
@@ -71,7 +73,8 @@ type Tchan interface {
 		~chan []float32 | ~chan []float64 |
 		~chan []complex64 | ~chan []complex128 |
 		~chan []string | ~chan []bool |
-		~chan []any | ~chan Func[Tbase]
+		~chan []any | ~chan Func[Tbase] |
+		~chan chan Tbase
 }
 
 type Tmap interface {

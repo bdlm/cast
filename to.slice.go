@@ -11,8 +11,9 @@ import (
 //
 // Options:
 //   - DEFAULT: slice, default return value on error.
-//   - LENGTH: int, size of the backing array length, default 1. Must be greater
-//     than 0.
+//   - LENGTH: int, initial backing-array capacity, default 1. Must be greater
+//     than or equal to 0.
+//   - UNIQUE_VALUES: bool, deduplicate slice elements after conversion.
 func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 	var ret any
 	var ok bool
@@ -29,191 +30,180 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 		return ret, errors.Errorf("invalid array length %d", size)
 	}
 
-	if reflect.TypeOf(val).Kind() != reflect.Slice {
+	fromKind := reflect.TypeOf(val).Kind()
+	if fromKind != reflect.Slice && fromKind != reflect.Array {
 		return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", val, val, to.Interface())
+	}
+
+	// Initialize the result slice based on target element type.
+	switch to.Interface().(type) {
+	default:
+		return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", val, val, to.Interface())
+	case []interface{}:
+		ret = make([]any, 0, size)
+	case []bool:
+		ret = make([]bool, 0, size)
+	case []complex64:
+		ret = make([]complex64, 0, size)
+	case []complex128:
+		ret = make([]complex128, 0, size)
+	case []float32:
+		ret = make([]float32, 0, size)
+	case []float64:
+		ret = make([]float64, 0, size)
+	case []int:
+		ret = make([]int, 0, size)
+	case []int8:
+		ret = make([]int8, 0, size)
+	case []int16:
+		ret = make([]int16, 0, size)
+	case []int32:
+		ret = make([]int32, 0, size)
+	case []int64:
+		ret = make([]int64, 0, size)
+	case []uint:
+		ret = make([]uint, 0, size)
+	case []uint8:
+		ret = make([]uint8, 0, size)
+	case []uint16:
+		ret = make([]uint16, 0, size)
+	case []uint32:
+		ret = make([]uint32, 0, size)
+	case []uint64:
+		ret = make([]uint64, 0, size)
+	case []uintptr:
+		ret = make([]uintptr, 0, size)
+	case []string:
+		ret = make([]string, 0, size)
 	}
 
 	slice := reflect.ValueOf(val)
 	for a := 0; a < slice.Len(); a++ {
 		elm := slice.Index(a).Interface()
-		switch to.Interface().(type) {
-		//case reflect.Invalid:
-		//case reflect.Array:
-		//case reflect.Func:
-		//case reflect.Chan:
-		//	return toChan(to.Elem(), from)
-		//case reflect.Slice:
-		//case reflect.Struct:
-		//case reflect.UnsafePointer:
-		//case reflect.Map:
-		//case reflect.Pointer:
-		default:
-			return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", val, val, to.Interface())
-
+		switch r := ret.(type) {
 		case []interface{}:
-			if nil == ret {
-				ret = make([]any, size)
-			}
 			tval, err := ToE[any](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]any), tval)
+			ret = append(r, tval)
 		case []bool:
-			if nil == ret {
-				ret = make([]bool, size)
-			}
 			tval, err := ToE[bool](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]bool), tval)
+			ret = append(r, tval)
 		case []complex64:
-			if nil == ret {
-				ret = make([]complex64, size)
-			}
 			tval, err := ToE[complex64](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]complex64), tval)
+			ret = append(r, tval)
 		case []complex128:
-			if nil == ret {
-				ret = make([]complex128, size)
-			}
 			tval, err := ToE[complex128](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]complex128), tval)
+			ret = append(r, tval)
 		case []float32:
-			if nil == ret {
-				ret = make([]float32, size)
-			}
 			tval, err := ToE[float32](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]float32), tval)
-
+			ret = append(r, tval)
 		case []float64:
-			if nil == ret {
-				ret = make([]float64, size)
-			}
 			tval, err := ToE[float64](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]float64), tval)
+			ret = append(r, tval)
 		case []int:
-			if nil == ret {
-				ret = make([]int, size)
-			}
 			tval, err := ToE[int](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]int), tval)
+			ret = append(r, tval)
 		case []int8:
-			if nil == ret {
-				ret = make([]int8, size)
-			}
 			tval, err := ToE[int8](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]int8), tval)
+			ret = append(r, tval)
 		case []int16:
-			if nil == ret {
-				ret = make([]int16, size)
-			}
 			tval, err := ToE[int16](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]int16), tval)
+			ret = append(r, tval)
 		case []int32:
-			if nil == ret {
-				ret = make([]int32, size)
-			}
 			tval, err := ToE[int32](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]int32), tval)
+			ret = append(r, tval)
 		case []int64:
-			if nil == ret {
-				ret = make([]int64, size)
-			}
 			tval, err := ToE[int64](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]int64), tval)
+			ret = append(r, tval)
 		case []uint:
-			if nil == ret {
-				ret = make([]uint, size)
-			}
 			tval, err := ToE[uint](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]uint), tval)
+			ret = append(r, tval)
 		case []uint8:
-			if nil == ret {
-				ret = make([]uint8, size)
-			}
 			tval, err := ToE[uint8](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]uint8), tval)
+			ret = append(r, tval)
 		case []uint16:
-			if nil == ret {
-				ret = make([]uint16, size)
-			}
 			tval, err := ToE[uint16](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]uint16), tval)
+			ret = append(r, tval)
 		case []uint32:
-			if nil == ret {
-				ret = make([]uint32, size)
-			}
 			tval, err := ToE[uint32](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]uint32), tval)
+			ret = append(r, tval)
 		case []uint64:
-			if nil == ret {
-				ret = make([]uint64, size)
-			}
 			tval, err := ToE[uint64](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]uint64), tval)
+			ret = append(r, tval)
 		case []uintptr:
-			if nil == ret {
-				ret = make([]uintptr, size)
-			}
 			tval, err := ToE[uintptr](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]uintptr), tval)
+			ret = append(r, tval)
 		case []string:
-			if nil == ret {
-				ret = make([]string, size)
-			}
 			tval, err := ToE[string](elm)
 			if err != nil {
 				return ret, err
 			}
-			ret = append(ret.([]string), tval)
+			ret = append(r, tval)
 		}
+	}
+
+	if unique, _ := ops[UNIQUE_VALUES].(bool); unique {
+		seen := make(map[any]struct{})
+		rv := reflect.ValueOf(ret)
+		deduped := reflect.MakeSlice(rv.Type(), 0, rv.Len())
+		for i := 0; i < rv.Len(); i++ {
+			elem := rv.Index(i).Interface()
+			if _, exists := seen[elem]; !exists {
+				seen[elem] = struct{}{}
+				deduped = reflect.Append(deduped, rv.Index(i))
+			}
+		}
+		ret = deduped.Interface()
 	}
 
 	return ret, nil

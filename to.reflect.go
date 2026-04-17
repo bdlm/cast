@@ -1,0 +1,177 @@
+package cast
+
+import (
+	"reflect"
+
+	"github.com/bdlm/errors/v2"
+)
+
+// castToKind casts v to the scalar Go type corresponding to kind and returns
+// the result as a reflect.Value. Used by toMap, castToArray, and toStruct.
+func castToKind(v any, kind reflect.Kind) (reflect.Value, error) {
+	switch kind {
+	case reflect.Interface:
+		if v == nil {
+			return reflect.Zero(reflect.TypeOf((*any)(nil)).Elem()), nil
+		}
+		return reflect.ValueOf(v), nil
+	case reflect.Bool:
+		r, err := ToE[bool](v)
+		return reflect.ValueOf(r), err
+	case reflect.Int:
+		r, err := ToE[int](v)
+		return reflect.ValueOf(r), err
+	case reflect.Int8:
+		r, err := ToE[int8](v)
+		return reflect.ValueOf(r), err
+	case reflect.Int16:
+		r, err := ToE[int16](v)
+		return reflect.ValueOf(r), err
+	case reflect.Int32:
+		r, err := ToE[int32](v)
+		return reflect.ValueOf(r), err
+	case reflect.Int64:
+		r, err := ToE[int64](v)
+		return reflect.ValueOf(r), err
+	case reflect.Uint:
+		r, err := ToE[uint](v)
+		return reflect.ValueOf(r), err
+	case reflect.Uint8:
+		r, err := ToE[uint8](v)
+		return reflect.ValueOf(r), err
+	case reflect.Uint16:
+		r, err := ToE[uint16](v)
+		return reflect.ValueOf(r), err
+	case reflect.Uint32:
+		r, err := ToE[uint32](v)
+		return reflect.ValueOf(r), err
+	case reflect.Uint64:
+		r, err := ToE[uint64](v)
+		return reflect.ValueOf(r), err
+	case reflect.Uintptr:
+		r, err := ToE[uintptr](v)
+		return reflect.ValueOf(r), err
+	case reflect.Float32:
+		r, err := ToE[float32](v)
+		return reflect.ValueOf(r), err
+	case reflect.Float64:
+		r, err := ToE[float64](v)
+		return reflect.ValueOf(r), err
+	case reflect.Complex64:
+		r, err := ToE[complex64](v)
+		return reflect.ValueOf(r), err
+	case reflect.Complex128:
+		r, err := ToE[complex128](v)
+		return reflect.ValueOf(r), err
+	case reflect.String:
+		r, err := ToE[string](v)
+		return reflect.ValueOf(r), err
+	}
+	return reflect.Value{}, errors.Errorf("unsupported kind %v", kind)
+}
+
+// castToType casts v to the type t and returns the result as a reflect.Value.
+func castToType(v any, t reflect.Type) (reflect.Value, error) {
+	switch t.Kind() {
+	case reflect.Interface:
+		if v == nil {
+			return reflect.Zero(t), nil
+		}
+		return reflect.ValueOf(v), nil
+	case reflect.Slice:
+		return castToSliceType(v, t)
+	default:
+		return castToKind(v, t.Kind())
+	}
+}
+
+func castToSliceType(v any, t reflect.Type) (reflect.Value, error) {
+	srcVal := reflect.ValueOf(v)
+	if !srcVal.IsValid() {
+		return reflect.MakeSlice(t, 0, 0), nil
+	}
+	switch srcVal.Kind() {
+	case reflect.Slice, reflect.Array:
+		result := reflect.MakeSlice(t, srcVal.Len(), srcVal.Len())
+		for i := 0; i < srcVal.Len(); i++ {
+			elem, err := castToType(srcVal.Index(i).Interface(), t.Elem())
+			if err != nil {
+				return reflect.Value{}, err
+			}
+			result.Index(i).Set(elem)
+		}
+		return result, nil
+	default:
+		elem, err := castToType(v, t.Elem())
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		result := reflect.MakeSlice(t, 1, 1)
+		result.Index(0).Set(elem)
+		return result, nil
+	}
+}
+
+// castToArray casts from (must be a slice or array) to the array type arrType,
+// casting each element. Requires source length == arrType.Len().
+func castToArray(arrType reflect.Type, from any) (reflect.Value, error) {
+	src := reflect.ValueOf(from)
+	if !src.IsValid() || (src.Kind() != reflect.Slice && src.Kind() != reflect.Array) {
+		return reflect.Value{}, errors.Errorf(ErrorStrUnableToCast, from, from, arrType)
+	}
+	if src.Len() != arrType.Len() {
+		return reflect.Value{}, errors.Errorf(
+			"array length mismatch: source has %d elements, target needs %d",
+			src.Len(), arrType.Len(),
+		)
+	}
+	arr := reflect.New(arrType).Elem()
+	elemKind := arrType.Elem().Kind()
+	for i := 0; i < src.Len(); i++ {
+		castVal, err := castToKind(src.Index(i).Interface(), elemKind)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		arr.Index(i).Set(castVal)
+	}
+	return arr, nil
+}
+
+// makeArrayChan builds a chan [N]T of the given chanType (must have Kind Chan
+// with Elem Kind Array), casts from into the array, and sends it on the channel.
+func makeArrayChan(chanType reflect.Type, from any, size int) (any, error) {
+	arr, err := castToArray(chanType.Elem(), from)
+	if err != nil {
+		return nil, err
+	}
+	ch := reflect.MakeChan(chanType, size)
+	ch.Send(arr)
+	return ch.Interface(), nil
+}
+
+// makeArrayFunc builds a func() [N]T of funcType, casting from into the array.
+func makeArrayFunc(funcType reflect.Type, from any) (any, error) {
+	arr, err := castToArray(funcType.Out(0), from)
+	if err != nil {
+		return nil, err
+	}
+	fn := reflect.MakeFunc(funcType, func(_ []reflect.Value) []reflect.Value {
+		return []reflect.Value{arr}
+	})
+	return fn.Interface(), nil
+}
+
+// makeArrayChanFunc builds a func() chan [N]T of funcType, casting from into
+// the array which is sent on the channel the function returns.
+func makeArrayChanFunc(funcType reflect.Type, from any) (any, error) {
+	chanType := funcType.Out(0)
+	chanVal, err := makeArrayChan(chanType, from, 1)
+	if err != nil {
+		return nil, err
+	}
+	rv := reflect.ValueOf(chanVal)
+	fn := reflect.MakeFunc(funcType, func(_ []reflect.Value) []reflect.Value {
+		return []reflect.Value{rv}
+	})
+	return fn.Interface(), nil
+}

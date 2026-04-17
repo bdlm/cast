@@ -8,25 +8,12 @@ import (
 	"github.com/bdlm/errors/v2"
 )
 
-func toStringDefaultCase(from reflect.Value, ops Ops) (any, error) {
-	var err error
-	var ret any
-	if s, ok := from.Interface().(fmt.Stringer); ok || nil == from.Interface() {
-		ret = fmt.Sprintf("%v", s)
-	} else {
-		var b = []byte{}
-		b, _ = json.Marshal(from.Interface())
-		ret = string(b)
-	}
-	return ret, err
-}
-
 // toString casts an interface to a string type.
 //
 // Options:
-//   - DEFAULT: slice, default return value on error.
-func toString(from reflect.Value, ops Ops) (any, error) {
-	var err error
+//   - DEFAULT: string, default return value on error.
+//   - JSON: bool, encode the string representation as a JSON string literal.
+func toString(from any, ops Ops) (any, error) {
 	var ret any
 	var ok bool
 
@@ -36,35 +23,39 @@ func toString(from reflect.Value, ops Ops) (any, error) {
 		}
 	}
 
-	switch from.Type().Kind() {
-	case
-		reflect.Bool,
-		reflect.Complex128, reflect.Complex64,
-		reflect.Float32, reflect.Float64,
-		reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8,
-		reflect.String,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr,
-		reflect.Chan:
-		ret = fmt.Sprintf("%v", from.Interface())
-	case reflect.Slice:
-		if _, ok = from.Interface().([]byte); ok {
-			ret = string(from.Interface().([]byte))
-		} else {
-			ret, err = toStringDefaultCase(from, ops)
+	if useJSON, _ := ops[JSON].(bool); useJSON {
+		s, sErr := toString(from, Ops{})
+		if sErr != nil {
+			return ret, sErr
 		}
-	default:
-		ret, err = toStringDefaultCase(from, ops)
+		b, mErr := json.Marshal(s)
+		if mErr != nil {
+			return ret, errors.Wrap(mErr, "JSON encoding failed")
+		}
+		return string(b), nil
 	}
 
-	if err != nil {
-		return ret, errors.WrapE(Error, err)
-	}
-	if nil == ret {
+	switch val := from.(type) {
+	case nil:
 		return "", nil
+	case string:
+		return val, nil
+	case []byte:
+		return string(val), nil
+	case fmt.Stringer:
+		return val.String(), nil
+	case bool,
+		int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64, uintptr,
+		float32, float64,
+		complex64, complex128:
+		return fmt.Sprintf("%v", val), nil
+	default:
+		// Channels have no useful JSON representation; preserve the address string.
+		if reflect.TypeOf(val).Kind() == reflect.Chan {
+			return fmt.Sprintf("%v", val), nil
+		}
+		b, _ := json.Marshal(val)
+		return string(b), nil
 	}
-	if ret, ok = ret.(string); ok {
-		return ret, nil
-	}
-
-	return ret, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, from, from.Interface(), ""))
 }
