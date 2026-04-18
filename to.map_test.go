@@ -314,3 +314,29 @@ func TestMapInvalidDefault(t *testing.T) {
 		}
 	})
 }
+
+func TestMapInterfaceValueAssignability(t *testing.T) {
+	type Stringer interface{ String() string }
+	type myStringer struct{ s string }
+	type notStringer struct{ n int }
+
+	t.Run("value implements interface map value type", func(t *testing.T) {
+		ms := myStringer{"hello"}
+		result, err := cast.ToE[map[string]any](map[string]any{"k": ms})
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if result["k"] != ms {
+			t.Errorf("expected %v, got %v", ms, result["k"])
+		}
+	})
+	t.Run("nil value for interface map value type", func(t *testing.T) {
+		result, err := cast.ToE[map[string]any](map[string]any{"k": nil})
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if result["k"] != nil {
+			t.Errorf("expected nil, got %v", result["k"])
+		}
+	})
+}

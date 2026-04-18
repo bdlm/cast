@@ -198,14 +198,32 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 	}
 
 	if unique, _ := ops[UNIQUE_VALUES].(bool); unique {
-		seen := make(map[any]struct{})
 		rv := reflect.ValueOf(ret)
 		deduped := reflect.MakeSlice(rv.Type(), 0, rv.Len())
+		seen := make(map[any]struct{})
+		var seenNonComparable []any
+
 		for i := 0; i < rv.Len(); i++ {
 			elem := rv.Index(i).Interface()
-			if _, exists := seen[elem]; !exists {
-				seen[elem] = struct{}{}
-				deduped = reflect.Append(deduped, rv.Index(i))
+			// For interface elements, comparability depends on the concrete value.
+			concrete := reflect.ValueOf(elem)
+			if !concrete.IsValid() || concrete.Type().Comparable() {
+				if _, exists := seen[elem]; !exists {
+					seen[elem] = struct{}{}
+					deduped = reflect.Append(deduped, rv.Index(i))
+				}
+			} else {
+				found := false
+				for _, prev := range seenNonComparable {
+					if reflect.DeepEqual(elem, prev) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					seenNonComparable = append(seenNonComparable, elem)
+					deduped = reflect.Append(deduped, rv.Index(i))
+				}
 			}
 		}
 		ret = deduped.Interface()

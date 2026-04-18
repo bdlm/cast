@@ -298,6 +298,49 @@ func TestUniqueValuesSlice(t *testing.T) {
 	})
 }
 
+func TestSliceUniqueValuesNonComparable(t *testing.T) {
+	t.Run("[]any containing slices does not panic", func(t *testing.T) {
+		in := []any{[]int{1, 2}, []int{3, 4}, []int{1, 2}}
+		result, err := cast.ToE[[]any](in, cast.Op{cast.UNIQUE_VALUES, true})
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if len(result) != 2 {
+			t.Errorf("expected 2 unique elements, got %d: %v", len(result), result)
+		}
+	})
+	t.Run("[]any containing maps does not panic", func(t *testing.T) {
+		in := []any{map[string]int{"a": 1}, map[string]int{"b": 2}, map[string]int{"a": 1}}
+		result, err := cast.ToE[[]any](in, cast.Op{cast.UNIQUE_VALUES, true})
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if len(result) != 2 {
+			t.Errorf("expected 2 unique elements, got %d: %v", len(result), result)
+		}
+	})
+	t.Run("[]any mixing comparable and non-comparable", func(t *testing.T) {
+		in := []any{1, []int{2, 3}, 1, []int{2, 3}, "x"}
+		result, err := cast.ToE[[]any](in, cast.Op{cast.UNIQUE_VALUES, true})
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if len(result) != 3 {
+			t.Errorf("expected 3 unique elements, got %d: %v", len(result), result)
+		}
+	})
+	t.Run("[]any containing nil", func(t *testing.T) {
+		in := []any{nil, 1, nil}
+		result, err := cast.ToE[[]any](in, cast.Op{cast.UNIQUE_VALUES, true})
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if len(result) != 2 {
+			t.Errorf("expected 2 unique elements, got %d: %v", len(result), result)
+		}
+	})
+}
+
 func TestSliceInvalidDefault(t *testing.T) {
 	t.Run("string DEFAULT for []int", func(t *testing.T) {
 		_, err := cast.ToE[[]int]([]string{"1", "2"}, cast.Op{cast.DEFAULT, "not a slice"})
