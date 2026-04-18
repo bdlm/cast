@@ -17,7 +17,7 @@ func To[TTo Types](v any, o ...Op) TTo {
 
 // ToE casts the value v to the given type, returning any errors.
 //
-// o (Ops) is an optional parameter providing flags that can be used to modify
+// ops (Ops) is an optional parameter providing flags that can be used to modify
 // the default type conversion behavior. If ops is not provided, the default
 // conversion behavior for a given type is used. Available options depend on the
 // target type, see the documentation for the specific type conversion function

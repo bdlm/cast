@@ -6,14 +6,13 @@ import (
 	"strings"
 
 	"github.com/bdlm/errors/v2"
-	"golang.org/x/exp/constraints"
 )
 
 // toFloat casts an interface to a float type.
 //
 // Options:
 //   - DEFAULT: float32 or float64, default 0.0. Default return value on error.
-func toFloat[TTo constraints.Float](from any, ops Ops) (TTo, error) {
+func toFloat[TTo float](from any, ops Ops) (TTo, error) {
 	var ret TTo
 	var ok bool
 
@@ -69,7 +68,7 @@ func toFloat[TTo constraints.Float](from any, ops Ops) (TTo, error) {
 }
 
 // strToFloat converts a string to a float type.
-func strToFloat[TTo constraints.Float](from string) (TTo, error) {
+func strToFloat[TTo float](from string) (TTo, error) {
 	var e, err error
 	var val any
 	var bitSize = 64

@@ -2,7 +2,6 @@ package cast
 
 import (
 	"github.com/bdlm/errors/v2"
-	"golang.org/x/exp/constraints"
 )
 
 // toComplex casts an interface to a complex number.
@@ -13,7 +12,7 @@ import (
 //
 // Options:
 //   - DEFAULT: complex64 or complex128, default return value on error.
-func toComplex[TTo constraints.Complex](from any, ops Ops) (TTo, error) {
+func toComplex[TTo complexNum](from any, ops Ops) (TTo, error) {
 	var ret TTo
 	var ok bool
 

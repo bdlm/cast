@@ -7,15 +7,14 @@ import (
 	"strings"
 
 	"github.com/bdlm/errors/v2"
-	"golang.org/x/exp/constraints"
 )
 
 // toInt casts an interface to an int type.
 //
 // Options:
-//   - DEFAULT: constraints.Integer, default 0. Default return value on error.
+//   - DEFAULT: integer, default 0. Default return value on error.
 //   - ABS: bool, default false. Return the absolute value of integers.
-func toInt[TTo constraints.Integer](from any, ops Ops) (TTo, error) {
+func toInt[TTo integer](from any, ops Ops) (TTo, error) {
 	var default_val TTo
 	var ok bool
 	var abs bool
@@ -130,10 +129,10 @@ func toInt[TTo constraints.Integer](from any, ops Ops) (TTo, error) {
 // strToInt converts a string to an integer type.
 //
 // Options:
-//   - DEFAULT: constraints.Integer, default 0. Default return value on error.
+//   - DEFAULT: integer, default 0. Default return value on error.
 //   - ABS: bool, default false. Return the absolute value of negative integers
 //     when casting to unsigned integers.
-func strToInt[TTo constraints.Integer](from string, ops Ops) (TTo, error) {
+func strToInt[TTo integer](from string, ops Ops) (TTo, error) {
 	var default_val TTo
 	var ok bool
 	var abs bool
