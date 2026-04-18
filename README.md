@@ -12,7 +12,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Minor**: feature additions
 - **Patch**: bug fixes, backward compatible model and function changes, etc.
 
-<a href="https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#release-candidate"><img src="https://img.shields.io/badge/stability-pre--release-48c9b0.svg" alt="Release Candidate"></a> Code is fairly settled and is in use in production systems. Backwards-compatibility will be maintained unless serious issues are discovered and consensus on a better solution is reached.
+[![stability-mature](https://img.shields.io/badge/stability-mature-008000.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#mature)
+
+
+<a href="https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#mature"><img src="https://img.shields.io/badge/stability-mature-008000.svg" alt="Release Candidate"></a> Code has proven satisfactory and is ready for production use, cleanup of the underlying code may cause some minor changes. Backwards-compatibility is guaranteed.
 
 **[CHANGELOG](CHANGELOG.md)**<br>
 
@@ -31,13 +34,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## What is Cast?
 
-`cast` is a library to convert between different data types in a straightforward and predictable way.
+`cast` is a library to easily convert between different data types in a straightforward and predictable way.
 
 `cast` provides a generic function to easily convert both simple types (number to a string, interface to a bool, etc.) and complex types (slice to map, any to func() any, any to chan any, etc.). Cast does this intelligently when an obvious conversion is possible and logically when a conversion requires a predictable measurable process, such as casting a bool to a channel or a struct to a map. It doesn’t make any assumptions about how types should be converted but follows simple predictable rules.
 
 For example you can only cast a string to an int when it is a string representation of a number, such as `"6.789"`. In a case like this, a reliable predictable rule converts that value to `int(6)` by converting it to a `float64` and calling `math.Floor()`. The reason it does not round is because there is no integer that is almost `7`, but there __is__ a `6` which can be contained within the original `float64`.
 
-`cast` is meant to simplify consumption of untyped or poorly typed data by removing all the boilerplate you would otherwise write for each use-case. [More about `cast`](ABOUT.md).
+`cast` is meant to simplify consumption of untyped or inconveniently / poorly typed data by removing all the boilerplate you would otherwise write for each use-case. [More about `cast`](ABOUT.md).
 
 ## Why use Cast?
 
@@ -56,15 +59,15 @@ func ToE[T Types](v any, o ...Op) (T, error)
 
 `To` returns the cast value and silently ignores errors. `ToE` returns both the cast value and any error. The type parameter `T` is constrained to `cast.Types`, which covers all scalar types, slices, maps, channels, and `cast.Func[T]`.
 
-***If input cannot be converted to the specified type, the zero value for that type is returned***. Use `ToE` to distinguish between a successful zero-value cast and a conversion error.
+***If input cannot be converted to the specified type, the zero value for that type is returned***. Use `ToE` to distinguish between a successful zero-value cast and a conversion error. `ToE` returns an error describing any issue along with the cast value..
 
 ### Options
 
 Both functions accept optional `Op` values that control conversion behavior. Each `Op` carries a `Flag` constant and a value:
 
 ```go
-result, err := cast.ToE[uint](score, cast.Op{cast.DEFAULT, uint(0)})
-result, err := cast.ToE[[]string](tags, cast.Op{cast.UNIQUE_VALUES, true})
+result := cast.To[float32](val, cast.Op{cast.DEFAULT, float32(3.14)})
+result, err := cast.ToE[[]string](items, cast.Op{cast.UNIQUE_VALUES, true})
 ```
 
 Available flags:

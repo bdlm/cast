@@ -19,8 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     (embedded) struct fields are promoted to the top level; nested structs
     recurse into `map[K]any` or `map[K]map[...]` when the value type allows.
     Unexported fields are included when `PRIVATE=true`.
-  - **slice / array → map**: element indices become keys, values are cast to
-    the target value type.
+  - **slice / array → map**: element indices become keys, keys and values are cast to
+    the target value types.
 - New `Op` flags:
   - `DUPLICATE_KEY_ERROR` (`bool`, default `false`) — error on duplicate key
     after casting (map→map only).
