@@ -53,7 +53,7 @@ func mapFromMap(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
 			return nil, err
 		}
 		if dupKeyErr && targetMap.MapIndex(castKey).IsValid() {
-			return nil, errors.Errorf("duplicate key %v", castKey)
+			return nil, errors.Errorf("duplicate key %v", castKey.Interface())
 		}
 		castVal, err := castToType(src.MapIndex(srcKey).Interface(), valType, ops)
 		if err != nil {
