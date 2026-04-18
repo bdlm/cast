@@ -149,6 +149,10 @@ func makeArrayChan(chanType reflect.Type, from any, size int, ops Ops) (any, err
 		return nil, err
 	}
 	ch := reflect.MakeChan(chanType, size)
+	if size == 0 {
+		go ch.Send(arr)
+		return ch.Interface(), nil
+	}
 	ch.Send(arr)
 	return ch.Interface(), nil
 }
