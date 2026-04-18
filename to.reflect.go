@@ -85,7 +85,17 @@ func castToType(v any, t reflect.Type, ops Ops) (reflect.Value, error) {
 	case reflect.Slice:
 		return castToSliceType(v, t, ops)
 	default:
-		return castToKind(v, t.Kind(), ops)
+		result, err := castToKind(v, t.Kind(), ops)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		if result.Type() == t {
+			return result, nil
+		}
+		if result.Type().ConvertibleTo(t) {
+			return result.Convert(t), nil
+		}
+		return reflect.Value{}, errors.Errorf("cannot convert %v to %v", result.Type(), t)
 	}
 }
 
