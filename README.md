@@ -12,10 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Minor**: feature additions
 - **Patch**: bug fixes, backward compatible model and function changes, etc.
 
-[![stability-mature](https://img.shields.io/badge/stability-mature-008000.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#mature)
-
-
-<a href="https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#mature"><img src="https://img.shields.io/badge/stability-mature-008000.svg" alt="Release Candidate"></a> Code has proven satisfactory and is ready for production use, cleanup of the underlying code may cause some minor changes. Backwards-compatibility is guaranteed.
+<a href="https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#mature"><img src="https://img.shields.io/badge/stability-mature-008000.svg" alt="Mature"></a> Code has proven satisfactory and is ready for production use, cleanup of the underlying code may cause some minor changes. Backwards-compatibility is guaranteed.
 
 **[CHANGELOG](CHANGELOG.md)**<br>
 
@@ -59,15 +56,24 @@ func ToE[T Types](v any, o ...Op) (T, error)
 
 `To` returns the cast value and silently ignores errors. `ToE` returns both the cast value and any error. The type parameter `T` is constrained to `cast.Types`, which covers all scalar types, slices, maps, channels, and `cast.Func[T]`.
 
-***If input cannot be converted to the specified type, the zero value for that type is returned***. Use `ToE` to distinguish between a successful zero-value cast and a conversion error. `ToE` returns an error describing any issue along with the cast value..
+***If input cannot be converted to the specified type, the zero value for that type is returned***. Use `ToE` to distinguish between a successful zero-value cast and a conversion error. `ToE` returns an error describing any issue along with the cast value.
 
 ### Options
 
-Both functions accept optional `Op` values that control conversion behavior. Each `Op` carries a `Flag` constant and a value:
+Both functions accept optional `Op` values that control conversion behavior. Each `Op` carries a `Flag` constant and a value. Multiple options may be passed:
 
 ```go
 result := cast.To[float32](val, cast.Op{cast.DEFAULT, float32(3.14)})
 result, err := cast.ToE[[]string](items, cast.Op{cast.UNIQUE_VALUES, true})
+
+items := map[any]any{
+    "10": 10,
+    0: struct{Field1 string, Field2 int}{"struct": 10},
+    struct{}{}: "struct{}{} value",
+}
+result, err := cast.ToE[[]string](items, cast.Op{cast.UNIQUE_VALUES, true}, cast.Op{cast.JSON, true})
+
+
 ```
 
 Available flags:

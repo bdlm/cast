@@ -12,7 +12,7 @@ import (
 // Options:
 //   - DEFAULT: channel, default return value on error.
 //   - LENGTH: int, channel buffer size, default 1. Must be greater than or
-//     equal to 0. A value of 0 creates an unbuffered channel.
+//     equal to 1.
 func toChan(to reflect.Value, from any, ops Ops) (any, error) {
 	var ret any
 	var ok bool
@@ -30,7 +30,7 @@ func toChan(to reflect.Value, from any, ops Ops) (any, error) {
 	if _, ok = ops[LENGTH]; ok {
 		size = To[int](ops[LENGTH])
 	}
-	if size < 0 {
+	if size < 1 {
 		return ret, errors.Errorf("invalid channel buffer size %d", size)
 	}
 

@@ -108,7 +108,7 @@ func ExampleToE_map_from_private_struct() {
 	type Point struct{ x, y int }
 	m, e := cast.ToE[map[string]any](Point{x: 3, y: 4}, cast.Op{cast.PRIVATE, true})
 	fmt.Printf("x=%v y=%v, %v", m["x"], m["y"], e)
-	// output: x=3 y=4, <nil>
+	// Output: x=3 y=4, <nil>
 }
 
 func ExampleToE_map_from_slice() {

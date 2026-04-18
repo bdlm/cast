@@ -10,7 +10,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build18:
+  GoVersion18:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -35,7 +35,7 @@ jobs:
     - name: Test
       run: go test -v ./...
 
-  build19:
+  GoVersion19:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -60,7 +60,7 @@ jobs:
     - name: Test
       run: go test -v ./...
 
-  build20:
+  GoVersion20:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -85,7 +85,7 @@ jobs:
     - name: Test
       run: go test -v ./...
 
-  build21:
+  GoVersion21:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -110,7 +110,7 @@ jobs:
     - name: Test
       run: go test -v ./...
 
-  build22:
+  GoVersion22:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -135,7 +135,7 @@ jobs:
     - name: Test
       run: go test -v ./...
 
-  build23:
+  GoVersion23:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -160,7 +160,7 @@ jobs:
     - name: Test
       run: go test -v ./...
 
-  build24:
+  GoVersion24:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -185,7 +185,7 @@ jobs:
     - name: Test
       run: go test -v ./...
 
-  build25:
+  GoVersion25:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3

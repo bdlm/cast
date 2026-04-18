@@ -34,11 +34,11 @@ const (
 
 	ABS                 // bool, default: false, use absolute value during uint conversion
 	DUPLICATE_KEY_ERROR // bool, default: false, error on duplicate map key
-	JSON                // bool, default: false, encode strings as JSON
 	LENGTH              // int,  default: 1,     number of elements in result
+	UNIQUE_VALUES       // bool, default: false, dedupe slice values
+	JSON                // bool, default: false, encode strings as JSON
 	PRIVATE             // bool, default: false, include unexported struct fields in map output
 	STRICT              // bool, default: false, return error instead of skipping unconvertible fields
-	UNIQUE_VALUES       // bool, default: false, dedupe slice values
 )
 
 func (o Ops) List() []Op {
