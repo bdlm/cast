@@ -77,7 +77,11 @@ func castToType(v any, t reflect.Type, ops Ops) (reflect.Value, error) {
 		if v == nil {
 			return reflect.Zero(t), nil
 		}
-		return reflect.ValueOf(v), nil
+		src := reflect.ValueOf(v)
+		if !src.Type().AssignableTo(t) {
+			return reflect.Value{}, errors.Errorf(ErrorStrUnableToCast, v, v, t)
+		}
+		return src, nil
 	case reflect.Slice:
 		return castToSliceType(v, t, ops)
 	default:
