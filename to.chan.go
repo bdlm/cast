@@ -19,6 +19,7 @@ func toChan(to reflect.Value, from any, ops Ops) (any, error) {
 
 	if _, ok = ops[DEFAULT]; ok {
 		ret = ops[DEFAULT]
+		ops = ops.Delete(DEFAULT) // Prevent DEFAULT from being passed to element casts.
 	}
 
 	size := 1
@@ -39,41 +40,41 @@ func toChan(to reflect.Value, from any, ops Ops) (any, error) {
 		return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
 
 	case reflect.Interface:
-		ret, err = makeChan[interface{}](from, size)
+		ret, err = makeChan[interface{}](from, size, ops)
 	case reflect.Bool:
-		ret, err = makeChan[bool](from, size)
+		ret, err = makeChan[bool](from, size, ops)
 	case reflect.Complex64:
-		ret, err = makeChan[complex64](from, size)
+		ret, err = makeChan[complex64](from, size, ops)
 	case reflect.Complex128:
-		ret, err = makeChan[complex128](from, size)
+		ret, err = makeChan[complex128](from, size, ops)
 	case reflect.Float32:
-		ret, err = makeChan[float32](from, size)
+		ret, err = makeChan[float32](from, size, ops)
 	case reflect.Float64:
-		ret, err = makeChan[float64](from, size)
+		ret, err = makeChan[float64](from, size, ops)
 	case reflect.Int:
-		ret, err = makeChan[int](from, size)
+		ret, err = makeChan[int](from, size, ops)
 	case reflect.Int8:
-		ret, err = makeChan[int8](from, size)
+		ret, err = makeChan[int8](from, size, ops)
 	case reflect.Int16:
-		ret, err = makeChan[int16](from, size)
+		ret, err = makeChan[int16](from, size, ops)
 	case reflect.Int32:
-		ret, err = makeChan[int32](from, size)
+		ret, err = makeChan[int32](from, size, ops)
 	case reflect.Int64:
-		ret, err = makeChan[int64](from, size)
+		ret, err = makeChan[int64](from, size, ops)
 	case reflect.Uint:
-		ret, err = makeChan[uint](from, size)
+		ret, err = makeChan[uint](from, size, ops)
 	case reflect.Uint8:
-		ret, err = makeChan[uint8](from, size)
+		ret, err = makeChan[uint8](from, size, ops)
 	case reflect.Uint16:
-		ret, err = makeChan[uint16](from, size)
+		ret, err = makeChan[uint16](from, size, ops)
 	case reflect.Uint32:
-		ret, err = makeChan[uint32](from, size)
+		ret, err = makeChan[uint32](from, size, ops)
 	case reflect.Uint64:
-		ret, err = makeChan[uint64](from, size)
+		ret, err = makeChan[uint64](from, size, ops)
 	case reflect.Uintptr:
-		ret, err = makeChan[uintptr](from, size)
+		ret, err = makeChan[uintptr](from, size, ops)
 	case reflect.String:
-		ret, err = makeChan[string](from, size)
+		ret, err = makeChan[string](from, size, ops)
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// Slices — chan []T
@@ -83,41 +84,41 @@ func toChan(to reflect.Value, from any, ops Ops) (any, error) {
 		default:
 			return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
 		case reflect.Interface:
-			ret, err = makeChan[[]any](from, size)
+			ret, err = makeChan[[]any](from, size, ops)
 		case reflect.Bool:
-			ret, err = makeChan[[]bool](from, size)
+			ret, err = makeChan[[]bool](from, size, ops)
 		case reflect.Complex64:
-			ret, err = makeChan[[]complex64](from, size)
+			ret, err = makeChan[[]complex64](from, size, ops)
 		case reflect.Complex128:
-			ret, err = makeChan[[]complex128](from, size)
+			ret, err = makeChan[[]complex128](from, size, ops)
 		case reflect.Float32:
-			ret, err = makeChan[[]float32](from, size)
+			ret, err = makeChan[[]float32](from, size, ops)
 		case reflect.Float64:
-			ret, err = makeChan[[]float64](from, size)
+			ret, err = makeChan[[]float64](from, size, ops)
 		case reflect.Int:
-			ret, err = makeChan[[]int](from, size)
+			ret, err = makeChan[[]int](from, size, ops)
 		case reflect.Int8:
-			ret, err = makeChan[[]int8](from, size)
+			ret, err = makeChan[[]int8](from, size, ops)
 		case reflect.Int16:
-			ret, err = makeChan[[]int16](from, size)
+			ret, err = makeChan[[]int16](from, size, ops)
 		case reflect.Int32:
-			ret, err = makeChan[[]int32](from, size)
+			ret, err = makeChan[[]int32](from, size, ops)
 		case reflect.Int64:
-			ret, err = makeChan[[]int64](from, size)
+			ret, err = makeChan[[]int64](from, size, ops)
 		case reflect.Uint:
-			ret, err = makeChan[[]uint](from, size)
+			ret, err = makeChan[[]uint](from, size, ops)
 		case reflect.Uint8:
-			ret, err = makeChan[[]uint8](from, size)
+			ret, err = makeChan[[]uint8](from, size, ops)
 		case reflect.Uint16:
-			ret, err = makeChan[[]uint16](from, size)
+			ret, err = makeChan[[]uint16](from, size, ops)
 		case reflect.Uint32:
-			ret, err = makeChan[[]uint32](from, size)
+			ret, err = makeChan[[]uint32](from, size, ops)
 		case reflect.Uint64:
-			ret, err = makeChan[[]uint64](from, size)
+			ret, err = makeChan[[]uint64](from, size, ops)
 		case reflect.Uintptr:
-			ret, err = makeChan[[]uintptr](from, size)
+			ret, err = makeChan[[]uintptr](from, size, ops)
 		case reflect.String:
-			ret, err = makeChan[[]string](from, size)
+			ret, err = makeChan[[]string](from, size, ops)
 		}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -128,41 +129,41 @@ func toChan(to reflect.Value, from any, ops Ops) (any, error) {
 		default:
 			return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
 		case reflect.Interface:
-			ret, err = makeChan[Func[any]](from, size)
+			ret, err = makeChan[Func[any]](from, size, ops)
 		case reflect.Bool:
-			ret, err = makeChan[Func[bool]](from, size)
+			ret, err = makeChan[Func[bool]](from, size, ops)
 		case reflect.Complex64:
-			ret, err = makeChan[Func[complex64]](from, size)
+			ret, err = makeChan[Func[complex64]](from, size, ops)
 		case reflect.Complex128:
-			ret, err = makeChan[Func[complex128]](from, size)
+			ret, err = makeChan[Func[complex128]](from, size, ops)
 		case reflect.Float32:
-			ret, err = makeChan[Func[float32]](from, size)
+			ret, err = makeChan[Func[float32]](from, size, ops)
 		case reflect.Float64:
-			ret, err = makeChan[Func[float64]](from, size)
+			ret, err = makeChan[Func[float64]](from, size, ops)
 		case reflect.Int:
-			ret, err = makeChan[Func[int]](from, size)
+			ret, err = makeChan[Func[int]](from, size, ops)
 		case reflect.Int8:
-			ret, err = makeChan[Func[int8]](from, size)
+			ret, err = makeChan[Func[int8]](from, size, ops)
 		case reflect.Int16:
-			ret, err = makeChan[Func[int16]](from, size)
+			ret, err = makeChan[Func[int16]](from, size, ops)
 		case reflect.Int32:
-			ret, err = makeChan[Func[int32]](from, size)
+			ret, err = makeChan[Func[int32]](from, size, ops)
 		case reflect.Int64:
-			ret, err = makeChan[Func[int64]](from, size)
+			ret, err = makeChan[Func[int64]](from, size, ops)
 		case reflect.Uint:
-			ret, err = makeChan[Func[uint]](from, size)
+			ret, err = makeChan[Func[uint]](from, size, ops)
 		case reflect.Uint8:
-			ret, err = makeChan[Func[uint8]](from, size)
+			ret, err = makeChan[Func[uint8]](from, size, ops)
 		case reflect.Uint16:
-			ret, err = makeChan[Func[uint16]](from, size)
+			ret, err = makeChan[Func[uint16]](from, size, ops)
 		case reflect.Uint32:
-			ret, err = makeChan[Func[uint32]](from, size)
+			ret, err = makeChan[Func[uint32]](from, size, ops)
 		case reflect.Uint64:
-			ret, err = makeChan[Func[uint64]](from, size)
+			ret, err = makeChan[Func[uint64]](from, size, ops)
 		case reflect.Uintptr:
-			ret, err = makeChan[Func[uintptr]](from, size)
+			ret, err = makeChan[Func[uintptr]](from, size, ops)
 		case reflect.String:
-			ret, err = makeChan[Func[string]](from, size)
+			ret, err = makeChan[Func[string]](from, size, ops)
 		}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -173,48 +174,48 @@ func toChan(to reflect.Value, from any, ops Ops) (any, error) {
 		default:
 			return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
 		case reflect.Interface:
-			ret, err = makeChan[chan any](from, size)
+			ret, err = makeChan[chan any](from, size, ops)
 		case reflect.Bool:
-			ret, err = makeChan[chan bool](from, size)
+			ret, err = makeChan[chan bool](from, size, ops)
 		case reflect.Complex64:
-			ret, err = makeChan[chan complex64](from, size)
+			ret, err = makeChan[chan complex64](from, size, ops)
 		case reflect.Complex128:
-			ret, err = makeChan[chan complex128](from, size)
+			ret, err = makeChan[chan complex128](from, size, ops)
 		case reflect.Float32:
-			ret, err = makeChan[chan float32](from, size)
+			ret, err = makeChan[chan float32](from, size, ops)
 		case reflect.Float64:
-			ret, err = makeChan[chan float64](from, size)
+			ret, err = makeChan[chan float64](from, size, ops)
 		case reflect.Int:
-			ret, err = makeChan[chan int](from, size)
+			ret, err = makeChan[chan int](from, size, ops)
 		case reflect.Int8:
-			ret, err = makeChan[chan int8](from, size)
+			ret, err = makeChan[chan int8](from, size, ops)
 		case reflect.Int16:
-			ret, err = makeChan[chan int16](from, size)
+			ret, err = makeChan[chan int16](from, size, ops)
 		case reflect.Int32:
-			ret, err = makeChan[chan int32](from, size)
+			ret, err = makeChan[chan int32](from, size, ops)
 		case reflect.Int64:
-			ret, err = makeChan[chan int64](from, size)
+			ret, err = makeChan[chan int64](from, size, ops)
 		case reflect.Uint:
-			ret, err = makeChan[chan uint](from, size)
+			ret, err = makeChan[chan uint](from, size, ops)
 		case reflect.Uint8:
-			ret, err = makeChan[chan uint8](from, size)
+			ret, err = makeChan[chan uint8](from, size, ops)
 		case reflect.Uint16:
-			ret, err = makeChan[chan uint16](from, size)
+			ret, err = makeChan[chan uint16](from, size, ops)
 		case reflect.Uint32:
-			ret, err = makeChan[chan uint32](from, size)
+			ret, err = makeChan[chan uint32](from, size, ops)
 		case reflect.Uint64:
-			ret, err = makeChan[chan uint64](from, size)
+			ret, err = makeChan[chan uint64](from, size, ops)
 		case reflect.Uintptr:
-			ret, err = makeChan[chan uintptr](from, size)
+			ret, err = makeChan[chan uintptr](from, size, ops)
 		case reflect.String:
-			ret, err = makeChan[chan string](from, size)
+			ret, err = makeChan[chan string](from, size, ops)
 		}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// Arrays — chan [N]T (reflection path, N is not known at compile time)
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	case reflect.Array:
-		ret, err = makeArrayChan(to.Type(), from, size)
+		ret, err = makeArrayChan(to.Type(), from, size, ops)
 	}
 	if err != nil {
 		return nil, err
@@ -224,8 +225,8 @@ func toChan(to reflect.Value, from any, ops Ops) (any, error) {
 
 // makeChan casts from to T, creates a buffered channel of size, sends the
 // result, and returns the channel as any.
-func makeChan[T Types](from any, size int) (any, error) {
-	val, err := ToE[T](from)
+func makeChan[T Types](from any, size int, ops Ops) (any, error) {
+	val, err := ToE[T](from, ops.List()...)
 	if err != nil {
 		return nil, err
 	}

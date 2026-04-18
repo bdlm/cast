@@ -64,7 +64,7 @@ func TestMapFromMap(t *testing.T) {
 		expectErr: false,
 	})
 
-	// target with interface{} values
+	// target with any{} values
 	testMapCase[map[string]any](t, testCase{
 		in:        map[string]int{"a": 1},
 		expect:    map[string]any{"a": 1},
@@ -82,7 +82,7 @@ func TestMapFromMap(t *testing.T) {
 	t.Run("map[string]int: duplicate key error", func(t *testing.T) {
 		// Two int keys that both cast to the same string would be unusual;
 		// instead test with a map that has a duplicate at the Go level — only
-		// possible through an interface{} source map.
+		// possible through an any{} source map.
 		src := map[any]int{"1": 10, 1: 20} // both keys cast to string "1"
 		_, err := cast.ToE[map[string]int](src, cast.Op{Flag: cast.DUPLICATE_KEY_ERROR, Val: true})
 		if err == nil {
@@ -110,8 +110,8 @@ func TestMapFromMap(t *testing.T) {
 // TestMapFromStruct tests struct-to-map conversions.
 func TestMapFromStruct(t *testing.T) {
 	type Simple struct {
-		Name  string
-		Score int
+		Name   string
+		Score  int
 		Active bool
 	}
 

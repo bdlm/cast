@@ -17,6 +17,7 @@ func toMap(to reflect.Value, from any, ops Ops) (any, error) {
 	var ret any
 	if _, ok := ops[DEFAULT]; ok {
 		ret = ops[DEFAULT]
+		ops = ops.Delete(DEFAULT) // Prevent DEFAULT from being passed to element casts.
 	}
 
 	fromVal := reflect.Indirect(reflect.ValueOf(from))
@@ -43,14 +44,14 @@ func mapFromMap(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
 	valType := to.Type().Elem()
 
 	for _, srcKey := range src.MapKeys() {
-		castKey, err := castToType(srcKey.Interface(), keyType)
+		castKey, err := castToType(srcKey.Interface(), keyType, ops)
 		if err != nil {
 			return nil, err
 		}
 		if dupKeyErr && targetMap.MapIndex(castKey).IsValid() {
 			return nil, errors.Errorf("duplicate key %v", castKey)
 		}
-		castVal, err := castToType(src.MapIndex(srcKey).Interface(), valType)
+		castVal, err := castToType(src.MapIndex(srcKey).Interface(), valType, ops)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +109,7 @@ func collectStructFields(
 			continue
 		}
 
-		castKey, err := castToKind(field.Name, keyKind)
+		castKey, err := castToKind(field.Name, keyKind, ops)
 		if err != nil {
 			if strict {
 				return errors.Errorf("cannot cast field name %q to map key: %v", field.Name, err)
@@ -140,7 +141,7 @@ func collectStructFields(
 				}
 				castVal = reflect.ValueOf(nested)
 			default:
-				castVal, err = castToType(rawVal, valType)
+				castVal, err = castToType(rawVal, valType, ops)
 				if err != nil {
 					if strict {
 						return err
@@ -149,7 +150,7 @@ func collectStructFields(
 				}
 			}
 		} else {
-			castVal, err = castToType(rawVal, valType)
+			castVal, err = castToType(rawVal, valType, ops)
 			if err != nil {
 				if strict {
 					return err
@@ -169,7 +170,7 @@ func mapFromSlice(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
 	valType := to.Type().Elem()
 
 	for i := 0; i < src.Len(); i++ {
-		castKey, err := castToKind(i, keyKind)
+		castKey, err := castToKind(i, keyKind, ops)
 		if err != nil {
 			return nil, errors.Errorf("cannot cast index %d to map key kind %v: %v", i, keyKind, err)
 		}
@@ -184,7 +185,7 @@ func mapFromSlice(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
 			}
 			elemIface = val
 		}
-		castVal, err := castToType(elemIface, valType)
+		castVal, err := castToType(elemIface, valType, ops)
 		if err != nil {
 			return nil, err
 		}

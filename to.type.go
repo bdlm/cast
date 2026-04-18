@@ -41,6 +41,24 @@ const (
 	UNIQUE_VALUES       // bool, default: false, dedupe slice values
 )
 
+func (o Ops) List() []Op {
+	opList := []Op{}
+	for flag, val := range o {
+		opList = append(opList, Op{flag, val})
+	}
+	return opList
+}
+
+func (o Ops) Delete(key Flag) Ops {
+	newO := make(Ops)
+	for k, v := range o {
+		if k != key {
+			newO[k] = v
+		}
+	}
+	return newO
+}
+
 func parseOps(o []Op) Ops {
 	ops := Ops{}
 	for _, op := range o {
