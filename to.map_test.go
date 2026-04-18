@@ -278,3 +278,39 @@ func TestMapFromSlice(t *testing.T) {
 		expectErr: false,
 	})
 }
+
+func TestMapInvalidDefault(t *testing.T) {
+	t.Run("string DEFAULT for map[string]int", func(t *testing.T) {
+		_, err := cast.ToE[map[string]int](map[string]string{"a": "1"}, cast.Op{cast.DEFAULT, "not a map"})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("int DEFAULT for map[string]string", func(t *testing.T) {
+		_, err := cast.ToE[map[string]string](map[string]string{"a": "1"}, cast.Op{cast.DEFAULT, 42})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("map[string]string DEFAULT for map[string]int", func(t *testing.T) {
+		_, err := cast.ToE[map[string]int](map[string]string{"a": "1"}, cast.Op{cast.DEFAULT, map[string]string{"x": "fallback"}})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("compatible DEFAULT for map[string]int does not error", func(t *testing.T) {
+		_, err := cast.ToE[map[string]int](map[string]string{"a": "1"}, cast.Op{cast.DEFAULT, map[string]int{"x": -1}})
+		if err != nil {
+			t.Errorf("expected nil error, got %v", err)
+		}
+	})
+}

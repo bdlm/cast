@@ -237,6 +237,42 @@ func TestToChanComplex(t *testing.T) {
 	})
 }
 
+func TestChanInvalidDefault(t *testing.T) {
+	t.Run("string DEFAULT for chan int", func(t *testing.T) {
+		_, err := cast.ToE[chan int](42, cast.Op{cast.DEFAULT, "not a chan"})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("int DEFAULT for chan string", func(t *testing.T) {
+		_, err := cast.ToE[chan string]("hello", cast.Op{cast.DEFAULT, 42})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("chan string DEFAULT for chan int", func(t *testing.T) {
+		_, err := cast.ToE[chan int](42, cast.Op{cast.DEFAULT, make(chan string, 1)})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("compatible DEFAULT for chan int does not error", func(t *testing.T) {
+		_, err := cast.ToE[chan int](42, cast.Op{cast.DEFAULT, make(chan int, 1)})
+		if err != nil {
+			t.Errorf("expected nil error, got %v", err)
+		}
+	})
+}
+
 func testChanCases[TTo any](t *testing.T, cases []testCase) {
 	var typ TTo
 	name := fmt.Sprintf("%T", typ)

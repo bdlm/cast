@@ -298,6 +298,42 @@ func TestUniqueValuesSlice(t *testing.T) {
 	})
 }
 
+func TestSliceInvalidDefault(t *testing.T) {
+	t.Run("string DEFAULT for []int", func(t *testing.T) {
+		_, err := cast.ToE[[]int]([]string{"1", "2"}, cast.Op{cast.DEFAULT, "not a slice"})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("int DEFAULT for []string", func(t *testing.T) {
+		_, err := cast.ToE[[]string]([]int{1, 2}, cast.Op{cast.DEFAULT, 42})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]string DEFAULT for []int", func(t *testing.T) {
+		_, err := cast.ToE[[]int]([]string{"1", "2"}, cast.Op{cast.DEFAULT, []string{"fallback"}})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("compatible DEFAULT for []int does not error", func(t *testing.T) {
+		_, err := cast.ToE[[]int]([]string{"1", "2"}, cast.Op{cast.DEFAULT, []int{-1}})
+		if err != nil {
+			t.Errorf("expected nil error, got %v", err)
+		}
+	})
+}
+
 func testSliceCases[TTo any](t *testing.T, cases []testCase) {
 	var typ TTo
 	name := fmt.Sprintf("%T", typ)
