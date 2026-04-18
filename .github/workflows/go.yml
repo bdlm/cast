@@ -10,8 +10,82 @@ on:
     branches: [ "main" ]
 
 jobs:
+  build18:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
 
-  build:
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.18'
+
+    - name: Deps
+      run: go get -u ./...
+
+    - name: Tidy
+      run: go mod tidy -v
+
+    - name: Vendor
+      run: go mod vendor -v
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...
+
+  build19:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.19'
+
+    - name: Deps
+      run: go get -u ./...
+
+    - name: Tidy
+      run: go mod tidy -v
+
+    - name: Vendor
+      run: go mod vendor -v
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...
+
+  build20:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+
+    - name: Deps
+      run: go get -u ./...
+
+    - name: Tidy
+      run: go mod tidy -v
+
+    - name: Vendor
+      run: go mod vendor -v
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...
+
+  build21:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -20,6 +94,106 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.21'
+
+    - name: Deps
+      run: go get -u ./...
+
+    - name: Tidy
+      run: go mod tidy -v
+
+    - name: Vendor
+      run: go mod vendor -v
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...
+
+  build22:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+
+    - name: Deps
+      run: go get -u ./...
+
+    - name: Tidy
+      run: go mod tidy -v
+
+    - name: Vendor
+      run: go mod vendor -v
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...
+
+  build23:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+
+    - name: Deps
+      run: go get -u ./...
+
+    - name: Tidy
+      run: go mod tidy -v
+
+    - name: Vendor
+      run: go mod vendor -v
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...
+
+  build24:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
+
+    - name: Deps
+      run: go get -u ./...
+
+    - name: Tidy
+      run: go mod tidy -v
+
+    - name: Vendor
+      run: go mod vendor -v
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...
+
+  build25:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.25'
 
     - name: Deps
       run: go get -u ./...
