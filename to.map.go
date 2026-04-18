@@ -16,6 +16,10 @@ import (
 func toMap(to reflect.Value, from any, ops Ops) (any, error) {
 	var ret any
 	if _, ok := ops[DEFAULT]; ok {
+		defaultVal := reflect.ValueOf(ops[DEFAULT])
+		if defaultVal.IsValid() && !defaultVal.Type().AssignableTo(to.Type()) {
+			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+		}
 		ret = ops[DEFAULT]
 		ops = ops.Delete(DEFAULT) // Prevent DEFAULT from being passed to element casts.
 	}
