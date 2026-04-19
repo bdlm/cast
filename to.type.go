@@ -48,7 +48,7 @@ const (
 
 	ABS                 // bool, default: false, use absolute value during uint conversion
 	DUPLICATE_KEY_ERROR // bool, default: false, error on duplicate map key
-	LENGTH              // int,  default: 1,     initial capacity for slices / buffer size for channels (min 1)
+	LENGTH              // int,  default: 1,     initial capacity for slices / buffer size for channels (slices allow 0; channels require >= 1)
 	UNIQUE_VALUES       // bool, default: false, dedupe slice values
 	JSON                // bool, default: false, encode strings as JSON
 	PRIVATE             // bool, default: false, include unexported struct fields in map output
