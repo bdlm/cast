@@ -13,13 +13,13 @@ import (
 //
 // Options:
 //   - DEFAULT: float32 or float64, default 0.0. Default return value on error.
-func toFloat[TTo float](from any, ops Ops) (TTo, error) {
+func toFloat[TTo float](from any, ops ops) (TTo, error) {
 	var defaultValue TTo
 	var ok bool
 
-	if _, ok = ops[DEFAULT]; ok {
-		if defaultValue, ok = ops[DEFAULT].(TTo); !ok {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+	if ops.hasDefault {
+		if defaultValue, ok = ops.defaultVal.(TTo); !ok {
+			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
 

@@ -11,15 +11,15 @@ import (
 //
 // Options:
 //   - DEFAULT: Func[T], default return value on error.
-func toFunc[TTo any](to reflect.Value, from any, ops Ops) (TTo, error) {
+func toFunc[TTo any](to reflect.Value, from any, ops ops) (TTo, error) {
 	var err error
 	var ret TTo
 	var reti any
 	var ok bool
 
-	if _, ok = ops[DEFAULT]; ok {
-		if ret, ok = ops[DEFAULT].(TTo); !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+	if ops.hasDefault {
+		if ret, ok = ops.defaultVal.(TTo); !ok {
+			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 		ops = ops.Delete(DEFAULT) // Prevent DEFAULT from being passed to element casts.
 	}
@@ -306,7 +306,7 @@ func toFunc[TTo any](to reflect.Value, from any, ops Ops) (TTo, error) {
 }
 
 // makeFunc casts from to T and returns a Func[T] closure capturing the result.
-func makeFunc[T Types](from any, orig any, ops Ops) (any, error) {
+func makeFunc[T Types](from any, orig any, ops ops) (any, error) {
 	val, err := ToE[T](from, ops.List()...)
 	if err != nil {
 		return nil, errors.Wrap(err, ErrorStrErrorCastingFunc, from, orig)

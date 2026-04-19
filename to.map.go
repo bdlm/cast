@@ -13,14 +13,14 @@ import (
 //   - DUPLICATE_KEY_ERROR: bool, error on duplicate map key (map→map only).
 //   - PRIVATE: bool, include unexported struct fields (struct→map only).
 //   - STRICT: bool, return an error instead of skipping unconvertible fields.
-func toMap(to reflect.Value, from any, ops Ops) (any, error) {
+func toMap(to reflect.Value, from any, ops ops) (any, error) {
 	var ret any
-	if _, ok := ops[DEFAULT]; ok {
-		defaultVal := reflect.ValueOf(ops[DEFAULT])
+	if ops.hasDefault {
+		defaultVal := reflect.ValueOf(ops.defaultVal)
 		if defaultVal.IsValid() && !defaultVal.Type().AssignableTo(to.Type()) {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
-		ret = ops[DEFAULT]
+		ret = ops.defaultVal
 		ops = ops.Delete(DEFAULT) // Prevent DEFAULT from being passed to element casts.
 	}
 
@@ -55,8 +55,8 @@ func toMap(to reflect.Value, from any, ops Ops) (any, error) {
 
 // mapFromMap converts a source map to the target map type, casting each key
 // and value individually. DUPLICATE_KEY_ERROR causes it to error on collision.
-func mapFromMap(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
-	dupKeyErr, _ := ops[DUPLICATE_KEY_ERROR].(bool)
+func mapFromMap(to reflect.Value, src reflect.Value, ops ops) (any, error) {
+	dupKeyErr := ops.dupKeyErr
 	targetMap := reflect.MakeMap(to.Type())
 	keyType := to.Type().Key()
 	valType := to.Type().Elem()
@@ -82,10 +82,10 @@ func mapFromMap(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
 // Embedded (anonymous) struct fields are recursively inlined. Unexported
 // fields are skipped unless PRIVATE is set. STRICT causes unconvertible
 // fields to return an error instead of being silently skipped.
-func mapFromStruct(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
+func mapFromStruct(to reflect.Value, src reflect.Value, ops ops) (any, error) {
 	targetMap := reflect.MakeMap(to.Type())
-	private, _ := ops[PRIVATE].(bool)
-	strict, _ := ops[STRICT].(bool)
+	private := ops.private
+	strict := ops.strict
 	keyType := to.Type().Key()
 	valType := to.Type().Elem()
 
@@ -101,7 +101,7 @@ func mapFromStruct(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
 func collectStructFields(
 	targetMap reflect.Value, src reflect.Value,
 	keyType reflect.Type, valType reflect.Type,
-	private, strict bool, ops Ops,
+	private, strict bool, ops ops,
 ) error {
 	for i := 0; i < src.NumField(); i++ {
 		field := src.Type().Field(i)
@@ -203,7 +203,7 @@ func collectStructFields(
 }
 
 // mapFromSlice converts a slice or array to a map using element indices as keys.
-func mapFromSlice(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
+func mapFromSlice(to reflect.Value, src reflect.Value, ops ops) (any, error) {
 	targetMap := reflect.MakeMap(to.Type())
 	keyType := to.Type().Key()
 	valType := to.Type().Elem()

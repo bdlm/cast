@@ -13,25 +13,24 @@ import (
 //   - DEFAULT: channel, default return value on error.
 //   - LENGTH: int, channel buffer size, default 1. Must be greater than or
 //     equal to 1.
-func toChan(to reflect.Value, from any, ops Ops) (any, error) {
+func toChan(to reflect.Value, from any, ops ops) (any, error) {
 	var defaultValue any
 	var returnValue any
-	var ok bool
 
-	if _, ok = ops[DEFAULT]; ok {
-		defaultVal := reflect.ValueOf(ops[DEFAULT])
+	if ops.hasDefault {
+		defaultVal := reflect.ValueOf(ops.defaultVal)
 		if defaultVal.IsValid() && !defaultVal.Type().AssignableTo(to.Type()) {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
-		defaultValue = ops[DEFAULT]
+		defaultValue = ops.defaultVal
 		ops = ops.Delete(DEFAULT) // Prevent DEFAULT from being passed to element casts.
 	}
 
 	size := 1
-	if _, ok = ops[LENGTH]; ok {
+	if ops.hasLength {
 		var sizeErr error
-		if size, sizeErr = ToE[int](ops[LENGTH]); sizeErr != nil {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "LENGTH", ops[LENGTH])
+		if size, sizeErr = ToE[int](ops.lengthVal); sizeErr != nil {
+			return defaultValue, errors.Errorf(ErrorInvalidOption, "LENGTH", ops.lengthVal)
 		}
 	}
 	if size < 1 {
@@ -277,7 +276,7 @@ func toChan(to reflect.Value, from any, ops Ops) (any, error) {
 // sends the cast value, and returns the channel as any. The caller is
 // responsible for converting the result to a named channel type if needed;
 // toChan does this via a reflect.Convert step after the switch.
-func makeChan[T Types](from any, size int, ops Ops) (any, error) {
+func makeChan[T Types](from any, size int, ops ops) (any, error) {
 	val, err := ToE[T](from, ops.List()...)
 	if err != nil {
 		return nil, err

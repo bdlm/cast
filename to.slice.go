@@ -15,24 +15,23 @@ import (
 //   - LENGTH: int, initial backing-array capacity, default 1. Must be greater
 //     than or equal to 0.
 //   - UNIQUE_VALUES: bool, deduplicate slice elements after conversion.
-func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
+func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 	var defaultValue any
-	var ok bool
 
-	if _, ok = ops[DEFAULT]; ok {
-		defaultVal := reflect.ValueOf(ops[DEFAULT])
+	if ops.hasDefault {
+		defaultVal := reflect.ValueOf(ops.defaultVal)
 		if defaultVal.IsValid() && !defaultVal.Type().AssignableTo(to.Type()) {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
-		defaultValue = ops[DEFAULT]
+		defaultValue = ops.defaultVal
 		ops = ops.Delete(DEFAULT) // Prevent DEFAULT from being passed to element casts.
 	}
 
 	size := 1
-	if _, ok = ops[LENGTH]; ok {
+	if ops.hasLength {
 		var sizeErr error
-		if size, sizeErr = ToE[int](ops[LENGTH]); sizeErr != nil {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "LENGTH", ops[LENGTH])
+		if size, sizeErr = ToE[int](ops.lengthVal); sizeErr != nil {
+			return defaultValue, errors.Errorf(ErrorInvalidOption, "LENGTH", ops.lengthVal)
 		}
 	}
 	if size < 0 {
@@ -96,7 +95,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 			}
 			sliceVal = reflect.Append(sliceVal, elem)
 		}
-		if unique, _ := ops[UNIQUE_VALUES].(bool); unique {
+		if ops.uniqueVals {
 			sliceVal = dedupeSliceVal(sliceVal)
 		}
 		return sliceVal.Interface(), nil
@@ -217,7 +216,7 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 		}
 	}
 
-	if unique, _ := ops[UNIQUE_VALUES].(bool); unique {
+	if ops.uniqueVals {
 		rv := reflect.ValueOf(result)
 		result = dedupeSliceVal(rv).Interface()
 	}

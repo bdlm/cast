@@ -15,21 +15,16 @@ import (
 // Options:
 //   - DEFAULT: integer, default 0. Default return value on error.
 //   - ABS: bool, default false. Return the absolute value of integers.
-func toInt[TTo integer](from any, ops Ops) (TTo, error) {
+func toInt[TTo integer](from any, ops ops) (TTo, error) {
 	var defaultValue TTo
 	var ok bool
-	var abs bool
 
-	if _, ok = ops[DEFAULT]; ok {
-		if defaultValue, ok = ops[DEFAULT].(TTo); !ok {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+	if ops.hasDefault {
+		if defaultValue, ok = ops.defaultVal.(TTo); !ok {
+			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
-	if _, ok = ops[ABS]; ok {
-		if abs, ok = ops[ABS].(bool); !ok {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "ABS", ops[ABS])
-		}
-	}
+	abs := ops.abs
 
 	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	unsigned := false
@@ -138,21 +133,16 @@ func toInt[TTo integer](from any, ops Ops) (TTo, error) {
 //   - DEFAULT: integer, default 0. Default return value on error.
 //   - ABS: bool, default false. Return the absolute value of negative integers
 //     when casting to unsigned integers.
-func strToInt[TTo integer](from string, ops Ops) (TTo, error) {
+func strToInt[TTo integer](from string, ops ops) (TTo, error) {
 	var defaultValue TTo
 	var ok bool
-	var abs bool
 
-	if _, ok = ops[DEFAULT]; ok {
-		if defaultValue, ok = ops[DEFAULT].(TTo); !ok {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+	if ops.hasDefault {
+		if defaultValue, ok = ops.defaultVal.(TTo); !ok {
+			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
-	if _, ok = ops[ABS]; ok {
-		if abs, ok = ops[ABS].(bool); !ok {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "ABS", ops[ABS])
-		}
-	}
+	abs := ops.abs
 
 	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	var e, err error

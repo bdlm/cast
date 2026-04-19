@@ -1,8 +1,6 @@
 package cast
 
 import (
-	"maps"
-
 	"github.com/bdlm/errors/v2"
 )
 
@@ -30,10 +28,6 @@ type complexNum interface{ ~complex64 | ~complex128 }
 // Flag is the key type for conversion options passed to [To] and [ToE].
 type Flag int
 
-// Ops is the parsed representation of options after [parseOps] collapses the
-// variadic []Op slice. Internal conversion functions receive Ops directly.
-type Ops map[Flag]any
-
 // Op is a single key/value option passed to [To] or [ToE]. Build one with a
 // [Flag] constant and the appropriate value type for that flag.
 type Op struct {
@@ -55,33 +49,115 @@ const (
 	STRICT              // bool, default: false, return error instead of skipping unconvertible fields
 )
 
-// List converts Ops back to a []Op slice, used when forwarding options to
-// recursive ToE calls for element-level casts inside containers.
-func (o Ops) List() []Op {
-	opList := []Op{}
-	for flag, val := range o {
-		opList = append(opList, Op{flag, val})
-	}
-	return opList
+// ops is the internal parsed representation of conversion options. A plain
+// struct is used instead of a map so that the common zero-options path
+// allocates nothing and bool-flag checks are plain field reads.
+//
+// defaultVal and lengthVal preserve the original Op.Val for type-checking
+// and error messages at each call site; all other flags are pre-parsed to
+// their concrete bool type by parseOps.
+type ops struct {
+	defaultVal any // DEFAULT value; meaningful only when hasDefault is true
+	lengthVal  any // LENGTH value preserved for ToE[int] parsing and error messages
+	hasDefault bool
+	hasLength  bool
+	abs        bool
+	dupKeyErr  bool
+	uniqueVals bool
+	jsonEncode bool
+	private    bool
+	strict     bool
 }
 
-// Delete returns a copy of Ops with the given flag removed. Container
+// Delete returns a copy of ops with the given flag cleared. Container
 // conversion functions call this to strip DEFAULT before forwarding ops to
-// element casts, so a container default is not mistakenly applied to elements.
-func (o Ops) Delete(key Flag) Ops {
-	n := Ops(maps.Clone(map[Flag]any(o)))
-	delete(n, key)
-	return n
+// element casts so a container default is not mistakenly applied to elements.
+func (o ops) Delete(key Flag) ops {
+	switch key {
+	case DEFAULT:
+		o.hasDefault = false
+		o.defaultVal = nil
+	case LENGTH:
+		o.hasLength = false
+		o.lengthVal = nil
+	case ABS:
+		o.abs = false
+	case DUPLICATE_KEY_ERROR:
+		o.dupKeyErr = false
+	case UNIQUE_VALUES:
+		o.uniqueVals = false
+	case JSON:
+		o.jsonEncode = false
+	case PRIVATE:
+		o.private = false
+	case STRICT:
+		o.strict = false
+	}
+	return o
 }
 
-// parseOps collapses the public variadic []Op into the internal Ops map used
-// by all conversion functions.
-func parseOps(o []Op) Ops {
-	ops := Ops{}
-	for _, op := range o {
-		ops[op.Flag] = op.Val
+// List converts ops back to a []Op slice for passing to recursive ToE calls
+// for element-level casts inside containers.
+func (o ops) List() []Op {
+	var list []Op
+	if o.hasDefault {
+		list = append(list, Op{DEFAULT, o.defaultVal})
 	}
-	return ops
+	if o.hasLength {
+		list = append(list, Op{LENGTH, o.lengthVal})
+	}
+	if o.abs {
+		list = append(list, Op{ABS, true})
+	}
+	if o.dupKeyErr {
+		list = append(list, Op{DUPLICATE_KEY_ERROR, true})
+	}
+	if o.uniqueVals {
+		list = append(list, Op{UNIQUE_VALUES, true})
+	}
+	if o.jsonEncode {
+		list = append(list, Op{JSON, true})
+	}
+	if o.private {
+		list = append(list, Op{PRIVATE, true})
+	}
+	if o.strict {
+		list = append(list, Op{STRICT, true})
+	}
+	return list
+}
+
+// parseOps collapses the public variadic []Op into the internal ops struct
+// used by all conversion functions. Bool flags are parsed eagerly; DEFAULT
+// and LENGTH preserve their raw Val for type-checking at each call site.
+func parseOps(o []Op) ops {
+	if len(o) == 0 {
+		return ops{}
+	}
+	var result ops
+	for _, op := range o {
+		switch op.Flag {
+		case DEFAULT:
+			result.hasDefault = true
+			result.defaultVal = op.Val
+		case LENGTH:
+			result.hasLength = true
+			result.lengthVal = op.Val
+		case ABS:
+			result.abs, _ = op.Val.(bool)
+		case DUPLICATE_KEY_ERROR:
+			result.dupKeyErr, _ = op.Val.(bool)
+		case UNIQUE_VALUES:
+			result.uniqueVals, _ = op.Val.(bool)
+		case JSON:
+			result.jsonEncode, _ = op.Val.(bool)
+		case PRIVATE:
+			result.private, _ = op.Val.(bool)
+		case STRICT:
+			result.strict, _ = op.Val.(bool)
+		}
+	}
+	return result
 }
 
 // Func is a named zero-argument function type that returns a T. A named type

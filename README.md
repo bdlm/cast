@@ -113,15 +113,18 @@ fmt.Printf("%#v (%T)\n", strFunc(), strFunc()) // "10" (string)
 ```
 
 ##### Slices
-Casting to a slice type converts each element of the source slice or array. The source must be a slice or array; scalar values are not accepted.
+Casting to a slice type converts each element of the source slice or array. The source must be a slice or array or map; scalar values are not accepted.
 ```go
-ints  := cast.To[[]int]([]string{"1", "2", "3"})    // []int{1, 2, 3}
+ints  := cast.To[[]int]([]string{"1", "2", "3"})     // []int{1, 2, 3}
 strs  := cast.To[[]string]([]int{1, 2, 3})           // []string{"1", "2", "3"}
 bools := cast.To[[]bool]([]int{1, 0, 1})             // []bool{true, false, true}
+maps  := cast.To[[]string](map[string]int{           // []string{"1", "2", "2"}
+    "a": 1, "b": 2, "c": 2,
+})
 
 // Deduplicate
 uniq, err := cast.ToE[[]int]([]int{1, 2, 1, 3}, cast.Op{cast.UNIQUE_VALUES, true})
-// uniq = []int{1, 2, 3}
+// uniq := []int{1, 2, 3}
 
 // Pre-allocate backing capacity
 big, err := cast.ToE[[]int]([]string{"1", "2"}, cast.Op{cast.LENGTH, 100})
@@ -190,15 +193,15 @@ Values that already implement `error`, `fmt.Stringer`, or the `github.com/bdlm/s
 e := fmt.Errorf("something failed")
 cast.To[error](e)           // returns e unchanged
 cast.ToE[error](e)          // returns (e, nil)
-cast.ToE[error](42)         // returns (nil, cast.Error) — int does not implement error
-cast.ToE[fmt.Stringer](42)  // returns (nil, cast.Error) — int does not implement fmt.Stringer
+cast.ToE[error](42)         // returns (nil, errors.Error) — int does not implement error
+cast.ToE[fmt.Stringer](42)  // returns (nil, errors.Error) — int does not implement fmt.Stringer
 ```
 
 ##### Error checking
 To capture any conversion errors, use the `ToE` method:
 ```go
 cast.To[int]("Hi!")           // 0 (int)
-cast.ToE[int]("Hi!")          // 0, error: unable to cast "Hi!" of type string to int
+cast.ToE[int]("Hi!")          // 0 (int), error: unable to cast "Hi!" of type string to int
 ```
 
 ### Supported Conversions

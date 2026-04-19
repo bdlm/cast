@@ -13,17 +13,17 @@ import (
 // Options:
 //   - DEFAULT: string, default return value on error.
 //   - JSON: bool, encode the string representation as a JSON string literal.
-func toString(from any, ops Ops) (any, error) {
+func toString(from any, ops ops) (any, error) {
 	var ret any
 	var ok bool
 
-	if _, ok = ops[DEFAULT]; ok {
-		if ret, ok = ops[DEFAULT].(string); !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+	if ops.hasDefault {
+		if ret, ok = ops.defaultVal.(string); !ok {
+			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
 
-	if useJSON, _ := ops[JSON].(bool); useJSON {
+	if ops.jsonEncode {
 		s, sErr := toString(from, ops.Delete(JSON))
 		if sErr != nil {
 			return ret, sErr

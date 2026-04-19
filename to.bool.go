@@ -13,13 +13,13 @@ import (
 //
 // Options:
 //   - DEFAULT: bool, default false. Default return value on error.
-func toBool[TTo bool](from any, ops Ops) (TTo, error) {
+func toBool[TTo bool](from any, ops ops) (TTo, error) {
 	var ret TTo
 	var ok bool
 
-	if _, ok = ops[DEFAULT]; ok {
-		if ret, ok = ops[DEFAULT].(TTo); !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+	if ops.hasDefault {
+		if ret, ok = ops.defaultVal.(TTo); !ok {
+			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
 

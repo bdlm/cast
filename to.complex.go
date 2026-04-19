@@ -12,13 +12,13 @@ import (
 //
 // Options:
 //   - DEFAULT: complex64 or complex128, default return value on error.
-func toComplex[TTo complexNum](from any, ops Ops) (TTo, error) {
+func toComplex[TTo complexNum](from any, ops ops) (TTo, error) {
 	var ret TTo
 	var ok bool
 
-	if _, ok = ops[DEFAULT]; ok {
-		if ret, ok = ops[DEFAULT].(TTo); !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+	if ops.hasDefault {
+		if ret, ok = ops.defaultVal.(TTo); !ok {
+			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
 

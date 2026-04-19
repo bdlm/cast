@@ -9,7 +9,7 @@ import (
 // castToKind casts v to the scalar Go type corresponding to kind and returns
 // the result as a reflect.Value. It only handles scalar kinds; for slices,
 // funcs, or chans use [castToType] instead.
-func castToKind(v any, kind reflect.Kind, ops Ops) (reflect.Value, error) {
+func castToKind(v any, kind reflect.Kind, ops ops) (reflect.Value, error) {
 	switch kind {
 	case reflect.Interface:
 		if v == nil {
@@ -72,7 +72,7 @@ func castToKind(v any, kind reflect.Kind, ops Ops) (reflect.Value, error) {
 }
 
 // castToType casts v to the type t and returns the result as a reflect.Value.
-func castToType(v any, t reflect.Type, ops Ops) (reflect.Value, error) {
+func castToType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 	switch t.Kind() {
 	case reflect.Interface:
 		if v == nil {
@@ -102,10 +102,10 @@ func castToType(v any, t reflect.Type, ops Ops) (reflect.Value, error) {
 		// Use reflect.MakeChan so named channel types (type MyChan chan int) are
 		// created correctly rather than a plain chan int.
 		size := 1
-		if _, ok := ops[LENGTH]; ok {
-			s, sErr := ToE[int](ops[LENGTH])
+		if ops.hasLength {
+			s, sErr := ToE[int](ops.lengthVal)
 			if sErr != nil {
-				return reflect.Value{}, errors.Errorf(ErrorInvalidOption, "LENGTH", ops[LENGTH])
+				return reflect.Value{}, errors.Errorf(ErrorInvalidOption, "LENGTH", ops.lengthVal)
 			}
 			if s < 1 {
 				return reflect.Value{}, errors.Errorf("invalid channel buffer size %d", s)
@@ -134,7 +134,7 @@ func castToType(v any, t reflect.Type, ops Ops) (reflect.Value, error) {
 	}
 }
 
-func castToSliceType(v any, t reflect.Type, ops Ops) (reflect.Value, error) {
+func castToSliceType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 	srcVal := reflect.ValueOf(v)
 	if !srcVal.IsValid() {
 		return reflect.MakeSlice(t, 0, 0), nil
