@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Patch**: bug fixes, backward compatible model and function changes, etc.
 
 
-## v2.1.0 - 2026-04-17
+## v2.1.0 - 2026-04-19
 
 ### Added
 
@@ -56,6 +56,9 @@ New internal package-level functions shared by `toMap`, `toChan`, and `toFunc`:
 - Added `PRIVATE` and `STRICT` flag constants (see Map section above).
 
 ### Changed
+
+#### Expanded version support
+- Expand support for Go v1.21 to current.
 
 #### `ToE` dispatch (`to.go`)
 - Uncommented and wired the `reflect.Map` case to `toMap`.

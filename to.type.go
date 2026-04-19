@@ -107,8 +107,11 @@ type Types interface {
 		Func[chan string] | Func[chan bool] | Func[chan any]
 }
 
-// Tbase covers all scalar types plus any (the empty interface). The any term
-// enables interface{} as a valid target, not all types.
+// Tbase covers all scalar types. The any term makes this constraint
+// effectively unconstrained — all types satisfy it. This is intentional:
+// interface targets like error and fmt.Stringer need to be expressible as TTo,
+// and there is no way to enumerate all interface types. Unsupported kinds
+// (struct, pointer, etc.) are rejected at runtime by ToE's dispatch switch.
 type Tbase interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |
 		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
