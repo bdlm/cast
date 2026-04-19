@@ -8,7 +8,8 @@ import (
 )
 
 // toBool casts an interface to a bool type. For numeric values, anything but
-// zero is considered true.
+// zero is considered true. The string path delegates to [strconv.ParseBool]
+// first, then falls back to integer parsing so "1"→true and "0"→false.
 //
 // Options:
 //   - DEFAULT: bool, default false. Default return value on error.
@@ -26,6 +27,7 @@ func toBool[TTo bool](from any, ops Ops) (TTo, error) {
 	case bool:
 		return TTo(from), nil
 	case byte:
+		// The character '0' (ASCII 48) represents the digit zero, so it maps to false.
 		return from != 0 && from != '0', nil
 	case complex64:
 		return from != 0, nil
@@ -41,7 +43,7 @@ func toBool[TTo bool](from any, ops Ops) (TTo, error) {
 		return from != 0, nil
 	case int16:
 		return from != 0, nil
-	case int32:
+	case int32: // rune: '0' (48) is the digit zero, not a true value
 		return from != 0 && from != '0', nil
 	case int64:
 		return from != 0, nil

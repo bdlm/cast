@@ -266,11 +266,20 @@ func toChan(to reflect.Value, from any, ops Ops) (any, error) {
 	if err != nil {
 		return defaultValue, err
 	}
+	// Convert to named channel type if needed (e.g. type MyChan chan int).
+	if returnValue != nil {
+		rv := reflect.ValueOf(returnValue)
+		if rv.IsValid() && rv.Type() != to.Type() && rv.Type().ConvertibleTo(to.Type()) {
+			returnValue = rv.Convert(to.Type()).Interface()
+		}
+	}
 	return returnValue, nil
 }
 
-// makeChan casts from to T, creates a buffered channel of size, sends the
-// result, and returns the channel as any.
+// makeChan casts from to T, creates a buffered channel of the given size,
+// sends the cast value, and returns the channel as any. The caller is
+// responsible for converting the result to a named channel type if needed;
+// toChan does this via a reflect.Convert step after the switch.
 func makeChan[T Types](from any, size int, ops Ops) (any, error) {
 	val, err := ToE[T](from, ops.List()...)
 	if err != nil {

@@ -2,6 +2,7 @@ package cast
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -62,6 +63,8 @@ func toFloat[TTo float](from any, ops Ops) (TTo, error) {
 		return strToFloat[TTo](typ)
 	}
 
+	// Fall back to string conversion for any other type (e.g. named numerics,
+	// structs with a String method that were not matched above).
 	result, err := toFloat[TTo](fmt.Sprintf("%v", from), ops)
 	if nil != err {
 		return defaultValue, errors.Wrap(err, ErrorStrUnableToCast, from, from, TTo(0))
@@ -69,9 +72,11 @@ func toFloat[TTo float](from any, ops Ops) (TTo, error) {
 	return result, nil
 }
 
-// strToFloat converts a string to a float type.
+// strToFloat converts a string to a float type. On initial parse failure it
+// strips whitespace, drops everything after the first decimal point, and
+// removes comma thousands-separators, then retries (e.g. "1,234.56" → "1234").
 func strToFloat[TTo float](from string) (TTo, error) {
-	_, isFloat32 := any(TTo(0)).(float32)
+	isFloat32 := reflect.TypeOf(TTo(0)).Kind() == reflect.Float32
 	bitSize := 64
 	if isFloat32 {
 		bitSize = 32

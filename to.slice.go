@@ -16,15 +16,15 @@ import (
 //     than or equal to 0.
 //   - UNIQUE_VALUES: bool, deduplicate slice elements after conversion.
 func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
-	var ret any
+	var defaultValue any
 	var ok bool
 
 	if _, ok = ops[DEFAULT]; ok {
 		defaultVal := reflect.ValueOf(ops[DEFAULT])
 		if defaultVal.IsValid() && !defaultVal.Type().AssignableTo(to.Type()) {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
 		}
-		ret = ops[DEFAULT]
+		defaultValue = ops[DEFAULT]
 		ops = ops.Delete(DEFAULT) // Prevent DEFAULT from being passed to element casts.
 	}
 
@@ -32,201 +32,222 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 	if _, ok = ops[LENGTH]; ok {
 		var sizeErr error
 		if size, sizeErr = ToE[int](ops[LENGTH]); sizeErr != nil {
-			return ret, errors.Errorf(ErrorInvalidOption, "LENGTH", ops[LENGTH])
+			return defaultValue, errors.Errorf(ErrorInvalidOption, "LENGTH", ops[LENGTH])
 		}
 	}
 	if size < 0 {
-		return ret, errors.Errorf("invalid array length %d", size)
+		return defaultValue, errors.Errorf("invalid array length %d", size)
 	}
 
 	fromType := reflect.TypeOf(val)
 	if fromType == nil || (fromType.Kind() != reflect.Slice && fromType.Kind() != reflect.Array) {
-		return ret, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
-	}
-
-	// Initialize the result slice based on target element type.
-	switch to.Interface().(type) {
-	default:
-		return ret, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
-	case []interface{}:
-		ret = make([]any, 0, size)
-	case []bool:
-		ret = make([]bool, 0, size)
-	case []complex64:
-		ret = make([]complex64, 0, size)
-	case []complex128:
-		ret = make([]complex128, 0, size)
-	case []float32:
-		ret = make([]float32, 0, size)
-	case []float64:
-		ret = make([]float64, 0, size)
-	case []int:
-		ret = make([]int, 0, size)
-	case []int8:
-		ret = make([]int8, 0, size)
-	case []int16:
-		ret = make([]int16, 0, size)
-	case []int32:
-		ret = make([]int32, 0, size)
-	case []int64:
-		ret = make([]int64, 0, size)
-	case []uint:
-		ret = make([]uint, 0, size)
-	case []uint8:
-		ret = make([]uint8, 0, size)
-	case []uint16:
-		ret = make([]uint16, 0, size)
-	case []uint32:
-		ret = make([]uint32, 0, size)
-	case []uint64:
-		ret = make([]uint64, 0, size)
-	case []uintptr:
-		ret = make([]uintptr, 0, size)
-	case []string:
-		ret = make([]string, 0, size)
+		return defaultValue, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
 	}
 
 	slice := reflect.ValueOf(val)
+
+	// Initialize the result slice based on target element type.
+	var result any
+	switch to.Interface().(type) {
+	case []interface{}:
+		result = make([]any, 0, size)
+	case []bool:
+		result = make([]bool, 0, size)
+	case []complex64:
+		result = make([]complex64, 0, size)
+	case []complex128:
+		result = make([]complex128, 0, size)
+	case []float32:
+		result = make([]float32, 0, size)
+	case []float64:
+		result = make([]float64, 0, size)
+	case []int:
+		result = make([]int, 0, size)
+	case []int8:
+		result = make([]int8, 0, size)
+	case []int16:
+		result = make([]int16, 0, size)
+	case []int32:
+		result = make([]int32, 0, size)
+	case []int64:
+		result = make([]int64, 0, size)
+	case []uint:
+		result = make([]uint, 0, size)
+	case []uint8:
+		result = make([]uint8, 0, size)
+	case []uint16:
+		result = make([]uint16, 0, size)
+	case []uint32:
+		result = make([]uint32, 0, size)
+	case []uint64:
+		result = make([]uint64, 0, size)
+	case []uintptr:
+		result = make([]uintptr, 0, size)
+	case []string:
+		result = make([]string, 0, size)
+	default:
+		// Named slice type: use reflection.
+		sliceVal := reflect.MakeSlice(to.Type(), 0, size)
+		for a := 0; a < slice.Len(); a++ {
+			elm := slice.Index(a).Interface()
+			elem, err := castToType(elm, to.Type().Elem(), ops)
+			if err != nil {
+				return defaultValue, err
+			}
+			sliceVal = reflect.Append(sliceVal, elem)
+		}
+		if unique, _ := ops[UNIQUE_VALUES].(bool); unique {
+			sliceVal = dedupeSliceVal(sliceVal)
+		}
+		return sliceVal.Interface(), nil
+	}
+
 	for a := 0; a < slice.Len(); a++ {
 		elm := slice.Index(a).Interface()
-		switch r := ret.(type) {
+		switch r := result.(type) {
 		case []any:
 			tval, err := ToE[any](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []bool:
 			tval, err := ToE[bool](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []complex64:
 			tval, err := ToE[complex64](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []complex128:
 			tval, err := ToE[complex128](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []float32:
 			tval, err := ToE[float32](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []float64:
 			tval, err := ToE[float64](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []int:
 			tval, err := ToE[int](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []int8:
 			tval, err := ToE[int8](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []int16:
 			tval, err := ToE[int16](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []int32:
 			tval, err := ToE[int32](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []int64:
 			tval, err := ToE[int64](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []uint:
 			tval, err := ToE[uint](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []uint8:
 			tval, err := ToE[uint8](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []uint16:
 			tval, err := ToE[uint16](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []uint32:
 			tval, err := ToE[uint32](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []uint64:
 			tval, err := ToE[uint64](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []uintptr:
 			tval, err := ToE[uintptr](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		case []string:
 			tval, err := ToE[string](elm, ops.List()...)
 			if err != nil {
-				return ret, err
+				return defaultValue, err
 			}
-			ret = append(r, tval)
+			result = append(r, tval)
 		}
 	}
 
 	if unique, _ := ops[UNIQUE_VALUES].(bool); unique {
-		rv := reflect.ValueOf(ret)
-		deduped := reflect.MakeSlice(rv.Type(), 0, rv.Len())
-		seen := make(map[any]struct{})
-		var seenNonComparable []any
-
-		for i := 0; i < rv.Len(); i++ {
-			elem := rv.Index(i).Interface()
-			// For interface elements, comparability depends on the concrete value.
-			concrete := reflect.ValueOf(elem)
-			if !concrete.IsValid() || concrete.Type().Comparable() {
-				if _, exists := seen[elem]; !exists {
-					seen[elem] = struct{}{}
-					deduped = reflect.Append(deduped, rv.Index(i))
-				}
-			} else {
-				if !slices.ContainsFunc(seenNonComparable, func(prev any) bool {
-					return reflect.DeepEqual(elem, prev)
-				}) {
-					seenNonComparable = append(seenNonComparable, elem)
-					deduped = reflect.Append(deduped, rv.Index(i))
-				}
-			}
-		}
-		ret = deduped.Interface()
+		rv := reflect.ValueOf(result)
+		result = dedupeSliceVal(rv).Interface()
 	}
 
-	return ret, nil
+	return result, nil
+}
+
+// dedupeSliceVal removes duplicate elements from rv, preserving first-seen
+// order. Comparable elements are tracked in a map; non-comparable elements
+// (e.g. slices) fall back to reflect.DeepEqual.
+func dedupeSliceVal(rv reflect.Value) reflect.Value {
+	deduped := reflect.MakeSlice(rv.Type(), 0, rv.Len())
+	seen := make(map[any]struct{})
+	var seenNonComparable []any
+
+	for i := 0; i < rv.Len(); i++ {
+		elem := rv.Index(i).Interface()
+		concrete := reflect.ValueOf(elem)
+		if !concrete.IsValid() || concrete.Type().Comparable() {
+			if _, exists := seen[elem]; !exists {
+				seen[elem] = struct{}{}
+				deduped = reflect.Append(deduped, rv.Index(i))
+			}
+		} else {
+			if !slices.ContainsFunc(seenNonComparable, func(prev any) bool {
+				return reflect.DeepEqual(elem, prev)
+			}) {
+				seenNonComparable = append(seenNonComparable, elem)
+				deduped = reflect.Append(deduped, rv.Index(i))
+			}
+		}
+	}
+	return deduped
 }

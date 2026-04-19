@@ -7,7 +7,8 @@ import (
 )
 
 // castToKind casts v to the scalar Go type corresponding to kind and returns
-// the result as a reflect.Value. Used by toMap, castToArray, and toStruct.
+// the result as a reflect.Value. It only handles scalar kinds; for slices,
+// funcs, or chans use [castToType] instead.
 func castToKind(v any, kind reflect.Kind, ops Ops) (reflect.Value, error) {
 	switch kind {
 	case reflect.Interface:
@@ -84,6 +85,33 @@ func castToType(v any, t reflect.Type, ops Ops) (reflect.Value, error) {
 		return src, nil
 	case reflect.Slice:
 		return castToSliceType(v, t, ops)
+	case reflect.Func:
+		// Only zero-arg, one-return functions are supported (matches Func[T]).
+		if t.NumIn() != 0 || t.NumOut() != 1 {
+			return reflect.Value{}, errors.Errorf("unsupported func type %v", t)
+		}
+		retVal, err := castToType(v, t.Out(0), ops)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		fn := reflect.MakeFunc(t, func(_ []reflect.Value) []reflect.Value {
+			return []reflect.Value{retVal}
+		})
+		return fn, nil
+	case reflect.Chan:
+		// Use reflect.MakeChan so named channel types (type MyChan chan int) are
+		// created correctly rather than a plain chan int.
+		size := 1
+		if s, sErr := ToE[int](ops[LENGTH]); sErr == nil && s >= 1 {
+			size = s
+		}
+		elem, err := castToType(v, t.Elem(), ops.Delete(LENGTH))
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		ch := reflect.MakeChan(t, size)
+		ch.Send(elem)
+		return ch, nil
 	default:
 		result, err := castToKind(v, t.Kind(), ops)
 		if err != nil {

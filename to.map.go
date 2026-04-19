@@ -31,16 +31,30 @@ func toMap(to reflect.Value, from any, ops Ops) (any, error) {
 
 	switch fromVal.Kind() {
 	case reflect.Map:
-		return mapFromMap(to, fromVal, ops)
+		result, err := mapFromMap(to, fromVal, ops)
+		if err != nil {
+			return ret, err
+		}
+		return result, nil
 	case reflect.Struct:
-		return mapFromStruct(to, fromVal, ops)
+		result, err := mapFromStruct(to, fromVal, ops)
+		if err != nil {
+			return ret, err
+		}
+		return result, nil
 	case reflect.Slice, reflect.Array:
-		return mapFromSlice(to, fromVal, ops)
+		result, err := mapFromSlice(to, fromVal, ops)
+		if err != nil {
+			return ret, err
+		}
+		return result, nil
 	default:
 		return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 	}
 }
 
+// mapFromMap converts a source map to the target map type, casting each key
+// and value individually. DUPLICATE_KEY_ERROR causes it to error on collision.
 func mapFromMap(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
 	dupKeyErr, _ := ops[DUPLICATE_KEY_ERROR].(bool)
 	targetMap := reflect.MakeMap(to.Type())
@@ -64,6 +78,10 @@ func mapFromMap(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
 	return targetMap.Interface(), nil
 }
 
+// mapFromStruct converts a struct to a map using field names as keys.
+// Embedded (anonymous) struct fields are recursively inlined. Unexported
+// fields are skipped unless PRIVATE is set. STRICT causes unconvertible
+// fields to return an error instead of being silently skipped.
 func mapFromStruct(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
 	targetMap := reflect.MakeMap(to.Type())
 	private, _ := ops[PRIVATE].(bool)
@@ -77,6 +95,9 @@ func mapFromStruct(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
 	return targetMap.Interface(), nil
 }
 
+// collectStructFields iterates struct fields and populates targetMap.
+// Exported anonymous (embedded) structs are recursed into so promoted fields
+// appear at the top level, matching Go's promotion semantics.
 func collectStructFields(
 	targetMap reflect.Value, src reflect.Value,
 	keyType reflect.Type, valType reflect.Type,
@@ -126,16 +147,28 @@ func collectStructFields(
 		if fieldVal.Kind() == reflect.Struct && fieldVal.CanInterface() {
 			switch valType.Kind() {
 			case reflect.Interface:
-				anyType := reflect.TypeOf((*any)(nil)).Elem()
-				nestedMapType := reflect.MapOf(keyType, anyType)
-				nested, nestedErr := mapFromStruct(reflect.Zero(nestedMapType), fieldVal, ops)
-				if nestedErr != nil {
-					if strict {
-						return nestedErr
+				if valType.NumMethod() != 0 {
+					// Non-empty interface (e.g. io.Reader): cast the raw value
+					// directly rather than wrapping the struct in a nested map.
+					castVal, err = castToType(rawVal, valType, ops)
+					if err != nil {
+						if strict {
+							return err
+						}
+						continue
 					}
-					continue
+				} else {
+					anyType := reflect.TypeOf((*any)(nil)).Elem()
+					nestedMapType := reflect.MapOf(keyType, anyType)
+					nested, nestedErr := mapFromStruct(reflect.Zero(nestedMapType), fieldVal, ops)
+					if nestedErr != nil {
+						if strict {
+							return nestedErr
+						}
+						continue
+					}
+					castVal = reflect.ValueOf(nested)
 				}
-				castVal = reflect.ValueOf(nested)
 			case reflect.Map:
 				nested, nestedErr := mapFromStruct(reflect.Zero(valType), fieldVal, ops)
 				if nestedErr != nil {
@@ -169,6 +202,7 @@ func collectStructFields(
 	return nil
 }
 
+// mapFromSlice converts a slice or array to a map using element indices as keys.
 func mapFromSlice(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
 	targetMap := reflect.MakeMap(to.Type())
 	keyType := to.Type().Key()

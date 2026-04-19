@@ -3,6 +3,7 @@ package cast
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -32,8 +33,8 @@ func toInt[TTo integer](from any, ops Ops) (TTo, error) {
 
 	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	unsigned := false
-	switch any(TTo(0)).(type) {
-	case uint, uint8, uint16, uint32, uint64, uintptr:
+	switch reflect.TypeOf(TTo(0)).Kind() {
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		unsigned = true
 	}
 
@@ -92,6 +93,8 @@ func toInt[TTo integer](from any, ops Ops) (TTo, error) {
 			}
 			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 		}
+		// Route through string to avoid float→int precision surprises; strToInt
+		// handles truncation consistently via math.Floor.
 		return strToInt[TTo](To[string](val), ops)
 	case float32:
 		if unsigned && val < 0 {
@@ -126,7 +129,10 @@ func toInt[TTo integer](from any, ops Ops) (TTo, error) {
 	}
 }
 
-// strToInt converts a string to an integer type.
+// strToInt converts a string to an integer type. It parses via float64 to
+// handle decimal strings like "3.7" (truncated to 3). On failure it strips
+// whitespace, drops the fractional part, and removes comma thousands-separators
+// before retrying (e.g. "1,234.56 kg" fails; "1,234" → 1234 succeeds).
 //
 // Options:
 //   - DEFAULT: integer, default 0. Default return value on error.
@@ -176,8 +182,8 @@ func strToInt[TTo integer](from string, ops Ops) (TTo, error) {
 		return TTo(math.Floor(val)), nil
 	}
 
-	switch any(TTo(0)).(type) {
-	case uint, uint8, uint16, uint32, uint64, uintptr:
+	switch reflect.TypeOf(TTo(0)).Kind() {
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errDetail)
 	}
 

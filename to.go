@@ -1,3 +1,12 @@
+// Package cast provides generic type conversion for Go 1.21+.
+//
+// The two public entry points are [To] (ignores errors) and [ToE] (returns
+// errors). Both accept an optional variadic [Op] list that controls conversion
+// behavior; see [Flag] for available options.
+//
+// Supported target types are described by the [Types] constraint: all basic
+// scalar types, slices of scalars, channels of scalars/slices, maps, and
+// [Func] wrappers for each of those groups.
 package cast
 
 import (
@@ -49,6 +58,8 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 	var retVal TTo
 
 	// Don't panic.
+	// Recover from any panic that may occur during type casting, converting it
+	// to an error so callers can handle it gracefully.
 	defer func() {
 		if r := recover(); r != nil {
 			panicTo = ret0Val
