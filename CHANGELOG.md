@@ -34,29 +34,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `chan []T` — channel of slices
 - `chan Func[T]` — channel of closures
 - `chan chan T` — channel of channels
-- `chan [N]T` — channel of fixed-size arrays (reflection path; N known only at
-  runtime)
 
 #### Extended func targets
 `toFunc` now handles composite return types in addition to scalars:
 - `Func[[]T]` — closure returning a slice
-- `Func[[N]T]` — closure returning a fixed-size array (reflection path)
 - `Func[chan T]` — closure returning a channel
 - `Func[chan []T]` — closure returning a channel of slices
 - `Func[chan Func[T]]` — closure returning a channel of closures
 - `Func[chan chan T]` — closure returning a channel of channels
-- `Func[chan [N]T]` — closure returning a channel of arrays (reflection path)
 
 #### Reflection helpers (`to.reflect.go`)
 New internal package-level functions shared by `toMap`, `toChan`, and `toFunc`:
 - `castToKind` — cast any value to a scalar `reflect.Kind`
 - `castToType` — cast any value to an arbitrary `reflect.Type`
-  (handles interface, slice, and scalar targets)
-- `castToSliceType` — element-wise cast to a slice type
-- `castToArray` — cast a slice/array source to a fixed-size array type
-- `makeArrayChan` — build and pre-load a `chan [N]T` at runtime
-- `makeArrayFunc` — build a `func() [N]T` closure at runtime
-- `makeArrayChanFunc` — build a `func() chan [N]T` closure at runtime
+  (handles interface, slice, func, chan, and scalar targets)
+- `castToSliceType` — element-wise cast to a named or concrete slice type
 
 #### Type system (`to.type.go`)
 - Added `~chan chan Tbase` to the `Tchan` constraint, enabling `chan chan T`

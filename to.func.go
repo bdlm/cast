@@ -115,11 +115,7 @@ func toFunc[TTo any](to reflect.Value, from any, ops Ops) (TTo, error) {
 			reti, err = makeFunc[[]string](from, ret, ops)
 		}
 
-	// Arrays — Func[[N]T] (reflection path, N is not known at compile time)
-	case reflect.Array:
-		reti, err = makeArrayFunc(to.Type(), from, ops)
-
-	// Channels — Func[chan T], Func[chan []T], Func[chan chan T], Func[chan [N]T]
+	// Channels — Func[chan T], Func[chan []T], Func[chan chan T]
 	case reflect.Chan:
 		switch to.Type().Out(0).Elem().Kind() {
 		//case reflect.Struct:
@@ -298,9 +294,6 @@ func toFunc[TTo any](to reflect.Value, from any, ops Ops) (TTo, error) {
 				reti, err = makeFunc[chan chan string](from, ret, ops)
 			}
 
-		// Func[chan [N]T] (reflection path)
-		case reflect.Array:
-			reti, err = makeArrayChanFunc(to.Type(), from, ops)
 		}
 	}
 	if err != nil {

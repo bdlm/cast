@@ -24,7 +24,7 @@ func toString(from any, ops Ops) (any, error) {
 	}
 
 	if useJSON, _ := ops[JSON].(bool); useJSON {
-		s, sErr := toString(from, Ops{})
+		s, sErr := toString(from, ops.Delete(JSON))
 		if sErr != nil {
 			return ret, sErr
 		}

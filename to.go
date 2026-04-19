@@ -37,11 +37,9 @@ func To[TTo Types](v any, o ...Op) TTo {
 //   - If the target type is a channel, a channel with a buffer of 1 is created
 //     and the cast value `v` is added to the the channel before it is returned.
 //
-//   - If the target type is an array a slice is created. To create a slice with
-//     a backing array with a spcific size, set the LENGTH flag to the desired
-//     size as an integer: `slice, err := cast.ToE[[]int](v, Ops{LENGTH: 10})`.
-//     The value `v` is cast to the required type and appended to the returned
-//     slice.
+//   - If the target type is a slice, a slice is created. To pre-allocate
+//     backing capacity set the LENGTH flag: `cast.ToE[[]int](v, cast.Op{cast.LENGTH, 10})`.
+//     The source must itself be a slice or array; scalar sources are rejected.
 //
 //   - If the target type is a map, the source is converted into the target map
 //     type. Supported sources: map (key/value types cast), struct or *struct
@@ -77,7 +75,7 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 	to := reflect.Indirect(toRef)
 
 	switch to.Type().Kind() {
-	// reflect.Array:
+	// reflect.Array:  array targets are not in Types; use []T slice targets instead.
 	// reflect.Invalid:
 	// reflect.Pointer:
 	// reflect.Struct:
@@ -103,8 +101,6 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 		retIface, err = toChan(to, val, options)
 	case reflect.Map:
 		retIface, err = toMap(to, val, options)
-	case reflect.Array:
-		fallthrough
 	case reflect.Slice:
 		fromType := reflect.TypeOf(val)
 		if fromType == nil || (fromType.Kind() != reflect.Slice && fromType.Kind() != reflect.Array) {

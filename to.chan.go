@@ -259,9 +259,6 @@ func toChan(to reflect.Value, from any, ops Ops) (any, error) {
 			returnValue, err = makeChan[chan string](from, size, ops)
 		}
 
-	// Arrays — chan [N]T (reflection path, N is not known at compile time)
-	case reflect.Array:
-		returnValue, err = makeArrayChan(to.Type(), from, size, ops)
 	}
 	if err != nil {
 		return defaultValue, err

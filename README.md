@@ -4,7 +4,7 @@
     <a href="https://gopherize.me/gopher/0b8aa47b088b43d10817e8a13cb115fdd87c0bcb"><img src="https://github.com/bdlm/cast/wiki/assets/images/gopher.png" width="300px"></a>
 </p>
 
-Now with Generics!
+Now with Generics! [![Go](https://github.com/bdlm/cast/actions/workflows/go.yml/badge.svg)](https://github.com/bdlm/cast/actions/workflows/go.yml)
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). You should expect package stability in <strong>Minor</strong> and <strong>Patch</strong> version releases
 
