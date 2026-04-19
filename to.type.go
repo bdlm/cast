@@ -1,6 +1,8 @@
 package cast
 
 import (
+	"maps"
+
 	"github.com/bdlm/errors/v2"
 )
 
@@ -50,13 +52,9 @@ func (o Ops) List() []Op {
 }
 
 func (o Ops) Delete(key Flag) Ops {
-	newO := make(Ops)
-	for k, v := range o {
-		if k != key {
-			newO[k] = v
-		}
-	}
-	return newO
+	n := Ops(maps.Clone(map[Flag]any(o)))
+	delete(n, key)
+	return n
 }
 
 func parseOps(o []Op) Ops {

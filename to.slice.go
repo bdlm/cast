@@ -2,6 +2,7 @@ package cast
 
 import (
 	"reflect"
+	"slices"
 
 	"github.com/bdlm/errors/v2"
 )
@@ -213,14 +214,9 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 					deduped = reflect.Append(deduped, rv.Index(i))
 				}
 			} else {
-				found := false
-				for _, prev := range seenNonComparable {
-					if reflect.DeepEqual(elem, prev) {
-						found = true
-						break
-					}
-				}
-				if !found {
+				if !slices.ContainsFunc(seenNonComparable, func(prev any) bool {
+					return reflect.DeepEqual(elem, prev)
+				}) {
 					seenNonComparable = append(seenNonComparable, elem)
 					deduped = reflect.Append(deduped, rv.Index(i))
 				}
