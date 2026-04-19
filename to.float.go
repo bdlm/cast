@@ -13,12 +13,12 @@ import (
 // Options:
 //   - DEFAULT: float32 or float64, default 0.0. Default return value on error.
 func toFloat[TTo float](from any, ops Ops) (TTo, error) {
-	var ret TTo
+	var defaultValue TTo
 	var ok bool
 
 	if _, ok = ops[DEFAULT]; ok {
-		if ret, ok = ops[DEFAULT].(TTo); !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+		if defaultValue, ok = ops[DEFAULT].(TTo); !ok {
+			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
 		}
 	}
 
@@ -54,55 +54,49 @@ func toFloat[TTo float](from any, ops Ops) (TTo, error) {
 		return TTo(typ), nil
 	case uint8:
 		return TTo(typ), nil
+	case uintptr:
+		return TTo(typ), nil
 	case fmt.Stringer:
 		return strToFloat[TTo](typ.String())
 	case string:
 		return strToFloat[TTo](typ)
 	}
 
-	ret, err := toFloat[TTo](fmt.Sprintf("%v", from), ops)
+	result, err := toFloat[TTo](fmt.Sprintf("%v", from), ops)
 	if nil != err {
-		return ret, errors.Wrap(err, ErrorStrUnableToCast, from, from, TTo(0))
+		return defaultValue, errors.Wrap(err, ErrorStrUnableToCast, from, from, TTo(0))
 	}
-	return ret, nil
+	return result, nil
 }
 
 // strToFloat converts a string to a float type.
 func strToFloat[TTo float](from string) (TTo, error) {
-	var e, err error
-	var val any
-	var bitSize = 64
-
-	switch any(TTo(0)).(type) {
-	case float32:
+	_, isFloat32 := any(TTo(0)).(float32)
+	bitSize := 64
+	if isFloat32 {
 		bitSize = 32
 	}
 
-	if val, e = strconv.ParseFloat(from, bitSize); e != nil {
-		err = e
-		from = strings.ReplaceAll(
+	val, err := strconv.ParseFloat(from, bitSize)
+	if err != nil {
+		stripped := strings.ReplaceAll(
 			strings.Split(
 				strings.Trim(from, "\r\n\t "),
 				".",
 			)[0],
 			",", "",
 		)
-		if val, e = strconv.ParseFloat(from, bitSize); e != nil {
+		val2, e := strconv.ParseFloat(stripped, bitSize)
+		if e != nil {
 			err = errors.WrapE(err, e)
-			_, e := strconv.ParseComplex(from, 64)
-			if e != nil {
-				err = errors.WrapE(err, e)
-			} else {
-				err = errors.Wrap(err, ErrorStrUnableToCast, from, from, TTo(0))
-				val = float64(0)
-			}
-		} else {
-			err = nil
+			return TTo(0), err
 		}
+		val = val2
+		err = nil
 	}
-	switch any(TTo(0)).(type) {
-	case float32:
-		val = float32(val.(float64))
+
+	if isFloat32 {
+		return TTo(float32(val)), nil
 	}
-	return val.(TTo), err
+	return TTo(val), err
 }

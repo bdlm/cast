@@ -84,7 +84,7 @@ Available flags:
 | `ABS` | `bool` | `false` | int/uint targets | Use the absolute value when casting a negative number to an unsigned type instead of returning an error |
 | `DUPLICATE_KEY_ERROR` | `bool` | `false` | map target | Return an error when two source keys cast to the same target key |
 | `JSON` | `bool` | `false` | string target | Encode the result as a JSON string literal (adds surrounding quotes and escaping) |
-| `LENGTH` | `int` | `1` (chan), `1` (slice) | slice/chan targets | Initial backing-array capacity for slices; buffer size for channels |
+| `LENGTH` | `int` | `1` (chan), `1` (slice) | slice/chan targets | Initial backing-array capacity for slices; buffer size for channels must be 1 or greater |
 | `PRIVATE` | `bool` | `false` | map target (struct source) | Include unexported struct fields in the output map |
 | `STRICT` | `bool` | `false` | map target (struct source) | Return an error instead of silently skipping fields that cannot be converted |
 | `UNIQUE_VALUES` | `bool` | `false` | slice target | Deduplicate slice elements after conversion |

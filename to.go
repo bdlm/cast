@@ -50,9 +50,14 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 
 	// Don't panic.
 	defer func() {
-		if err := recover(); err != nil {
+		if r := recover(); r != nil {
 			panicTo = ret0Val
-			panicErr = errors.Wrap(err.(error), "failure casting %T to %T (panic)", val, ret0Val)
+			switch e := r.(type) {
+			case error:
+				panicErr = errors.Wrap(e, "failure casting %T to %T (panic)", val, ret0Val)
+			default:
+				panicErr = errors.Errorf("failure casting %T to %T (panic): %v", val, ret0Val, e)
+			}
 		}
 	}()
 	options := parseOps(ops)
@@ -139,13 +144,9 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 		return retVal, errors.WrapE(Error, err)
 	}
 
-	if retVal, ok = retIface.(TTo); ok {
-		return retVal, nil
-	}
-
-	if nil == retIface {
+	if retIface == nil {
 		return ret0Val, nil
 	}
 
-	return retVal, errors.WrapE(Error, errors.Errorf("unable to cast %#.10v of type %T to %T (%#.10v %T)", val, val, to.Interface(), retVal, retVal))
+	return retVal, nil
 }

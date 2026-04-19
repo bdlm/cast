@@ -155,6 +155,8 @@ func TestUintToFloat(t *testing.T) {
 		{uint32(0), float32(0), nil, false},
 		{uint64(1), float32(1), nil, false},
 		{uint64(0), float32(0), nil, false},
+		{uintptr(1), float32(1), nil, false},
+		{uintptr(0), float32(0), nil, false},
 	})
 	testSimpleCases[float64](t, []testCase{
 		{uint(1), float64(1), nil, false},
@@ -167,5 +169,7 @@ func TestUintToFloat(t *testing.T) {
 		{uint32(0), float64(0), nil, false},
 		{uint64(1), float64(1), nil, false},
 		{uint64(0), float64(0), nil, false},
+		{uintptr(1), float64(1), nil, false},
+		{uintptr(0), float64(0), nil, false},
 	})
 }

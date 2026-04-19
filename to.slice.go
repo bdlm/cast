@@ -30,21 +30,24 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 
 	size := 1
 	if _, ok = ops[LENGTH]; ok {
-		size = To[int](ops[LENGTH])
+		var sizeErr error
+		if size, sizeErr = ToE[int](ops[LENGTH]); sizeErr != nil {
+			return ret, errors.Errorf(ErrorInvalidOption, "LENGTH", ops[LENGTH])
+		}
 	}
 	if size < 0 {
 		return ret, errors.Errorf("invalid array length %d", size)
 	}
 
-	fromKind := reflect.TypeOf(val).Kind()
-	if fromKind != reflect.Slice && fromKind != reflect.Array {
-		return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", val, val, to.Interface())
+	fromType := reflect.TypeOf(val)
+	if fromType == nil || (fromType.Kind() != reflect.Slice && fromType.Kind() != reflect.Array) {
+		return ret, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
 	}
 
 	// Initialize the result slice based on target element type.
 	switch to.Interface().(type) {
 	default:
-		return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", val, val, to.Interface())
+		return ret, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
 	case []interface{}:
 		ret = make([]any, 0, size)
 	case []bool:

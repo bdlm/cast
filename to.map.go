@@ -68,10 +68,10 @@ func mapFromStruct(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
 	targetMap := reflect.MakeMap(to.Type())
 	private, _ := ops[PRIVATE].(bool)
 	strict, _ := ops[STRICT].(bool)
-	keyKind := to.Type().Key().Kind()
+	keyType := to.Type().Key()
 	valType := to.Type().Elem()
 
-	if err := collectStructFields(targetMap, src, keyKind, valType, private, strict, ops); err != nil {
+	if err := collectStructFields(targetMap, src, keyType, valType, private, strict, ops); err != nil {
 		return nil, err
 	}
 	return targetMap.Interface(), nil
@@ -79,7 +79,7 @@ func mapFromStruct(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
 
 func collectStructFields(
 	targetMap reflect.Value, src reflect.Value,
-	keyKind reflect.Kind, valType reflect.Type,
+	keyType reflect.Type, valType reflect.Type,
 	private, strict bool, ops Ops,
 ) error {
 	for i := 0; i < src.NumField(); i++ {
@@ -93,7 +93,7 @@ func collectStructFields(
 			}
 			embedded := reflect.Indirect(fieldVal)
 			if embedded.IsValid() && embedded.Kind() == reflect.Struct {
-				if err := collectStructFields(targetMap, embedded, keyKind, valType, private, strict, ops); err != nil {
+				if err := collectStructFields(targetMap, embedded, keyType, valType, private, strict, ops); err != nil {
 					return err
 				}
 				continue
@@ -113,7 +113,7 @@ func collectStructFields(
 			continue
 		}
 
-		castKey, err := castToKind(field.Name, keyKind, ops)
+		castKey, err := castToType(field.Name, keyType, ops)
 		if err != nil {
 			if strict {
 				return errors.Errorf("cannot cast field name %q to map key: %v", field.Name, err)
@@ -126,8 +126,9 @@ func collectStructFields(
 		if fieldVal.Kind() == reflect.Struct && fieldVal.CanInterface() {
 			switch valType.Kind() {
 			case reflect.Interface:
-				mapType := reflect.TypeOf(map[string]any{})
-				nested, nestedErr := mapFromStruct(reflect.Zero(mapType), fieldVal, ops)
+				anyType := reflect.TypeOf((*any)(nil)).Elem()
+				nestedMapType := reflect.MapOf(keyType, anyType)
+				nested, nestedErr := mapFromStruct(reflect.Zero(nestedMapType), fieldVal, ops)
 				if nestedErr != nil {
 					if strict {
 						return nestedErr
@@ -170,13 +171,13 @@ func collectStructFields(
 
 func mapFromSlice(to reflect.Value, src reflect.Value, ops Ops) (any, error) {
 	targetMap := reflect.MakeMap(to.Type())
-	keyKind := to.Type().Key().Kind()
+	keyType := to.Type().Key()
 	valType := to.Type().Elem()
 
 	for i := 0; i < src.Len(); i++ {
-		castKey, err := castToKind(i, keyKind, ops)
+		castKey, err := castToType(i, keyType, ops)
 		if err != nil {
-			return nil, errors.Errorf("cannot cast index %d to map key kind %v: %v", i, keyKind, err)
+			return nil, errors.Errorf("cannot cast index %d to map key type %v: %v", i, keyType, err)
 		}
 		elem := src.Index(i)
 		var elemIface any

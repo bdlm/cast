@@ -24,6 +24,9 @@ func toFunc[TTo any](to reflect.Value, from any, ops Ops) (TTo, error) {
 		ops = ops.Delete(DEFAULT) // Prevent DEFAULT from being passed to element casts.
 	}
 
+	if to.Type().NumOut() < 1 {
+		return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+	}
 	switch to.Type().Out(0).Kind() {
 	//case reflect.Struct:
 	//case reflect.UnsafePointer:
@@ -208,6 +211,9 @@ func toFunc[TTo any](to reflect.Value, from any, ops Ops) (TTo, error) {
 
 		// Func[chan Func[T]]
 		case reflect.Func:
+			if to.Type().Out(0).Elem().NumOut() < 1 {
+				return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+			}
 			switch to.Type().Out(0).Elem().Out(0).Kind() {
 			default:
 				return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())

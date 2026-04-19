@@ -1,6 +1,7 @@
 package cast
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/bdlm/errors/v2"
@@ -17,7 +18,7 @@ func toBool[TTo bool](from any, ops Ops) (TTo, error) {
 
 	if _, ok = ops[DEFAULT]; ok {
 		if ret, ok = ops[DEFAULT].(TTo); !ok {
-			return false, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
 		}
 	}
 
@@ -40,7 +41,7 @@ func toBool[TTo bool](from any, ops Ops) (TTo, error) {
 		return from != 0, nil
 	case int16:
 		return from != 0, nil
-	case int32: // rune
+	case int32:
 		return from != 0 && from != '0', nil
 	case int64:
 		return from != 0, nil
@@ -56,6 +57,8 @@ func toBool[TTo bool](from any, ops Ops) (TTo, error) {
 		return from != 0, nil
 	case nil:
 		return false, nil
+	case fmt.Stringer:
+		return toBool[TTo](from.String(), ops)
 	case string:
 		r, e := strconv.ParseBool(from)
 		if nil != e {
@@ -68,5 +71,5 @@ func toBool[TTo bool](from any, ops Ops) (TTo, error) {
 		return TTo(r), nil
 	}
 
-	return false, errors.Errorf(ErrorStrUnableToCast, from, from, false)
+	return ret, errors.Errorf(ErrorStrUnableToCast, from, from, false)
 }

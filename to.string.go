@@ -55,7 +55,10 @@ func toString(from any, ops Ops) (any, error) {
 		if reflect.TypeOf(val).Kind() == reflect.Chan {
 			return fmt.Sprintf("%v", val), nil
 		}
-		b, _ := json.Marshal(val)
+		b, err := json.Marshal(val)
+		if err != nil {
+			return ret, errors.Wrap(err, "JSON encoding failed")
+		}
 		return string(b), nil
 	}
 }

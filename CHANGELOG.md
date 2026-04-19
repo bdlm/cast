@@ -77,8 +77,6 @@ New internal package-level functions shared by `toMap`, `toChan`, and `toFunc`:
 #### `toChan` refactor (`to.chan.go`)
 - Replaced per-type inline make+send blocks with a shared `makeChan[T]`
   generic helper (cast, make, send, return).
-- Channel buffer minimum changed from 1 to 0 (unbuffered channels are now
-  valid; `LENGTH=0` creates an unbuffered channel).
 
 #### `toFunc` refactor (`to.func.go`)
 - Replaced per-type inline logic with calls to `makeFunc[T]` and the new

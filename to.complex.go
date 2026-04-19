@@ -25,14 +25,14 @@ func toComplex[TTo complexNum](from any, ops Ops) (TTo, error) {
 	// Preserve both real and imaginary parts for complex sources.
 	switch v := from.(type) {
 	case complex64:
-		switch any(ret).(type) {
+		switch any(TTo(0)).(type) {
 		case complex64:
 			return TTo(v), nil
 		case complex128:
 			return TTo(complex128(v)), nil
 		}
 	case complex128:
-		switch any(ret).(type) {
+		switch any(TTo(0)).(type) {
 		case complex64:
 			return TTo(complex64(v)), nil
 		case complex128:
@@ -41,15 +41,16 @@ func toComplex[TTo complexNum](from any, ops Ops) (TTo, error) {
 	}
 
 	// For non-complex sources the imaginary part is zero by definition.
-	switch any(ret).(type) {
+	floatOps := ops.Delete(DEFAULT)
+	switch any(TTo(0)).(type) {
 	case complex64:
-		f, err := toFloat[float32](from, ops)
+		f, err := toFloat[float32](from, floatOps)
 		if nil != err {
 			return ret, err
 		}
 		return TTo(complex(f, 0)), nil
 	case complex128:
-		f, err := toFloat[float64](from, ops)
+		f, err := toFloat[float64](from, floatOps)
 		if nil != err {
 			return ret, err
 		}
