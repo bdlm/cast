@@ -64,16 +64,10 @@ Both functions accept optional `Op` values that control conversion behavior. Eac
 
 ```go
 result := cast.To[float32](val, cast.Op{cast.DEFAULT, float32(3.14)})
+
+items := []any{1, "two", true, 1}
 result, err := cast.ToE[[]string](items, cast.Op{cast.UNIQUE_VALUES, true})
-
-items := map[any]any{
-    "10": 10,
-    0: struct{Field1 string, Field2 int}{"struct": 10},
-    struct{}{}: "struct{}{} value",
-}
-result, err := cast.ToE[[]string](items, cast.Op{cast.UNIQUE_VALUES, true}, cast.Op{cast.JSON, true})
-
-
+// result = []string{"1", "two", "true"}  (duplicate 1 removed)
 ```
 
 Available flags:

@@ -102,113 +102,114 @@ func toSlice(to reflect.Value, val any, ops Ops) (any, error) {
 		return sliceVal.Interface(), nil
 	}
 
+	opList := ops.List()
 	for a := 0; a < slice.Len(); a++ {
 		elm := slice.Index(a).Interface()
 		switch r := result.(type) {
 		case []any:
-			tval, err := ToE[any](elm, ops.List()...)
+			tval, err := ToE[any](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []bool:
-			tval, err := ToE[bool](elm, ops.List()...)
+			tval, err := ToE[bool](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []complex64:
-			tval, err := ToE[complex64](elm, ops.List()...)
+			tval, err := ToE[complex64](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []complex128:
-			tval, err := ToE[complex128](elm, ops.List()...)
+			tval, err := ToE[complex128](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []float32:
-			tval, err := ToE[float32](elm, ops.List()...)
+			tval, err := ToE[float32](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []float64:
-			tval, err := ToE[float64](elm, ops.List()...)
+			tval, err := ToE[float64](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int:
-			tval, err := ToE[int](elm, ops.List()...)
+			tval, err := ToE[int](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int8:
-			tval, err := ToE[int8](elm, ops.List()...)
+			tval, err := ToE[int8](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int16:
-			tval, err := ToE[int16](elm, ops.List()...)
+			tval, err := ToE[int16](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int32:
-			tval, err := ToE[int32](elm, ops.List()...)
+			tval, err := ToE[int32](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int64:
-			tval, err := ToE[int64](elm, ops.List()...)
+			tval, err := ToE[int64](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint:
-			tval, err := ToE[uint](elm, ops.List()...)
+			tval, err := ToE[uint](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint8:
-			tval, err := ToE[uint8](elm, ops.List()...)
+			tval, err := ToE[uint8](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint16:
-			tval, err := ToE[uint16](elm, ops.List()...)
+			tval, err := ToE[uint16](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint32:
-			tval, err := ToE[uint32](elm, ops.List()...)
+			tval, err := ToE[uint32](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint64:
-			tval, err := ToE[uint64](elm, ops.List()...)
+			tval, err := ToE[uint64](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uintptr:
-			tval, err := ToE[uintptr](elm, ops.List()...)
+			tval, err := ToE[uintptr](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []string:
-			tval, err := ToE[string](elm, ops.List()...)
+			tval, err := ToE[string](elm, opList...)
 			if err != nil {
 				return defaultValue, err
 			}

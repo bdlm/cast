@@ -144,7 +144,15 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 	}
 
 	if retVal, ok = retIface.(TTo); !ok && retIface != nil {
-		return ret0Val, errors.WrapE(Error, errors.Errorf("unable to cast %#.10v of type %T to %T (%#.10v %T)", val, val, *new(TTo), retVal, retVal))
+		// Direct assertion failed; try a reflect-based conversion for named types
+		// whose underlying kind matches (e.g. type MyInt int → int convertible to MyInt).
+		rv := reflect.ValueOf(retIface)
+		if rv.IsValid() && rv.Type().ConvertibleTo(to.Type()) {
+			retVal, ok = rv.Convert(to.Type()).Interface().(TTo)
+		}
+		if !ok {
+			return ret0Val, errors.WrapE(Error, errors.Errorf("unable to cast %#.10v of type %T to %T (%#.10v %T)", val, val, *new(TTo), retVal, retVal))
+		}
 	}
 
 	if err != nil {

@@ -102,7 +102,14 @@ func castToType(v any, t reflect.Type, ops Ops) (reflect.Value, error) {
 		// Use reflect.MakeChan so named channel types (type MyChan chan int) are
 		// created correctly rather than a plain chan int.
 		size := 1
-		if s, sErr := ToE[int](ops[LENGTH]); sErr == nil && s >= 1 {
+		if _, ok := ops[LENGTH]; ok {
+			s, sErr := ToE[int](ops[LENGTH])
+			if sErr != nil {
+				return reflect.Value{}, errors.Errorf(ErrorInvalidOption, "LENGTH", ops[LENGTH])
+			}
+			if s < 1 {
+				return reflect.Value{}, errors.Errorf("invalid channel buffer size %d", s)
+			}
 			size = s
 		}
 		elem, err := castToType(v, t.Elem(), ops.Delete(LENGTH))
