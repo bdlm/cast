@@ -1062,6 +1062,58 @@ func TestToChanFuncElement(t *testing.T) {
 	})
 }
 
+// TestToChanSliceDefaultArm exercises the default: arm in toChan's chan []T
+// inner switch (to.chan.go:91): fires when the slice element kind (struct) is
+// not one of the explicitly handled kinds.
+func TestToChanSliceDefaultArm(t *testing.T) {
+	_, err := cast.ToE[chan []struct{}](42)
+	if err == nil {
+		t.Fatal("expected error for chan []struct{} (unsupported slice element kind), got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %v", err)
+	}
+}
+
+// TestToChanFuncDefaultArm exercises the default: arm in toChan's chan Func[T]
+// inner switch (to.chan.go:137): fires when the Func return kind (struct) is
+// not one of the explicitly handled kinds.
+func TestToChanFuncDefaultArm(t *testing.T) {
+	_, err := cast.ToE[chan cast.Func[struct{}]](42)
+	if err == nil {
+		t.Fatal("expected error for chan Func[struct{}] (unsupported Func return kind), got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %v", err)
+	}
+}
+
+// TestToChanFuncSliceDefaultArm exercises the default: arm in toChan's
+// chan Func[[]T] inner switch (to.chan.go:177): fires when the Func[[]T] slice
+// element kind (struct) is not one of the explicitly handled kinds.
+func TestToChanFuncSliceDefaultArm(t *testing.T) {
+	_, err := cast.ToE[chan cast.Func[[]struct{}]](42)
+	if err == nil {
+		t.Fatal("expected error for chan Func[[]struct{}] (unsupported element kind), got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %v", err)
+	}
+}
+
+// TestToChanNestedDefaultArm exercises the default: arm in toChan's chan chan T
+// inner switch (to.chan.go:221): fires when the inner channel element kind
+// (struct) is not one of the explicitly handled kinds.
+func TestToChanNestedDefaultArm(t *testing.T) {
+	_, err := cast.ToE[chan chan struct{}](42)
+	if err == nil {
+		t.Fatal("expected error for chan chan struct{} (unsupported nested element kind), got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %v", err)
+	}
+}
+
 func testChanCases[TTo any](t *testing.T, cases []testCase) {
 	var typ TTo
 	name := fmt.Sprintf("%T", typ)

@@ -38,11 +38,6 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 		return defaultValue, errors.Errorf("invalid array length %d", size)
 	}
 
-	fromType := reflect.TypeOf(val)
-	if fromType == nil || (fromType.Kind() != reflect.Slice && fromType.Kind() != reflect.Array) {
-		return defaultValue, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
-	}
-
 	slice := reflect.ValueOf(val)
 
 	// Initialize the result slice based on target element type.

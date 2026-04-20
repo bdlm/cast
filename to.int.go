@@ -163,9 +163,6 @@ func strToInt[TTo integer](from string, ops ops) (TTo, error) {
 	if val < 0 && abs {
 		val = -val
 	}
-	if err != nil {
-		return defaultValue, errors.WrapE(err, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
-	}
 	if val >= 0 {
 		return TTo(math.Floor(val)), nil
 	}

@@ -690,3 +690,17 @@ func TestMapInterfaceValueAssignability(t *testing.T) {
 		}
 	})
 }
+
+// TestMapFromSliceKeyCastError exercises the key-cast error path in
+// mapFromSlice (to.map.go:213-215): when the slice index cannot be cast to the
+// map key type, mapFromSlice returns an error. A struct{} key type triggers
+// this because castToKind has no handler for reflect.Struct.
+func TestMapFromSliceKeyCastError(t *testing.T) {
+	_, err := cast.ToE[map[struct{}]int]([]int{1, 2, 3})
+	if err == nil {
+		t.Fatal("expected error casting slice index to struct{} key, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %v", err)
+	}
+}
