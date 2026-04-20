@@ -364,6 +364,36 @@ func TestSliceToAnySlice(t *testing.T) {
 	})
 }
 
+func TestSliceToUintptrSlice(t *testing.T) {
+	testSliceCases[[]uintptr](t, []testCase{
+		{in: []int{1, 2, 3}, expect: []uintptr{1, 2, 3}, err: nil, expectErr: false},
+		{in: []string{"1", "2"}, expect: []uintptr{1, 2}, err: nil, expectErr: false},
+		{in: []int{-1}, expect: []uintptr{}, err: nil, expectErr: true},
+		{in: 1, expect: []uintptr{}, err: nil, expectErr: true},
+	})
+}
+
+func TestSliceLengthErrors(t *testing.T) {
+	t.Run("invalid LENGTH string errors", func(t *testing.T) {
+		_, err := cast.ToE[[]int]([]string{"1", "2"}, cast.Op{cast.LENGTH, "bad"})
+		if err == nil {
+			t.Fatal("expected error for invalid LENGTH value, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("negative LENGTH errors", func(t *testing.T) {
+		_, err := cast.ToE[[]int]([]string{"1", "2"}, cast.Op{cast.LENGTH, -1})
+		if err == nil {
+			t.Fatal("expected error for negative LENGTH, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+}
+
 func TestSliceInvalidDefault(t *testing.T) {
 	t.Run("string DEFAULT for []int", func(t *testing.T) {
 		_, err := cast.ToE[[]int]([]string{"1", "2"}, cast.Op{cast.DEFAULT, "not a slice"})
@@ -398,6 +428,86 @@ func TestSliceInvalidDefault(t *testing.T) {
 			t.Errorf("expected nil error, got %v", err)
 		}
 	})
+}
+
+// TestToSliceElementErrors covers the error-return inside toSlice's per-type
+// loop for each typed slice case. Each subtest passes a slice with an
+// unconvertible element so the element-cast fails mid-loop.
+func TestToSliceElementErrors(t *testing.T) {
+	bad := []string{"bad"}
+
+	t.Run("[]bool element error", func(t *testing.T) {
+		_, err := cast.ToE[[]bool](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]complex64 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]complex64](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]complex128 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]complex128](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]float32 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]float32](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]float64 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]float64](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]int element error", func(t *testing.T) {
+		_, err := cast.ToE[[]int](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]int8 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]int8](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]int16 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]int16](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]int32 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]int32](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]int64 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]int64](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+}
+
+// TestToSliceNamedTypeUniqueVals covers the dedupeSliceVal call inside toSlice's
+// default/named-type branch (line 98-100 in to.slice.go).
+func TestToSliceNamedTypeUniqueVals(t *testing.T) {
+	result, err := cast.ToE[tags]([]string{"a", "b", "a", "c", "b"}, cast.Op{cast.UNIQUE_VALUES, true})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !reflect.DeepEqual(result, tags{"a", "b", "c"}) {
+		t.Errorf("expected [a b c], got %v", result)
+	}
 }
 
 func testSliceCases[TTo any](t *testing.T, cases []testCase) {

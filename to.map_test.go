@@ -503,6 +503,168 @@ func TestMapFromStructNestedMapValue(t *testing.T) {
 	}
 }
 
+// TestCollectStructFieldsEmbeddedError covers the error-return in
+// collectStructFields when the anonymous-field recursion returns an error
+// (line 117-119 in to.map.go). Requires strict=true so the nested error
+// propagates instead of being skipped.
+func TestCollectStructFieldsEmbeddedError(t *testing.T) {
+	type BadInner struct{ Tags []string }
+	type OuterEmbed struct {
+		BadInner
+		Score int
+	}
+	src := OuterEmbed{BadInner: BadInner{Tags: []string{"a"}}, Score: 5}
+	_, err := cast.ToE[map[string]int](src, cast.Op{cast.STRICT, true})
+	if err == nil {
+		t.Fatal("expected error from embedded struct recursion, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %v", err)
+	}
+}
+
+// TestCollectStructFieldsMapValTypeError covers the strict error-return when the
+// target map value type is itself a map and the nested mapFromStruct call fails
+// (lines 174-178 in to.map.go). The outer struct has only a nested struct field
+// so that the map-valtype branch is reached before any scalar field can fail.
+func TestCollectStructFieldsMapValTypeError(t *testing.T) {
+	type Inner struct{ Tags []string } // Tags []string can't cast to int
+	type Outer struct{ Inner Inner }   // only field — no scalar to fail first
+	src := Outer{Inner: Inner{Tags: []string{"a"}}}
+	_, err := cast.ToE[map[string]map[string]int](src, cast.Op{cast.STRICT, true})
+	if err == nil {
+		t.Fatal("expected error from map-valtype nested struct failure, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %v", err)
+	}
+}
+
+// TestCollectStructFieldsAnyValTypeNestedError covers lines 164-168 in
+// to.map.go: the empty-interface (any) valType branch where mapFromStruct on
+// the nested struct returns an error under strict mode. The outer field name
+// "True" casts to bool (the outer key type), reaching the any-valType branch;
+// the inner struct's field "Score" can't cast to bool as a key, causing the
+// nested mapFromStruct to fail with strict=true.
+func TestCollectStructFieldsAnyValTypeNestedError(t *testing.T) {
+	type Inner struct{ Score int }
+	type Outer struct{ True Inner } // "True" parses as bool key
+	src := Outer{True: Inner{Score: 5}}
+	_, err := cast.ToE[map[bool]any](src, cast.Op{cast.STRICT, true})
+	if err == nil {
+		t.Fatal("expected error from nested mapFromStruct failure (any valType), got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %v", err)
+	}
+}
+
+// TestMapFromSliceNilElement covers castToSliceType's nil-source branch
+// (line 143-145 in util.reflect.go) via a map whose value type is []int and
+// whose source contains a nil any element.
+func TestMapFromSliceNilElement(t *testing.T) {
+	result, err := cast.ToE[map[string][]int](map[string]any{"a": nil})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !reflect.DeepEqual(result["a"], []int{}) {
+		t.Errorf("expected empty []int, got %v", result["a"])
+	}
+}
+
+// TestMapFromStructNonEmptyInterfaceValType exercises collectStructFields'
+// valType.NumMethod() != 0 branch: when the target map value type is a non-empty
+// interface, struct fields are cast directly rather than wrapped in a nested map.
+func TestMapFromStructNonEmptyInterfaceValType(t *testing.T) {
+	// testStringer is defined in to.string_test.go (same package cast_test).
+	type notStringer struct{ n int }
+	type mixedStringers struct {
+		Name    testStringer
+		NoStr   notStringer // struct, does NOT implement fmt.Stringer
+	}
+	src := mixedStringers{Name: testStringer{"hello"}, NoStr: notStringer{42}}
+
+	t.Run("non-strict: implementing field kept, non-implementing skipped", func(t *testing.T) {
+		result, err := cast.ToE[map[string]fmt.Stringer](src)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result["Name"] == nil || result["Name"].String() != "hello" {
+			t.Errorf("expected Name=hello Stringer, got %v", result["Name"])
+		}
+		if _, ok := result["NoStr"]; ok {
+			t.Error("expected NoStr to be skipped (does not implement Stringer)")
+		}
+	})
+	t.Run("strict: non-implementing struct field returns error", func(t *testing.T) {
+		// NoStr is a struct that doesn't implement Stringer → strict hits the
+		// non-empty interface error return inside the nested-struct if-block.
+		_, err := cast.ToE[map[string]fmt.Stringer](src, cast.Op{cast.STRICT, true})
+		if err == nil {
+			t.Error("expected error in strict mode for non-Stringer struct field, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+}
+
+// TestMapFromStructNestedStructToScalar exercises collectStructFields' default:
+// branch in the nested-struct valType switch: a struct field cast to a scalar
+// target type (string) goes through castToType/castToKind/toString.
+func TestMapFromStructNestedStructToScalar(t *testing.T) {
+	type point struct{ X, Y int }
+	type shape struct {
+		P    point
+		Name string
+	}
+	src := shape{P: point{1, 2}, Name: "circle"}
+
+	t.Run("nested struct cast to string succeeds", func(t *testing.T) {
+		result, err := cast.ToE[map[string]string](src)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result["Name"] != "circle" {
+			t.Errorf("expected Name=circle, got %v", result["Name"])
+		}
+		// P is a struct cast to string via JSON marshal
+		if result["P"] == "" {
+			t.Error("expected non-empty JSON for nested struct P")
+		}
+	})
+	t.Run("nested struct cast to int fails in strict mode", func(t *testing.T) {
+		type withNested struct {
+			N     point
+			Score int
+		}
+		_, err := cast.ToE[map[string]int](withNested{N: point{1, 2}, Score: 5}, cast.Op{cast.STRICT, true})
+		if err == nil {
+			t.Error("expected error: struct→int cast fails in strict mode")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("nested struct cast to int fails non-strict: field skipped", func(t *testing.T) {
+		type withNested struct {
+			N     point
+			Score int
+		}
+		// non-strict: N (struct→int fails) skipped; Score included
+		result, err := cast.ToE[map[string]int](withNested{N: point{1, 2}, Score: 5})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result["Score"] != 5 {
+			t.Errorf("expected Score=5, got %v", result["Score"])
+		}
+		if _, ok := result["N"]; ok {
+			t.Error("expected N to be skipped")
+		}
+	})
+}
+
 func TestMapInterfaceValueAssignability(t *testing.T) {
 	type Stringer interface{ String() string }
 	type myStringer struct{ s string }

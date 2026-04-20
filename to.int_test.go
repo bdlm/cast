@@ -574,3 +574,28 @@ func TestNegativeFloatToUintErrors(t *testing.T) {
 		}
 	}
 }
+
+// TestToIntFromUintTypes covers the uintptr and uint16 arms in toInt's type
+// switch, which are only reached when the source value is already one of those
+// exact types.
+func TestToIntFromUintTypes(t *testing.T) {
+	if v, err := cast.ToE[int](uintptr(42)); err != nil || v != 42 {
+		t.Errorf("ToE[int](uintptr(42)): expected 42/nil, got %v/%v", v, err)
+	}
+	if v, err := cast.ToE[int](uint16(7)); err != nil || v != 7 {
+		t.Errorf("ToE[int](uint16(7)): expected 7/nil, got %v/%v", v, err)
+	}
+}
+
+// TestStrToIntDefaultWrongType2 covers the DEFAULT type-assertion failure in
+// strToInt via a decimal-string source (not an integer literal), exercising the
+// strToInt code path specifically.
+func TestStrToIntDefaultWrongType2(t *testing.T) {
+	_, err := cast.ToE[int]("3.14", cast.Op{cast.DEFAULT, "not an int"})
+	if err == nil {
+		t.Fatal("expected error for wrong DEFAULT type, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %v", err)
+	}
+}
