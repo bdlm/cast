@@ -80,8 +80,9 @@ func mapFromMap(to reflect.Value, src reflect.Value, ops ops) (any, error) {
 
 // mapFromStruct converts a struct to a map using field names as keys.
 // Embedded (anonymous) struct fields are recursively inlined. Unexported
-// fields are skipped unless PRIVATE is set. STRICT causes unconvertible
-// fields to return an error instead of being silently skipped.
+// fields are skipped unless PRIVATE is set; when PRIVATE is set, unexported
+// scalar fields are included, while unexported non-scalar fields are skipped
+// (or return an error when STRICT is set).
 func mapFromStruct(to reflect.Value, src reflect.Value, ops ops) (any, error) {
 	targetMap := reflect.MakeMap(to.Type())
 	private := ops.private

@@ -79,7 +79,7 @@ Available flags:
 | `DUPLICATE_KEY_ERROR` | `bool` | `false` | map target | Return an error when two source keys cast to the same target key |
 | `JSON` | `bool` | `false` | string target | Encode the result as a JSON string literal (adds surrounding quotes and escaping) |
 | `LENGTH` | `int` | `1` (chan), `1` (slice) | slice/chan targets | Initial backing-array capacity for slices; buffer size for channels must be 1 or greater |
-| `PRIVATE` | `bool` | `false` | map target (struct source) | Include unexported struct fields in the output map |
+| `PRIVATE` | `bool` | `false` | map target (struct source) | Include unexported scalar struct fields; unexported non-scalar fields are skipped (or error with `STRICT`) |
 | `STRICT` | `bool` | `false` | map target (struct source) | Return an error instead of silently skipping fields that cannot be converted |
 | `UNIQUE_VALUES` | `bool` | `false` | slice target | Deduplicate slice elements after conversion |
 
@@ -149,7 +149,7 @@ idx, err := cast.ToE[map[int]string]([]string{"a", "b", "c"})
 // Struct options
 p2, err := cast.ToE[map[string]any](
     myStruct,
-    cast.Op{cast.PRIVATE, true},  // include unexported fields
+    cast.Op{cast.PRIVATE, true},  // include unexported scalar fields
     cast.Op{cast.STRICT,  true},  // error instead of skipping bad fields
 )
 ```
@@ -231,4 +231,3 @@ cast.ToE[int]("Hi!")          // 0 (int), error: unable to cast "Hi!" of type st
 |          | **`chan`**       | n | n | n | n | n | n | n | n | n | n | n | n | n | n | n | y | n | n | n | n |
 
 > **Interface targets (`error`, `fmt.Stringer`):** Casting to interface targets is supported when the source value already implements the target interface; the value is returned as-is. These are not reflected in the matrix above.
-
