@@ -341,6 +341,29 @@ func TestSliceUniqueValuesNonComparable(t *testing.T) {
 	})
 }
 
+func TestSliceToStringSlice(t *testing.T) {
+	testSliceCases[[]string](t, []testCase{
+		{in: []int{1, 2, 3}, expect: []string{"1", "2", "3"}, err: nil, expectErr: false},
+		{in: []bool{true, false}, expect: []string{"true", "false"}, err: nil, expectErr: false},
+		{in: []float64{1.5, -1.5}, expect: []string{"1.5", "-1.5"}, err: nil, expectErr: false},
+		{in: []string{"a", "b"}, expect: []string{"a", "b"}, err: nil, expectErr: false},
+		{in: []string{}, expect: []string{}, err: nil, expectErr: false},
+		{in: 1, expect: []string{}, err: nil, expectErr: true},
+		{in: "hello", expect: []string{}, err: nil, expectErr: true},
+	})
+}
+
+func TestSliceToAnySlice(t *testing.T) {
+	testSliceCases[[]any](t, []testCase{
+		{in: []int{1, 2, 3}, expect: []any{1, 2, 3}, err: nil, expectErr: false},
+		{in: []string{"a", "b"}, expect: []any{"a", "b"}, err: nil, expectErr: false},
+		{in: []bool{true, false}, expect: []any{true, false}, err: nil, expectErr: false},
+		{in: []any{1, "a", true}, expect: []any{1, "a", true}, err: nil, expectErr: false},
+		{in: []any{}, expect: []any{}, err: nil, expectErr: false},
+		{in: 1, expect: []any{}, err: nil, expectErr: true},
+	})
+}
+
 func TestSliceInvalidDefault(t *testing.T) {
 	t.Run("string DEFAULT for []int", func(t *testing.T) {
 		_, err := cast.ToE[[]int]([]string{"1", "2"}, cast.Op{cast.DEFAULT, "not a slice"})

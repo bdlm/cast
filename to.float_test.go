@@ -2,6 +2,8 @@ package cast_test
 
 import (
 	"testing"
+
+	"github.com/bdlm/cast/v2"
 )
 
 func TestComplexToFloat(t *testing.T) {
@@ -171,5 +173,61 @@ func TestUintToFloat(t *testing.T) {
 		{uint64(0), float64(0), nil, false},
 		{uintptr(1), float64(1), nil, false},
 		{uintptr(0), float64(0), nil, false},
+	})
+}
+
+func TestFloatToFloat(t *testing.T) {
+	testSimpleCases[float32](t, []testCase{
+		{float32(1.5), float32(1.5), nil, false},
+		{float32(0.0), float32(0.0), nil, false},
+		{float32(-1.5), float32(-1.5), nil, false},
+		{float64(3.14), float32(float64(3.14)), nil, false},
+	})
+	testSimpleCases[float64](t, []testCase{
+		{float64(3.14), float64(3.14), nil, false},
+		{float64(0.0), float64(0.0), nil, false},
+		{float64(-3.14), float64(-3.14), nil, false},
+		{float32(1.5), float64(float32(1.5)), nil, false},
+	})
+}
+
+func TestNilToFloat(t *testing.T) {
+	testSimpleCases[float32](t, []testCase{
+		{nil, float32(0), nil, false},
+	})
+	testSimpleCases[float64](t, []testCase{
+		{nil, float64(0), nil, false},
+	})
+}
+
+func TestStringerToFloat(t *testing.T) {
+	testSimpleCases[float32](t, []testCase{
+		{testStringer{"1.5"}, float32(1.5), nil, false},
+		{testStringer{"bad"}, float32(0), nil, true},
+	})
+	testSimpleCases[float64](t, []testCase{
+		{testStringer{"3.14"}, float64(3.14), nil, false},
+		{testStringer{"bad"}, float64(0), nil, true},
+	})
+}
+
+func TestFloatDefaultOption(t *testing.T) {
+	t.Run("DEFAULT used on error", func(t *testing.T) {
+		result := cast.To[float64]("bad", cast.Op{cast.DEFAULT, float64(9.9)})
+		if result != 9.9 {
+			t.Errorf("expected 9.9, got %v", result)
+		}
+	})
+	t.Run("DEFAULT wrong type errors immediately", func(t *testing.T) {
+		_, err := cast.ToE[float64]("bad", cast.Op{cast.DEFAULT, "not a float"})
+		if err == nil {
+			t.Fatal("expected error for wrong DEFAULT type, got nil")
+		}
+	})
+	t.Run("DEFAULT not used when conversion succeeds", func(t *testing.T) {
+		result := cast.To[float64]("1.5", cast.Op{cast.DEFAULT, float64(9.9)})
+		if result != 1.5 {
+			t.Errorf("expected 1.5, got %v", result)
+		}
 	})
 }

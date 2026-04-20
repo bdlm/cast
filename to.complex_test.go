@@ -2,6 +2,8 @@ package cast_test
 
 import (
 	"testing"
+
+	"github.com/bdlm/cast/v2"
 )
 
 func TestComplex64ToComplex64(t *testing.T) {
@@ -55,5 +57,56 @@ func TestNonComplexToComplex(t *testing.T) {
 		{42, complex64(42 + 0i), nil, false},
 		{float32(1.5), complex64(1.5 + 0i), nil, false},
 		{true, complex64(1 + 0i), nil, false},
+	})
+}
+
+func TestStringerToComplex(t *testing.T) {
+	testSimpleCases[complex128](t, []testCase{
+		{testStringer{"1.5"}, complex128(1.5 + 0i), nil, false},
+		{testStringer{"0"}, complex128(0 + 0i), nil, false},
+		{testStringer{"bad"}, complex128(0), nil, true},
+	})
+	testSimpleCases[complex64](t, []testCase{
+		{testStringer{"2.5"}, complex64(2.5 + 0i), nil, false},
+		{testStringer{"bad"}, complex64(0), nil, true},
+	})
+}
+
+func TestNilToComplex(t *testing.T) {
+	testSimpleCases[complex64](t, []testCase{
+		{nil, complex64(0), nil, false},
+	})
+	testSimpleCases[complex128](t, []testCase{
+		{nil, complex128(0), nil, false},
+	})
+}
+
+func TestInvalidStringToComplex(t *testing.T) {
+	testSimpleCases[complex64](t, []testCase{
+		{"not a number", complex64(0), nil, true},
+	})
+	testSimpleCases[complex128](t, []testCase{
+		{"not a number", complex128(0), nil, true},
+	})
+}
+
+func TestComplexDefaultOption(t *testing.T) {
+	t.Run("DEFAULT used on error", func(t *testing.T) {
+		result := cast.To[complex128]("bad", cast.Op{cast.DEFAULT, complex128(1 + 2i)})
+		if result != complex128(1+2i) {
+			t.Errorf("expected (1+2i), got %v", result)
+		}
+	})
+	t.Run("DEFAULT wrong type errors immediately", func(t *testing.T) {
+		_, err := cast.ToE[complex128]("bad", cast.Op{cast.DEFAULT, "not a complex"})
+		if err == nil {
+			t.Fatal("expected error for wrong DEFAULT type, got nil")
+		}
+	})
+	t.Run("DEFAULT not used when conversion succeeds", func(t *testing.T) {
+		result := cast.To[complex128]("2.5", cast.Op{cast.DEFAULT, complex128(1 + 2i)})
+		if result != complex128(2.5+0i) {
+			t.Errorf("expected (2.5+0i), got %v", result)
+		}
 	})
 }

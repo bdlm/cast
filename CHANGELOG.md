@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Patch**: bug fixes, backward compatible model and function changes, etc.
 
 
-## v2.1.0 - 2026-04-19
+## v2.1.0 - 2026-04-20
 
 ### Added
 

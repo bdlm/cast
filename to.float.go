@@ -58,9 +58,17 @@ func toFloat[TTo float](from any, ops ops) (TTo, error) {
 	case uintptr:
 		return TTo(typ), nil
 	case fmt.Stringer:
-		return strToFloat[TTo](typ.String())
+		result, err := strToFloat[TTo](typ.String())
+		if err != nil {
+			return defaultValue, err
+		}
+		return result, nil
 	case string:
-		return strToFloat[TTo](typ)
+		result, err := strToFloat[TTo](typ)
+		if err != nil {
+			return defaultValue, err
+		}
+		return result, nil
 	}
 
 	// Fall back to string conversion for any other type (e.g. named numerics,

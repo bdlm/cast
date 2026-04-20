@@ -237,6 +237,84 @@ func TestToFuncComplex(t *testing.T) {
 	})
 }
 
+func TestToFuncString(t *testing.T) {
+	testFuncCases[string](t, []testCase{
+		{in: "hello", expect: "hello", err: nil, expectErr: false},
+		{in: 42, expect: "42", err: nil, expectErr: false},
+		{in: true, expect: "true", err: nil, expectErr: false},
+		{in: false, expect: "false", err: nil, expectErr: false},
+		{in: float64(1.5), expect: "1.5", err: nil, expectErr: false},
+	})
+}
+
+func TestToFuncSlice(t *testing.T) {
+	t.Run("Func[[]int] from []string source", func(t *testing.T) {
+		fn, err := cast.ToE[cast.Func[[]int]]([]string{"1", "2", "3"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		result := fn()
+		expect := []int{1, 2, 3}
+		if !reflect.DeepEqual(result, expect) {
+			t.Errorf("expected %v, got %v", expect, result)
+		}
+	})
+	t.Run("Func[[]string] from []int source", func(t *testing.T) {
+		fn, err := cast.ToE[cast.Func[[]string]]([]int{1, 2, 3})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		result := fn()
+		expect := []string{"1", "2", "3"}
+		if !reflect.DeepEqual(result, expect) {
+			t.Errorf("expected %v, got %v", expect, result)
+		}
+	})
+	t.Run("Func[[]int] from scalar source errors", func(t *testing.T) {
+		_, err := cast.ToE[cast.Func[[]int]]("not a slice")
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+}
+
+func TestToFuncChan(t *testing.T) {
+	t.Run("Func[chan int] from int source", func(t *testing.T) {
+		fn, err := cast.ToE[cast.Func[chan int]](42)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		ch := fn()
+		val := <-ch
+		if val != 42 {
+			t.Errorf("expected 42, got %v", val)
+		}
+	})
+	t.Run("Func[chan string] from string source", func(t *testing.T) {
+		fn, err := cast.ToE[cast.Func[chan string]]("hello")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		ch := fn()
+		val := <-ch
+		if val != "hello" {
+			t.Errorf("expected \"hello\", got %v", val)
+		}
+	})
+	t.Run("invalid source errors", func(t *testing.T) {
+		_, err := cast.ToE[cast.Func[chan int]]("bad")
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+}
+
 func testFuncCases[TTo any](t *testing.T, cases []testCase) {
 	var typ TTo
 	name := fmt.Sprintf("%T", typ)

@@ -63,9 +63,9 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 			panicTo = ret0Val
 			switch e := r.(type) {
 			case error:
-				panicErr = errors.Wrap(e, "failure casting %T to %T (panic)", val, ret0Val)
+				panicErr = errors.WrapE(Error, errors.Wrap(e, "failure casting %T to %T (panic)", val, ret0Val))
 			default:
-				panicErr = errors.Errorf("failure casting %T to %T (panic): %v", val, ret0Val, e)
+				panicErr = errors.WrapE(Error, errors.Errorf("failure casting %T to %T (panic): %v", val, ret0Val, e))
 			}
 		}
 	}()

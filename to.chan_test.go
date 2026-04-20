@@ -237,6 +237,82 @@ func TestToChanComplex(t *testing.T) {
 	})
 }
 
+func TestToChanString(t *testing.T) {
+	testChanCases[string](t, []testCase{
+		{in: "hello", expect: "hello", err: nil, expectErr: false},
+		{in: 42, expect: "42", err: nil, expectErr: false},
+		{in: true, expect: "true", err: nil, expectErr: false},
+		{in: false, expect: "false", err: nil, expectErr: false},
+		{in: float64(1.5), expect: "1.5", err: nil, expectErr: false},
+	})
+}
+
+func TestToChanSlice(t *testing.T) {
+	t.Run("chan []int from []string source", func(t *testing.T) {
+		ch, err := cast.ToE[chan []int]([]string{"1", "2", "3"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		result := <-ch
+		if !reflect.DeepEqual(result, []int{1, 2, 3}) {
+			t.Errorf("expected [1 2 3], got %v", result)
+		}
+	})
+	t.Run("chan []string from []int source", func(t *testing.T) {
+		ch, err := cast.ToE[chan []string]([]int{1, 2, 3})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		result := <-ch
+		if !reflect.DeepEqual(result, []string{"1", "2", "3"}) {
+			t.Errorf(`expected ["1" "2" "3"], got %v`, result)
+		}
+	})
+	t.Run("scalar source errors", func(t *testing.T) {
+		_, err := cast.ToE[chan []int]("not a slice")
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+}
+
+func TestToChanNested(t *testing.T) {
+	t.Run("chan chan int from int source", func(t *testing.T) {
+		outer, err := cast.ToE[chan chan int](42)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		inner := <-outer
+		val := <-inner
+		if val != 42 {
+			t.Errorf("expected 42, got %v", val)
+		}
+	})
+	t.Run("chan chan string from string source", func(t *testing.T) {
+		outer, err := cast.ToE[chan chan string]("hello")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		inner := <-outer
+		val := <-inner
+		if val != "hello" {
+			t.Errorf("expected \"hello\", got %v", val)
+		}
+	})
+	t.Run("invalid source errors", func(t *testing.T) {
+		_, err := cast.ToE[chan chan int]("bad")
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+}
+
 func TestChanInvalidDefault(t *testing.T) {
 	t.Run("string DEFAULT for chan int", func(t *testing.T) {
 		_, err := cast.ToE[chan int](42, cast.Op{cast.DEFAULT, "not a chan"})

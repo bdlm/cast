@@ -100,6 +100,60 @@ test: %#v
 	}
 }
 
+// concError is a concrete struct type implementing error. When used as TTo,
+// to.Type().Kind() == reflect.Struct → ToE's default: branch, which detects
+// the error interface and builds an error-string result.
+type concError struct{}
+
+func (e concError) Error() string { return "concError" }
+
+// concStringer is a concrete struct type implementing fmt.Stringer, similarly
+// exercising the fmt.Stringer sub-branch of ToE's default: case.
+type concStringer struct{}
+
+func (s concStringer) String() string { return "concStringer" }
+
+func TestToEDefaultCaseConcreteError(t *testing.T) {
+	// concError has Kind == Struct, so it hits ToE's default: branch.
+	// The branch detects it implements error and attempts an error-string cast,
+	// which ultimately fails the type assertion → returns an error.
+	_, err := cast.ToE[concError](42)
+	if err == nil {
+		t.Error("expected error for concrete error type → ToE default branch, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %v", err)
+	}
+}
+
+func TestToEDefaultCaseConcreteStringer(t *testing.T) {
+	// concStringer has Kind == Struct, hits ToE's default: branch.
+	// Detects fmt.Stringer, builds string result, but final assertion to
+	// concStringer fails → returns an error.
+	_, err := cast.ToE[concStringer](42)
+	if err == nil {
+		t.Error("expected error for concrete Stringer type → ToE default branch, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %v", err)
+	}
+}
+
+func TestTo(t *testing.T) {
+	t.Run("To positive: string to int", func(t *testing.T) {
+		result := cast.To[int]("42")
+		if result != 42 {
+			t.Errorf("expected 42, got %v", result)
+		}
+	})
+	t.Run("To negative: invalid string returns zero value silently", func(t *testing.T) {
+		result := cast.To[int]("bad")
+		if result != 0 {
+			t.Errorf("expected 0, got %v", result)
+		}
+	})
+}
+
 var simpleCases = testCases{
 	"bool": {
 		{in: true, expect: true, err: nil, expectErr: false},

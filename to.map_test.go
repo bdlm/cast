@@ -315,6 +315,194 @@ func TestMapInvalidDefault(t *testing.T) {
 	})
 }
 
+// TestMapFromMapErrors covers the key-cast and value-cast failure paths in mapFromMap.
+func TestMapFromMapErrors(t *testing.T) {
+	t.Run("key cast failure errors", func(t *testing.T) {
+		// "not_an_int" cannot be parsed as an int key.
+		src := map[string]int{"not_an_int": 5}
+		_, err := cast.ToE[map[int]int](src)
+		if err == nil {
+			t.Error("expected error for uncastable map key, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("value cast failure errors", func(t *testing.T) {
+		// "bad" cannot be parsed as an int value.
+		src := map[string]string{"a": "bad"}
+		_, err := cast.ToE[map[string]int](src)
+		if err == nil {
+			t.Error("expected error for uncastable map value, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+}
+
+// TestMapFromSliceValueError covers the value-cast failure path in mapFromSlice.
+func TestMapFromSliceValueError(t *testing.T) {
+	_, err := cast.ToE[map[int]int]([]string{"bad"})
+	if err == nil {
+		t.Error("expected error for uncastable slice element, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %v", err)
+	}
+}
+
+// TestMapFromScalarSourceError covers toMap's default: case — scalar inputs are not
+// map, struct, or slice/array and must return an error.
+func TestMapFromScalarSourceError(t *testing.T) {
+	_, err := cast.ToE[map[string]int](42)
+	if err == nil {
+		t.Error("expected error for scalar source → map, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %v", err)
+	}
+}
+
+// TestMapFromStructUnexportedScalars covers extractFieldValue's per-kind branches
+// (Bool, Uint, Float, Complex, String) for unexported fields when PRIVATE=true.
+func TestMapFromStructUnexportedScalars(t *testing.T) {
+	type allPrivate struct {
+		PubName    string
+		privBool    bool       //nolint:unused
+		privUint    uint       //nolint:unused
+		privFloat   float64    //nolint:unused
+		privComplex complex128 //nolint:unused
+		privString  string     //nolint:unused
+	}
+	src := allPrivate{
+		PubName:     "test",
+		privBool:    true,
+		privUint:    42,
+		privFloat:   3.14,
+		privComplex: complex(1, 2),
+		privString:  "secret",
+	}
+	result, err := cast.ToE[map[string]any](src, cast.Op{cast.PRIVATE, true})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result["PubName"] != "test" {
+		t.Errorf("expected PubName=test, got %v", result["PubName"])
+	}
+	for _, field := range []string{"privBool", "privUint", "privFloat", "privComplex", "privString"} {
+		if result[field] == nil {
+			t.Errorf("expected private field %q to be present in result", field)
+		}
+	}
+}
+
+// TestMapFromStructUnextractableField covers the extractFieldValue default case
+// (returns false) for unexported fields with non-scalar kinds (e.g. chan).
+func TestMapFromStructUnextractableField(t *testing.T) {
+	type withChan struct {
+		Name   string
+		privCh chan int //nolint:unused
+	}
+	src := withChan{Name: "hello", privCh: make(chan int)}
+
+	t.Run("non-strict: unextractable field skipped", func(t *testing.T) {
+		result, err := cast.ToE[map[string]any](src, cast.Op{cast.PRIVATE, true})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result["Name"] != "hello" {
+			t.Errorf("expected Name=hello, got %v", result["Name"])
+		}
+		if _, ok := result["privCh"]; ok {
+			t.Error("expected privCh to be skipped (non-scalar unexported)")
+		}
+	})
+	t.Run("strict: unextractable field returns error", func(t *testing.T) {
+		_, err := cast.ToE[map[string]any](src,
+			cast.Op{cast.PRIVATE, true},
+			cast.Op{cast.STRICT, true},
+		)
+		if err == nil {
+			t.Error("expected error in strict mode for non-scalar unexported field, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+}
+
+// TestMapFromStructEmbeddedUnexported covers the early-continue in collectStructFields
+// for unexported anonymous (embedded) fields when PRIVATE=false.
+func TestMapFromStructEmbeddedUnexported(t *testing.T) {
+	type inner struct{ val int } //nolint:unused
+	type outer struct {
+		inner
+		Name string
+	}
+	src := outer{Name: "visible"}
+	result, err := cast.ToE[map[string]any](src) // PRIVATE=false
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result["Name"] != "visible" {
+		t.Errorf("expected Name=visible, got %v", result["Name"])
+	}
+	// The unexported embedded field should not appear.
+	if _, ok := result["inner"]; ok {
+		t.Error("expected unexported embedded field to be skipped")
+	}
+}
+
+// TestMapFromStructKeyIncompatible covers the key-cast-fail branch in collectStructFields
+// when the field name cannot be cast to the target map key type.
+func TestMapFromStructKeyIncompatible(t *testing.T) {
+	type simple struct{ Score int }
+	src := simple{Score: 5}
+
+	t.Run("non-strict: incompatible key type skips field", func(t *testing.T) {
+		// map[int]int target: field name "Score" cannot be parsed as int → skip
+		result, err := cast.ToE[map[int]int](src)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(result) != 0 {
+			t.Errorf("expected empty map (field skipped), got %v", result)
+		}
+	})
+	t.Run("strict: incompatible key type returns error", func(t *testing.T) {
+		_, err := cast.ToE[map[int]int](src, cast.Op{cast.STRICT, true})
+		if err == nil {
+			t.Error("expected error in strict mode for incompatible key type, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+}
+
+// TestMapFromStructNestedMapValue covers the case reflect.Map branch in
+// collectStructFields when the target map's value type is itself a map.
+func TestMapFromStructNestedMapValue(t *testing.T) {
+	type inner struct{ Val int }
+	type outer struct {
+		Name  string
+		Inner inner
+	}
+	src := outer{Name: "top", Inner: inner{Val: 7}}
+	result, err := cast.ToE[map[string]map[string]any](src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	innerMap, ok := result["Inner"]
+	if !ok {
+		t.Fatal("expected Inner key in result map")
+	}
+	if innerMap["Val"] != 7 {
+		t.Errorf("expected Inner.Val=7, got %v", innerMap["Val"])
+	}
+}
+
 func TestMapInterfaceValueAssignability(t *testing.T) {
 	type Stringer interface{ String() string }
 	type myStringer struct{ s string }
