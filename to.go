@@ -1,3 +1,12 @@
+// Package cast provides generic type conversion for Go 1.21+.
+//
+// The two public entry points are [To] (ignores errors) and [ToE] (returns
+// errors). Both accept an optional variadic [Op] list that controls conversion
+// behavior; see [Flag] for available options.
+//
+// Supported target types are described by the [Types] constraint: all basic
+// scalar types, slices of scalars, channels of scalars/slices, maps, and
+// [Func] wrappers for each of those groups.
 package cast
 
 import (
@@ -17,7 +26,7 @@ func To[TTo Types](v any, o ...Op) TTo {
 
 // ToE casts the value v to the given type, returning any errors.
 //
-// o (Ops) is an optional parameter providing flags that can be used to modify
+// ops (Ops) is an optional parameter providing flags that can be used to modify
 // the default type conversion behavior. If ops is not provided, the default
 // conversion behavior for a given type is used. Available options depend on the
 // target type, see the documentation for the specific type conversion function
@@ -28,14 +37,13 @@ func To[TTo Types](v any, o ...Op) TTo {
 //   - If the target type is a channel, a channel with a buffer of 1 is created
 //     and the cast value `v` is added to the the channel before it is returned.
 //
-//   - If the target type is an array a slice is created. To create a slice with
-//     a backing array with a spcific size, set the LENGTH flag to the desired
-//     size as an integer: `slice, err := cast.ToE[[]int](v, Ops{LENGTH: 10})`.
-//     The value `v` is cast to the required type and appended to the returned
-//     slice.
+//   - If the target type is a slice, a slice is created. To pre-allocate
+//     backing capacity set the LENGTH flag: `cast.ToE[[]int](v, cast.Op{cast.LENGTH, 10})`.
+//     The source must itself be a slice or array; scalar sources are rejected.
 //
-//   - If the target type is a map, a map is created with a zero-value key
-//     containing the cast value `v` which is then returned.
+//   - If the target type is a map, the source is converted into the target map
+//     type. Supported sources: map (key/value types cast), struct or *struct
+//     (field names become keys), slice or array (indices become keys).
 //
 // See the documentation for the specific type conversion function for more
 // information.
@@ -48,33 +56,30 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 	var retVal TTo
 
 	// Don't panic.
+	// Recover from any panic that may occur during type casting, converting it
+	// to an error so callers can handle it gracefully.
 	defer func() {
-		if err := recover(); err != nil {
+		if r := recover(); r != nil {
 			panicTo = ret0Val
-			panicErr = errors.Wrap(err.(error), "failure casting %T to %T (panic)", val, ret0Val)
+			switch e := r.(type) {
+			case error:
+				panicErr = errors.WrapE(Error, errors.Wrap(e, "failure casting %T to %T (panic)", val, ret0Val))
+			default:
+				panicErr = errors.WrapE(Error, errors.Errorf("failure casting %T to %T (panic): %v", val, ret0Val, e))
+			}
 		}
 	}()
-	go func() {
-		if e := recover(); e != nil {
-			err = errors.WrapE(err, e.(error))
-		}
-	}()
-
 	options := parseOps(ops)
 
-	// Collapse reflection values.
-	from := reflect.ValueOf(val)
 	toRef := reflect.ValueOf(new(TTo))
 	to := reflect.Indirect(toRef)
 
 	switch to.Type().Kind() {
-	// reflect.Array:
+	// reflect.Array:  array targets are not in Types; use []T slice targets instead.
 	// reflect.Invalid:
 	// reflect.Pointer:
 	// reflect.Struct:
 	// reflect.UnsafePointer:
-	// error
-	// std_error.Error
 	default:
 		retIface = ret0Val
 		if _, ok := retIface.(error); ok {
@@ -84,7 +89,7 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 		} else if _, ok := retIface.(fmt.Stringer); ok {
 			retIface = errors.Errorf("%s", To[string](val, ops...))
 		} else {
-			return ret0Val, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, from, from.Interface(), to.Interface()))
+			return ret0Val, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface()))
 		}
 
 	case reflect.Interface:
@@ -94,69 +99,69 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 		retIface, err = toBool(val, options)
 	case reflect.Chan:
 		retIface, err = toChan(to, val, options)
-	//case reflect.Map: // TODO
-	//	if reflect.Map != from.Type().Kind() {
-	//		return ret0Val, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, from, from.Interface(), to.Interface()))
-	//	}
-	//	retIface, err = toMap(to, val, options)
-	case reflect.Array: // TODO
-		fallthrough
+	case reflect.Map:
+		retIface, err = toMap(to, val, options)
 	case reflect.Slice:
-		if reflect.Slice != from.Type().Kind() {
-			return ret0Val, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, from, from.Interface(), to.Interface()))
+		fromType := reflect.TypeOf(val)
+		if fromType == nil || (fromType.Kind() != reflect.Slice && fromType.Kind() != reflect.Array) {
+			return ret0Val, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface()))
 		}
 		retIface, err = toSlice(to, val, options)
 	case reflect.Func:
 		retIface, err = toFunc[TTo](to, val, options)
 	case reflect.Complex64:
-		retIface, err = toComplex[complex64](from, options)
+		retIface, err = toComplex[complex64](val, options)
 	case reflect.Complex128:
-		retIface, err = toComplex[complex128](from, options)
+		retIface, err = toComplex[complex128](val, options)
 	case reflect.Float32:
-		retIface, err = toFloat[float32](from, options)
+		retIface, err = toFloat[float32](val, options)
 	case reflect.Float64:
-		retIface, err = toFloat[float64](from, options)
+		retIface, err = toFloat[float64](val, options)
 	case reflect.Int:
-		retIface, err = toInt[int](from, options)
+		retIface, err = toInt[int](val, options)
 	case reflect.Int8:
-		retIface, err = toInt[int8](from, options)
+		retIface, err = toInt[int8](val, options)
 	case reflect.Int16:
-		retIface, err = toInt[int16](from, options)
+		retIface, err = toInt[int16](val, options)
 	case reflect.Int32:
-		retIface, err = toInt[int32](from, options)
+		retIface, err = toInt[int32](val, options)
 	case reflect.Int64:
-		retIface, err = toInt[int64](from, options)
+		retIface, err = toInt[int64](val, options)
 	case reflect.Uint:
-		retIface, err = toInt[uint](from, options)
+		retIface, err = toInt[uint](val, options)
 	case reflect.Uint8:
-		retIface, err = toInt[uint8](from, options)
+		retIface, err = toInt[uint8](val, options)
 	case reflect.Uint16:
-		retIface, err = toInt[uint16](from, options)
+		retIface, err = toInt[uint16](val, options)
 	case reflect.Uint32:
-		retIface, err = toInt[uint32](from, options)
+		retIface, err = toInt[uint32](val, options)
 	case reflect.Uint64:
-		retIface, err = toInt[uint64](from, options)
+		retIface, err = toInt[uint64](val, options)
 	case reflect.Uintptr:
-		retIface, err = toInt[uintptr](from, options)
+		retIface, err = toInt[uintptr](val, options)
 	case reflect.String:
-		retIface, err = toString(from, options)
+		retIface, err = toString(val, options)
 	}
 
 	if retVal, ok = retIface.(TTo); !ok && retIface != nil {
-		return ret0Val, errors.WrapE(Error, errors.Errorf("unable to cast %#.10v of type %T to %T (%#.10v %T)", from, from.Interface(), *new(TTo), retVal, retVal))
+		// Direct assertion failed; try a reflect-based conversion for named types
+		// whose underlying kind matches (e.g. type MyInt int → int convertible to MyInt).
+		rv := reflect.ValueOf(retIface)
+		if rv.IsValid() && rv.Type().ConvertibleTo(to.Type()) {
+			retVal, ok = rv.Convert(to.Type()).Interface().(TTo)
+		}
+		if !ok {
+			return ret0Val, errors.WrapE(Error, errors.Errorf("unable to cast %#.10v of type %T to %T (%#.10v %T)", val, val, *new(TTo), retVal, retVal))
+		}
 	}
 
 	if err != nil {
 		return retVal, errors.WrapE(Error, err)
 	}
 
-	if retVal, ok = retIface.(TTo); ok {
-		return retVal, nil
-	}
-
-	if nil == retIface {
+	if retIface == nil {
 		return ret0Val, nil
 	}
 
-	return retVal, errors.WrapE(Error, errors.Errorf("unable to cast %#.10v of type %T to %T (%#.10v %T)", from, from.Interface(), to.Interface(), retVal, retVal))
+	return retVal, nil
 }

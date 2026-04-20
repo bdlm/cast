@@ -1,23 +1,25 @@
 package cast
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/bdlm/errors/v2"
 )
 
 // toBool casts an interface to a bool type. For numeric values, anything but
-// zero is considered true.
+// zero is considered true. The string path delegates to [strconv.ParseBool]
+// first, then falls back to integer parsing so "1"→true and "0"→false.
 //
 // Options:
 //   - DEFAULT: bool, default false. Default return value on error.
-func toBool[TTo bool](from any, ops Ops) (TTo, error) {
+func toBool[TTo bool](from any, ops ops) (TTo, error) {
 	var ret TTo
 	var ok bool
 
-	if _, ok = ops[DEFAULT]; ok {
-		if ret, ok = ops[DEFAULT].(TTo); !ok {
-			return false, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+	if ops.hasDefault {
+		if ret, ok = ops.defaultVal.(TTo); !ok {
+			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
 
@@ -25,6 +27,7 @@ func toBool[TTo bool](from any, ops Ops) (TTo, error) {
 	case bool:
 		return TTo(from), nil
 	case byte:
+		// The character '0' (ASCII 48) represents the digit zero, so it maps to false.
 		return from != 0 && from != '0', nil
 	case complex64:
 		return from != 0, nil
@@ -40,12 +43,24 @@ func toBool[TTo bool](from any, ops Ops) (TTo, error) {
 		return from != 0, nil
 	case int16:
 		return from != 0, nil
-	case int32: // rune
+	case int32: // rune: '0' (48) is the digit zero, not a true value
 		return from != 0 && from != '0', nil
 	case int64:
 		return from != 0, nil
+	case uint:
+		return from != 0, nil
+	case uint16:
+		return from != 0, nil
+	case uint32:
+		return from != 0, nil
+	case uint64:
+		return from != 0, nil
+	case uintptr:
+		return from != 0, nil
 	case nil:
 		return false, nil
+	case fmt.Stringer:
+		return toBool[TTo](from.String(), ops)
 	case string:
 		r, e := strconv.ParseBool(from)
 		if nil != e {
@@ -58,5 +73,5 @@ func toBool[TTo bool](from any, ops Ops) (TTo, error) {
 		return TTo(r), nil
 	}
 
-	return false, errors.Errorf(ErrorStrUnableToCast, from, from, false)
+	return ret, errors.Errorf(ErrorStrUnableToCast, from, from, false)
 }

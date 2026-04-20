@@ -7,31 +7,23 @@ import (
 	"strings"
 
 	"github.com/bdlm/errors/v2"
-	"golang.org/x/exp/constraints"
 )
 
 // toFloat casts an interface to a float type.
 //
 // Options:
 //   - DEFAULT: float32 or float64, default 0.0. Default return value on error.
-func toFloat[TTo constraints.Float](from reflect.Value, ops Ops) (TTo, error) {
-	var ret TTo
+func toFloat[TTo float](from any, ops ops) (TTo, error) {
+	var defaultValue TTo
 	var ok bool
 
-	if _, ok = ops[DEFAULT]; ok {
-		if ret, ok = ops[DEFAULT].(TTo); !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+	if ops.hasDefault {
+		if defaultValue, ok = ops.defaultVal.(TTo); !ok {
+			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
 
-	fromVal := reflect.ValueOf(from)
-	if !fromVal.IsValid() || !fromVal.CanInterface() {
-		return ret, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
-	}
-
-	to := reflect.Indirect(reflect.ValueOf(new(TTo)))
-
-	switch typ := from.Interface().(type) {
+	switch typ := from.(type) {
 	case nil:
 		return TTo(0), nil
 	case bool:
@@ -63,53 +55,61 @@ func toFloat[TTo constraints.Float](from reflect.Value, ops Ops) (TTo, error) {
 		return TTo(typ), nil
 	case uint8:
 		return TTo(typ), nil
+	case uintptr:
+		return TTo(typ), nil
 	case fmt.Stringer:
-		return strToFloat[TTo](to, typ.String())
+		result, err := strToFloat[TTo](typ.String())
+		if err != nil {
+			return defaultValue, err
+		}
+		return result, nil
 	case string:
-		return strToFloat[TTo](to, typ)
+		result, err := strToFloat[TTo](typ)
+		if err != nil {
+			return defaultValue, err
+		}
+		return result, nil
 	}
 
-	ret, err := toFloat[TTo](reflect.ValueOf(fmt.Sprintf("%v", from.Interface())), ops)
+	// Fall back to string conversion for any other type (e.g. named numerics,
+	// structs with a String method that were not matched above).
+	result, err := toFloat[TTo](fmt.Sprintf("%v", from), ops)
 	if nil != err {
-		return ret, errors.Wrap(err, ErrorStrUnableToCast, from.Interface(), from.Interface(), to.Interface())
+		return defaultValue, errors.Wrap(err, ErrorStrUnableToCast, from, from, TTo(0))
 	}
-	return ret, nil
+	return result, nil
 }
 
-// strToFloat converts a string to a float type.
-func strToFloat[TTo constraints.Float](to reflect.Value, from string) (TTo, error) {
-	var e, err error
-	var val any
-	var bitSize = 64
-
-	if to.Type().Kind() == reflect.Float32 {
+// strToFloat converts a string to a float type. On initial parse failure it
+// strips whitespace, drops everything after the first decimal point, and
+// removes comma thousands-separators, then retries (e.g. "1,234.56" → "1234").
+func strToFloat[TTo float](from string) (TTo, error) {
+	isFloat32 := reflect.TypeOf(TTo(0)).Kind() == reflect.Float32
+	bitSize := 64
+	if isFloat32 {
 		bitSize = 32
 	}
 
-	if val, e = strconv.ParseFloat(from, bitSize); e != nil {
-		err = e
-		from = strings.ReplaceAll(
+	val, err := strconv.ParseFloat(from, bitSize)
+	if err != nil {
+		stripped := strings.ReplaceAll(
 			strings.Split(
 				strings.Trim(from, "\r\n\t "),
 				".",
 			)[0],
 			",", "",
 		)
-		if val, e = strconv.ParseFloat(from, bitSize); e != nil {
+		val2, e := strconv.ParseFloat(stripped, bitSize)
+		if e != nil {
 			err = errors.WrapE(err, e)
-			_, e := strconv.ParseComplex(from, bitSize)
-			if e != nil {
-				err = errors.WrapE(err, e)
-			} else {
-				err = errors.Wrap(err, ErrorStrUnableToCast, from, from, to.Interface())
-				val = float64(0)
-			}
-		} else {
-			err = nil
+			return TTo(0), err
 		}
+		val = val2
+		err = nil
 	}
-	if to.Type().Kind() == reflect.Float32 {
-		val = float32(val.(float64))
+
+	if isFloat32 {
+		return TTo(float32(val)), nil
 	}
-	return val.(TTo), err
+	return TTo(val), err
 }

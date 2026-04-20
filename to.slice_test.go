@@ -3,6 +3,7 @@ package cast_test
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/bdlm/cast/v2"
@@ -190,30 +191,31 @@ func TestSliceToFloatSlice(t *testing.T) {
 		{in: []float32{-1.9}, expect: []float32{-1.9}, err: nil, expectErr: false},
 		{in: []string{"-1.9"}, expect: []float32{-1.9}, err: nil, expectErr: false},
 		{in: []float32{}, expect: []float32{}, err: nil, expectErr: false},
-		{in: 1, expect: []float32{1}, err: nil, expectErr: true},
-		{in: "1", expect: []float32{1}, err: nil, expectErr: true},
-		{in: -1, expect: []float32{1}, err: nil, expectErr: true},
-		{in: "-1", expect: []float32{1}, err: nil, expectErr: true},
-		{in: []float32{1.1}, expect: []float32{1}, err: nil, expectErr: false},
-		{in: []string{"1.1"}, expect: []float32{1}, err: nil, expectErr: false},
-		{in: []float32{1.9}, expect: []float32{1}, err: nil, expectErr: false},
-		{in: []string{"1.9"}, expect: []float32{1}, err: nil, expectErr: false},
+		{in: 1, expect: []float32{}, err: nil, expectErr: true},
+		{in: "1", expect: []float32{}, err: nil, expectErr: true},
+		{in: -1, expect: []float32{}, err: nil, expectErr: true},
+		{in: "-1", expect: []float32{}, err: nil, expectErr: true},
+		{in: []float32{1.1}, expect: []float32{1.1}, err: nil, expectErr: false},
+		{in: []string{"1.1"}, expect: []float32{1.1}, err: nil, expectErr: false},
+		{in: []float32{1.9}, expect: []float32{1.9}, err: nil, expectErr: false},
+		{in: []string{"1.9"}, expect: []float32{1.9}, err: nil, expectErr: false},
 	})
 	testSliceCases[[]float64](t, []testCase{
 		{in: []float64{1, 30, 10, 0, 1}, expect: []float64{1, 30, 10, 0, 1}, err: nil, expectErr: false},
-		{in: []float32{-1}, expect: []float64{}, err: nil, expectErr: false},
-		{in: []string{"-1"}, expect: []float64{}, err: nil, expectErr: false},
-		{in: []float32{-1.9}, expect: []float64{}, err: nil, expectErr: false},
-		{in: []string{"-1.9"}, expect: []float64{}, err: nil, expectErr: false},
+		// float32 source: widened to float64 via float64(float32(x)), not float64(x)
+		{in: []float32{-1}, expect: []float64{-1}, err: nil, expectErr: false},
+		{in: []string{"-1"}, expect: []float64{-1}, err: nil, expectErr: false},
+		{in: []float32{-1.9}, expect: []float64{float64(float32(-1.9))}, err: nil, expectErr: false},
+		{in: []string{"-1.9"}, expect: []float64{-1.9}, err: nil, expectErr: false},
 		{in: []float64{}, expect: []float64{}, err: nil, expectErr: false},
-		{in: 1, expect: []float64{1}, err: nil, expectErr: true},
-		{in: "1", expect: []float64{1}, err: nil, expectErr: true},
-		{in: -1, expect: []float64{1}, err: nil, expectErr: true},
-		{in: "-1", expect: []float64{1}, err: nil, expectErr: true},
-		{in: []float32{1.1}, expect: []float64{1}, err: nil, expectErr: false},
-		{in: []string{"1.1"}, expect: []float64{1}, err: nil, expectErr: false},
-		{in: []float32{1.9}, expect: []float64{1}, err: nil, expectErr: false},
-		{in: []string{"1.9"}, expect: []float64{1}, err: nil, expectErr: false},
+		{in: 1, expect: []float64{}, err: nil, expectErr: true},
+		{in: "1", expect: []float64{}, err: nil, expectErr: true},
+		{in: -1, expect: []float64{}, err: nil, expectErr: true},
+		{in: "-1", expect: []float64{}, err: nil, expectErr: true},
+		{in: []float32{1.1}, expect: []float64{float64(float32(1.1))}, err: nil, expectErr: false},
+		{in: []string{"1.1"}, expect: []float64{1.1}, err: nil, expectErr: false},
+		{in: []float32{1.9}, expect: []float64{float64(float32(1.9))}, err: nil, expectErr: false},
+		{in: []string{"1.9"}, expect: []float64{1.9}, err: nil, expectErr: false},
 	})
 }
 
@@ -224,11 +226,11 @@ func TestSliceToComplexSlice(t *testing.T) {
 		{in: []string{"-1"}, expect: []complex64{complex64(-1)}, err: nil, expectErr: false},
 		{in: []float32{-1.9}, expect: []complex64{complex64(-1.9)}, err: nil, expectErr: false},
 		{in: []string{"-1.9"}, expect: []complex64{complex64(-1.9)}, err: nil, expectErr: false},
-		{in: []complex64{}, expect: []float64{}, err: nil, expectErr: false},
-		{in: 1, expect: []complex64{1}, err: nil, expectErr: true},
-		{in: "1", expect: []complex64{1}, err: nil, expectErr: true},
-		{in: -1, expect: []complex64{1}, err: nil, expectErr: true},
-		{in: "-1", expect: []complex64{1}, err: nil, expectErr: true},
+		{in: []complex64{}, expect: []complex64{}, err: nil, expectErr: false},
+		{in: 1, expect: []complex64{}, err: nil, expectErr: true},
+		{in: "1", expect: []complex64{}, err: nil, expectErr: true},
+		{in: -1, expect: []complex64{}, err: nil, expectErr: true},
+		{in: "-1", expect: []complex64{}, err: nil, expectErr: true},
 		{in: []float32{1.1}, expect: []complex64{complex64(1.1)}, err: nil, expectErr: false},
 		{in: []string{"1.1"}, expect: []complex64{complex64(1.1)}, err: nil, expectErr: false},
 		{in: []float32{1.9}, expect: []complex64{complex64(1.9)}, err: nil, expectErr: false},
@@ -236,20 +238,276 @@ func TestSliceToComplexSlice(t *testing.T) {
 	})
 	testSliceCases[[]complex128](t, []testCase{
 		{in: []float64{1, 30, 10, 0, 1}, expect: []complex128{complex128(1), complex128(30), complex128(10), complex128(0), complex128(1)}, err: nil, expectErr: false},
+		// float32 source: real part is float64(float32(x)), not float64(x)
 		{in: []float32{-1}, expect: []complex128{complex128(-1)}, err: nil, expectErr: false},
 		{in: []string{"-1"}, expect: []complex128{complex128(-1)}, err: nil, expectErr: false},
-		{in: []float32{-1.9}, expect: []complex128{complex128(-1.9)}, err: nil, expectErr: false},
+		{in: []float32{-1.9}, expect: []complex128{complex(float64(float32(-1.9)), 0)}, err: nil, expectErr: false},
 		{in: []string{"-1.9"}, expect: []complex128{complex128(-1.9)}, err: nil, expectErr: false},
-		{in: []complex128{}, expect: []float64{}, err: nil, expectErr: false},
-		{in: 1, expect: []complex128{1}, err: nil, expectErr: true},
-		{in: "1", expect: []complex128{1}, err: nil, expectErr: true},
-		{in: -1, expect: []complex128{1}, err: nil, expectErr: true},
-		{in: "-1", expect: []complex128{1}, err: nil, expectErr: true},
-		{in: []float32{1.1}, expect: []complex128{complex128(1.1)}, err: nil, expectErr: false},
+		{in: []complex128{}, expect: []complex128{}, err: nil, expectErr: false},
+		{in: 1, expect: []complex128{}, err: nil, expectErr: true},
+		{in: "1", expect: []complex128{}, err: nil, expectErr: true},
+		{in: -1, expect: []complex128{}, err: nil, expectErr: true},
+		{in: "-1", expect: []complex128{}, err: nil, expectErr: true},
+		{in: []float32{1.1}, expect: []complex128{complex(float64(float32(1.1)), 0)}, err: nil, expectErr: false},
 		{in: []string{"1.1"}, expect: []complex128{complex128(1.1)}, err: nil, expectErr: false},
-		{in: []float32{1.9}, expect: []complex128{complex128(1.9)}, err: nil, expectErr: false},
+		{in: []float32{1.9}, expect: []complex128{complex(float64(float32(1.9)), 0)}, err: nil, expectErr: false},
 		{in: []string{"1.9"}, expect: []complex128{complex128(1.9)}, err: nil, expectErr: false},
 	})
+}
+
+func TestUniqueValuesSlice(t *testing.T) {
+	t.Run("int dedup", func(t *testing.T) {
+		actual, err := cast.ToE[[]int]([]int{1, 2, 2, 3, 1}, cast.Op{Flag: cast.UNIQUE_VALUES, Val: true})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		expect := []int{1, 2, 3}
+		if !reflect.DeepEqual(actual, expect) {
+			t.Errorf("expected %v, got %v", expect, actual)
+		}
+	})
+	t.Run("string dedup", func(t *testing.T) {
+		actual, err := cast.ToE[[]string]([]string{"a", "b", "a", "c"}, cast.Op{Flag: cast.UNIQUE_VALUES, Val: true})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		expect := []string{"a", "b", "c"}
+		if !reflect.DeepEqual(actual, expect) {
+			t.Errorf("expected %v, got %v", expect, actual)
+		}
+	})
+	t.Run("no duplicates unchanged", func(t *testing.T) {
+		actual, err := cast.ToE[[]int]([]int{1, 2, 3}, cast.Op{Flag: cast.UNIQUE_VALUES, Val: true})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		expect := []int{1, 2, 3}
+		if !reflect.DeepEqual(actual, expect) {
+			t.Errorf("expected %v, got %v", expect, actual)
+		}
+	})
+	t.Run("order preserved", func(t *testing.T) {
+		actual, err := cast.ToE[[]int]([]int{3, 1, 2, 1, 3}, cast.Op{Flag: cast.UNIQUE_VALUES, Val: true})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		expect := []int{3, 1, 2}
+		if !reflect.DeepEqual(actual, expect) {
+			t.Errorf("expected %v, got %v", expect, actual)
+		}
+	})
+}
+
+func TestSliceUniqueValuesNonComparable(t *testing.T) {
+	t.Run("[]any containing slices does not panic", func(t *testing.T) {
+		in := []any{[]int{1, 2}, []int{3, 4}, []int{1, 2}}
+		result, err := cast.ToE[[]any](in, cast.Op{cast.UNIQUE_VALUES, true})
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if len(result) != 2 {
+			t.Errorf("expected 2 unique elements, got %d: %v", len(result), result)
+		}
+	})
+	t.Run("[]any containing maps does not panic", func(t *testing.T) {
+		in := []any{map[string]int{"a": 1}, map[string]int{"b": 2}, map[string]int{"a": 1}}
+		result, err := cast.ToE[[]any](in, cast.Op{cast.UNIQUE_VALUES, true})
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if len(result) != 2 {
+			t.Errorf("expected 2 unique elements, got %d: %v", len(result), result)
+		}
+	})
+	t.Run("[]any mixing comparable and non-comparable", func(t *testing.T) {
+		in := []any{1, []int{2, 3}, 1, []int{2, 3}, "x"}
+		result, err := cast.ToE[[]any](in, cast.Op{cast.UNIQUE_VALUES, true})
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if len(result) != 3 {
+			t.Errorf("expected 3 unique elements, got %d: %v", len(result), result)
+		}
+	})
+	t.Run("[]any containing nil", func(t *testing.T) {
+		in := []any{nil, 1, nil}
+		result, err := cast.ToE[[]any](in, cast.Op{cast.UNIQUE_VALUES, true})
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if len(result) != 2 {
+			t.Errorf("expected 2 unique elements, got %d: %v", len(result), result)
+		}
+	})
+}
+
+func TestSliceToStringSlice(t *testing.T) {
+	testSliceCases[[]string](t, []testCase{
+		{in: []int{1, 2, 3}, expect: []string{"1", "2", "3"}, err: nil, expectErr: false},
+		{in: []bool{true, false}, expect: []string{"true", "false"}, err: nil, expectErr: false},
+		{in: []float64{1.5, -1.5}, expect: []string{"1.5", "-1.5"}, err: nil, expectErr: false},
+		{in: []string{"a", "b"}, expect: []string{"a", "b"}, err: nil, expectErr: false},
+		{in: []string{}, expect: []string{}, err: nil, expectErr: false},
+		{in: 1, expect: []string{}, err: nil, expectErr: true},
+		{in: "hello", expect: []string{}, err: nil, expectErr: true},
+	})
+}
+
+func TestSliceToAnySlice(t *testing.T) {
+	testSliceCases[[]any](t, []testCase{
+		{in: []int{1, 2, 3}, expect: []any{1, 2, 3}, err: nil, expectErr: false},
+		{in: []string{"a", "b"}, expect: []any{"a", "b"}, err: nil, expectErr: false},
+		{in: []bool{true, false}, expect: []any{true, false}, err: nil, expectErr: false},
+		{in: []any{1, "a", true}, expect: []any{1, "a", true}, err: nil, expectErr: false},
+		{in: []any{}, expect: []any{}, err: nil, expectErr: false},
+		{in: 1, expect: []any{}, err: nil, expectErr: true},
+	})
+}
+
+func TestSliceToUintptrSlice(t *testing.T) {
+	testSliceCases[[]uintptr](t, []testCase{
+		{in: []int{1, 2, 3}, expect: []uintptr{1, 2, 3}, err: nil, expectErr: false},
+		{in: []string{"1", "2"}, expect: []uintptr{1, 2}, err: nil, expectErr: false},
+		{in: []int{-1}, expect: []uintptr{}, err: nil, expectErr: true},
+		{in: 1, expect: []uintptr{}, err: nil, expectErr: true},
+	})
+}
+
+func TestSliceLengthErrors(t *testing.T) {
+	t.Run("invalid LENGTH string errors", func(t *testing.T) {
+		_, err := cast.ToE[[]int]([]string{"1", "2"}, cast.Op{cast.LENGTH, "bad"})
+		if err == nil {
+			t.Fatal("expected error for invalid LENGTH value, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("negative LENGTH errors", func(t *testing.T) {
+		_, err := cast.ToE[[]int]([]string{"1", "2"}, cast.Op{cast.LENGTH, -1})
+		if err == nil {
+			t.Fatal("expected error for negative LENGTH, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+}
+
+func TestSliceInvalidDefault(t *testing.T) {
+	t.Run("string DEFAULT for []int", func(t *testing.T) {
+		_, err := cast.ToE[[]int]([]string{"1", "2"}, cast.Op{cast.DEFAULT, "not a slice"})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("int DEFAULT for []string", func(t *testing.T) {
+		_, err := cast.ToE[[]string]([]int{1, 2}, cast.Op{cast.DEFAULT, 42})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]string DEFAULT for []int", func(t *testing.T) {
+		_, err := cast.ToE[[]int]([]string{"1", "2"}, cast.Op{cast.DEFAULT, []string{"fallback"}})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("compatible DEFAULT for []int does not error", func(t *testing.T) {
+		_, err := cast.ToE[[]int]([]string{"1", "2"}, cast.Op{cast.DEFAULT, []int{-1}})
+		if err != nil {
+			t.Errorf("expected nil error, got %v", err)
+		}
+	})
+}
+
+// TestToSliceElementErrors covers the error-return inside toSlice's per-type
+// loop for each typed slice case. Each subtest passes a slice with an
+// unconvertible element so the element-cast fails mid-loop.
+func TestToSliceElementErrors(t *testing.T) {
+	bad := []string{"bad"}
+
+	t.Run("[]bool element error", func(t *testing.T) {
+		_, err := cast.ToE[[]bool](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]complex64 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]complex64](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]complex128 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]complex128](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]float32 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]float32](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]float64 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]float64](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]int element error", func(t *testing.T) {
+		_, err := cast.ToE[[]int](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]int8 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]int8](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]int16 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]int16](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]int32 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]int32](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+	t.Run("[]int64 element error", func(t *testing.T) {
+		_, err := cast.ToE[[]int64](bad)
+		if err == nil || !errors.Is(err, cast.Error) {
+			t.Fatalf("expected cast.Error, got %v", err)
+		}
+	})
+}
+
+// TestToSliceNamedTypeUniqueVals covers the dedupeSliceVal call inside toSlice's
+// default/named-type branch (line 98-100 in to.slice.go).
+func TestToSliceNamedTypeUniqueVals(t *testing.T) {
+	result, err := cast.ToE[tags]([]string{"a", "b", "a", "c", "b"}, cast.Op{cast.UNIQUE_VALUES, true})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !reflect.DeepEqual(result, tags{"a", "b", "c"}) {
+		t.Errorf("expected [a b c], got %v", result)
+	}
 }
 
 func testSliceCases[TTo any](t *testing.T, cases []testCase) {
@@ -284,6 +542,8 @@ test: %#v
 				t.Error("2. expected error, got nil", testInfo)
 			} else if nil != err && !errors.Is(err, cast.Error) {
 				t.Error("3. expected cast.Error, got different error type", testInfo)
+			} else if nil == err && !reflect.DeepEqual(actual, test.expect) {
+				t.Errorf("4. expected %v (%T) to equal %v (%T)\n%s", test.expect, test.expect, actual, actual, testInfo)
 			}
 		})
 	}

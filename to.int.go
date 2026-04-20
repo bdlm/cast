@@ -8,45 +8,31 @@ import (
 	"strings"
 
 	"github.com/bdlm/errors/v2"
-	"golang.org/x/exp/constraints"
 )
 
 // toInt casts an interface to an int type.
 //
 // Options:
-//   - DEFAULT: constraints.Integer, default 0. Default return value on error.
+//   - DEFAULT: integer, default 0. Default return value on error.
 //   - ABS: bool, default false. Return the absolute value of integers.
-func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
-	var default_val TTo
+func toInt[TTo integer](from any, ops ops) (TTo, error) {
+	var defaultValue TTo
 	var ok bool
-	var abs bool
 
-	if _, ok = ops[DEFAULT]; ok {
-		if default_val, ok = ops[DEFAULT].(TTo); !ok {
-			return default_val, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+	if ops.hasDefault {
+		if defaultValue, ok = ops.defaultVal.(TTo); !ok {
+			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
-	if _, ok = ops[ABS]; ok {
-		if abs, ok = ops[ABS].(bool); !ok {
-			return default_val, errors.Errorf(ErrorInvalidOption, "ABS", ops[ABS])
-		}
-	}
+	abs := ops.abs
 
-	fromVal := reflect.Indirect(from)
-	if !fromVal.IsValid() || !fromVal.CanInterface() {
-		return default_val, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
-	}
-
-	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from.Interface(), from.Interface(), TTo(0))
-	to := reflect.Indirect(reflect.ValueOf(new(TTo)))
 	unsigned := false
-	switch to.Interface().(type) {
-	case uint, uint8, uint16, uint32, uint64, uintptr:
+	switch reflect.TypeOf(TTo(0)).Kind() {
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		unsigned = true
 	}
 
-	//fmt.Printf("\n\nto: %v (%T); from: %v (%T)\n\n", to, to.Interface(), from, from.Interface())
-	switch val := from.Interface().(type) {
+	switch val := from.(type) {
 	case nil:
 		return TTo(0), nil
 	case bool:
@@ -59,7 +45,7 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 			if abs {
 				return TTo(-val), nil
 			}
-			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case int64:
@@ -67,7 +53,7 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 			if abs {
 				return TTo(-val), nil
 			}
-			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case int32:
@@ -75,7 +61,7 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 			if abs {
 				return TTo(-val), nil
 			}
-			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case int16:
@@ -83,7 +69,7 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 			if abs {
 				return TTo(-val), nil
 			}
-			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case int8:
@@ -91,23 +77,25 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 			if abs {
 				return TTo(-val), nil
 			}
-			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case float64:
 		if unsigned && val < 0 {
 			if abs {
-				return TTo(-val), nil
+				return TTo(math.Floor(-val)), nil
 			}
-			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
-		return strToInt[TTo](To[string](from.Interface()), ops)
+		// Route through string to avoid float→int precision surprises; strToInt
+		// handles truncation consistently via math.Floor.
+		return strToInt[TTo](To[string](val), ops)
 	case float32:
 		if unsigned && val < 0 {
 			if abs {
-				return strToInt[TTo](To[string](-val), ops)
+				return TTo(math.Floor(float64(-val))), nil
 			}
-			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return strToInt[TTo](To[string](val), ops)
 	case uint:
@@ -126,78 +114,62 @@ func toInt[TTo constraints.Integer](from reflect.Value, ops Ops) (TTo, error) {
 		return strToInt[TTo](val.String(), ops)
 	case string:
 		return strToInt[TTo](val, ops)
-
-	//case complex128:
-	//case complex64:
+	case complex64:
+		return toInt[TTo](float32(real(val)), ops)
+	case complex128:
+		return toInt[TTo](float64(real(val)), ops)
 	default:
-		return toInt[TTo](reflect.ValueOf(fmt.Sprintf("%#.10v", from.Interface())), ops)
+		return toInt[TTo](fmt.Sprintf("%v", from), ops)
 	}
 }
 
-// strToInt converts a string to an integer type.
+// strToInt converts a string to an integer type. It parses via float64 to
+// handle decimal strings like "3.7" (truncated to 3). On failure it strips
+// whitespace, drops the fractional part, and removes comma thousands-separators
+// before retrying (e.g. "1,234.56 kg" fails; "1,234" → 1234 succeeds).
 //
 // Options:
-//   - DEFAULT: constraints.Integer, default 0. Default return value on error.
+//   - DEFAULT: integer, default 0. Default return value on error.
 //   - ABS: bool, default false. Return the absolute value of negative integers
 //     when casting to unsigned integers.
-func strToInt[TTo constraints.Integer](from string, ops Ops) (TTo, error) {
-	var default_val TTo
+func strToInt[TTo integer](from string, ops ops) (TTo, error) {
+	var defaultValue TTo
 	var ok bool
-	var abs bool
 
-	if _, ok = ops[DEFAULT]; ok {
-		if default_val, ok = ops[DEFAULT].(TTo); !ok {
-			return default_val, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops[DEFAULT])
+	if ops.hasDefault {
+		if defaultValue, ok = ops.defaultVal.(TTo); !ok {
+			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
-	if _, ok = ops[ABS]; ok {
-		if abs, ok = ops[ABS].(bool); !ok {
-			return default_val, errors.Errorf(ErrorInvalidOption, "ABS", ops[ABS])
-		}
-	}
+	abs := ops.abs
 
-	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	var e, err error
 	var val float64
 	if val, e = strconv.ParseFloat(from, 64); e != nil {
 		err = e
-		from = strings.ReplaceAll(
+		stripped := strings.ReplaceAll(
 			strings.Split(
 				strings.Trim(from, "\r\n\t "),
 				".",
 			)[0],
 			",", "",
 		)
-		if val, e = strconv.ParseFloat(from, 64); e != nil {
+		if val, e = strconv.ParseFloat(stripped, 64); e != nil {
 			err = errors.WrapE(err, e)
-			_, e := strconv.ParseComplex(from, 64)
-			if e != nil {
-				err = errors.WrapE(err, e)
-			} else {
-				err = errors.Wrap(err, "unable to cast complex to int")
-				val = float64(default_val)
-			}
-		} else {
-			err = nil
+			return defaultValue, errors.WrapE(err, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
+		err = nil
 	}
 	if val < 0 && abs {
 		val = -val
-	}
-	if err != nil {
-		return default_val, errors.WrapE(err, errDetail)
 	}
 	if val >= 0 {
 		return TTo(math.Floor(val)), nil
 	}
 
-	// Negative to uint error.
-	ref := reflect.ValueOf(TTo(0))
-	switch ref.Interface().(type) {
-	case uint, uint8, uint16, uint32, uint64, uintptr:
-		if val < 0 {
-			return default_val, errors.WrapE(ErrorSignedToUnsigned, errDetail)
-		}
+	switch reflect.TypeOf(TTo(0)).Kind() {
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 	}
 
 	return TTo(math.Ceil(val)), nil
