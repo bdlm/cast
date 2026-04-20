@@ -26,7 +26,6 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 	}
 	abs := ops.abs
 
-	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	unsigned := false
 	switch reflect.TypeOf(TTo(0)).Kind() {
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
@@ -46,7 +45,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				return TTo(-val), nil
 			}
-			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case int64:
@@ -54,7 +53,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				return TTo(-val), nil
 			}
-			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case int32:
@@ -62,7 +61,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				return TTo(-val), nil
 			}
-			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case int16:
@@ -70,7 +69,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				return TTo(-val), nil
 			}
-			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case int8:
@@ -78,7 +77,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				return TTo(-val), nil
 			}
-			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case float64:
@@ -86,7 +85,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				return TTo(math.Floor(-val)), nil
 			}
-			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		// Route through string to avoid float→int precision surprises; strToInt
 		// handles truncation consistently via math.Floor.
@@ -96,7 +95,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				return TTo(math.Floor(float64(-val))), nil
 			}
-			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return strToInt[TTo](To[string](val), ops)
 	case uint:
@@ -144,7 +143,6 @@ func strToInt[TTo integer](from string, ops ops) (TTo, error) {
 	}
 	abs := ops.abs
 
-	errDetail := errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, TTo(0))
 	var e, err error
 	var val float64
 	if val, e = strconv.ParseFloat(from, 64); e != nil {
@@ -158,7 +156,7 @@ func strToInt[TTo integer](from string, ops ops) (TTo, error) {
 		)
 		if val, e = strconv.ParseFloat(stripped, 64); e != nil {
 			err = errors.WrapE(err, e)
-			return defaultValue, errors.WrapE(err, errDetail)
+			return defaultValue, errors.WrapE(err, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		err = nil
 	}
@@ -166,7 +164,7 @@ func strToInt[TTo integer](from string, ops ops) (TTo, error) {
 		val = -val
 	}
 	if err != nil {
-		return defaultValue, errors.WrapE(err, errDetail)
+		return defaultValue, errors.WrapE(err, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 	}
 	if val >= 0 {
 		return TTo(math.Floor(val)), nil
@@ -174,7 +172,7 @@ func strToInt[TTo integer](from string, ops ops) (TTo, error) {
 
 	switch reflect.TypeOf(TTo(0)).Kind() {
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errDetail)
+		return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 	}
 
 	return TTo(math.Ceil(val)), nil

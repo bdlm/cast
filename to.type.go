@@ -13,18 +13,6 @@ var (
 	ErrorStrUnableToCast     = "unable to cast %#.10v of type %T to %T"
 )
 
-// integer, float, and complexNum are internal constraints used by the
-// per-kind conversion functions. They accept named types with the matching
-// underlying type (e.g. type Celsius float32).
-type integer interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
-}
-
-type float interface{ ~float32 | ~float64 }
-
-type complexNum interface{ ~complex64 | ~complex128 }
-
 // Flag is the key type for conversion options passed to [To] and [ToE].
 type Flag int
 
@@ -159,6 +147,18 @@ func parseOps(o []Op) ops {
 	}
 	return result
 }
+
+// integer, float, and complexNum are internal constraints used by the
+// per-kind conversion functions. They accept named types with the matching
+// underlying type (e.g. type Celsius float32).
+type integer interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+}
+
+type float interface{ ~float32 | ~float64 }
+
+type complexNum interface{ ~complex64 | ~complex128 }
 
 // Func is a named zero-argument function type that returns a T. A named type
 // is required because Go generics cannot use plain function literals as type

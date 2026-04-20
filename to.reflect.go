@@ -17,56 +17,60 @@ func castToKind(v any, kind reflect.Kind, ops ops) (reflect.Value, error) {
 		}
 		return reflect.ValueOf(v), nil
 	case reflect.Bool:
-		r, err := ToE[bool](v, ops.List()...)
+		r, err := toBool[bool](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Int:
-		r, err := ToE[int](v, ops.List()...)
+		r, err := toInt[int](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Int8:
-		r, err := ToE[int8](v, ops.List()...)
+		r, err := toInt[int8](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Int16:
-		r, err := ToE[int16](v, ops.List()...)
+		r, err := toInt[int16](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Int32:
-		r, err := ToE[int32](v, ops.List()...)
+		r, err := toInt[int32](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Int64:
-		r, err := ToE[int64](v, ops.List()...)
+		r, err := toInt[int64](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Uint:
-		r, err := ToE[uint](v, ops.List()...)
+		r, err := toInt[uint](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Uint8:
-		r, err := ToE[uint8](v, ops.List()...)
+		r, err := toInt[uint8](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Uint16:
-		r, err := ToE[uint16](v, ops.List()...)
+		r, err := toInt[uint16](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Uint32:
-		r, err := ToE[uint32](v, ops.List()...)
+		r, err := toInt[uint32](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Uint64:
-		r, err := ToE[uint64](v, ops.List()...)
+		r, err := toInt[uint64](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Uintptr:
-		r, err := ToE[uintptr](v, ops.List()...)
+		r, err := toInt[uintptr](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Float32:
-		r, err := ToE[float32](v, ops.List()...)
+		r, err := toFloat[float32](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Float64:
-		r, err := ToE[float64](v, ops.List()...)
+		r, err := toFloat[float64](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Complex64:
-		r, err := ToE[complex64](v, ops.List()...)
+		r, err := toComplex[complex64](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.Complex128:
-		r, err := ToE[complex128](v, ops.List()...)
+		r, err := toComplex[complex128](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.String:
-		r, err := ToE[string](v, ops.List()...)
-		return reflect.ValueOf(r), err
+		r, err := toString(v, ops)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		s, _ := r.(string)
+		return reflect.ValueOf(s), nil
 	}
 	return reflect.Value{}, errors.Errorf("unsupported kind %v", kind)
 }
