@@ -23,18 +23,26 @@ type Op struct {
 	Val  any
 }
 
-// Available option flags. Not all flags apply to every target type; see the
-// doc comment on each internal conversion function for which flags it honours.
+// Available option flags. Flags fall into two categories:
+//
+// Global flags propagate through the full conversion tree and are preserved by
+// [ops.Global]. They apply the same way at every level of a nested conversion:
+//   - ABS, JSON, LENGTH, PRIVATE, STRICT, UNIQUE_VALUES
+//
+// Local flags apply only to the conversion they are passed to and are stripped
+// by [ops.Global]. Container converters read their own local flags, then pass
+// [ops.Global] to element-level casts so the local flags do not leak into
+// nested conversions where they carry no meaning or the wrong type:
+//   - DEFAULT, DUPLICATE_KEY_ERROR
 const (
-	DEFAULT Flag = iota // TTo,  default: TTo zero value, value to return on error
-
-	ABS                 // bool, default: false, use absolute value during uint conversion
-	DUPLICATE_KEY_ERROR // bool, default: false, error on duplicate map key
-	LENGTH              // int,  default: 1,     initial capacity for slices / buffer size for channels (slices allow 0; channels require >= 1)
-	UNIQUE_VALUES       // bool, default: false, dedupe slice values
-	JSON                // bool, default: false, encode strings as JSON
-	PRIVATE             // bool, default: false, include unexported struct fields in map output
-	STRICT              // bool, default: false, return error instead of skipping unconvertible fields
+	DEFAULT Flag = iota // TTo,  LOCAL  — value to return on error; type-specific, not passed to nested casts
+	ABS                 // bool, GLOBAL — use absolute value during uint conversion
+	DUPLICATE_KEY_ERROR // bool, LOCAL  — error on duplicate key (map→map only); not meaningful in nested casts
+	LENGTH              // int,  GLOBAL — initial capacity for slices / buffer size for channels; applies to all slice and chan targets in the tree (slices allow 0; channels require >= 1)
+	UNIQUE_VALUES       // bool, GLOBAL — dedupe slice values; applies to all slice targets in the tree
+	JSON                // bool, GLOBAL — encode strings as JSON
+	PRIVATE             // bool, GLOBAL — include unexported struct fields in map output
+	STRICT              // bool, GLOBAL — return error instead of skipping unconvertible fields
 )
 
 // ops is the internal parsed representation of conversion options. A plain
@@ -57,9 +65,27 @@ type ops struct {
 	strict     bool
 }
 
-// Delete returns a copy of ops with the given flag cleared. Container
-// conversion functions call this to strip DEFAULT before forwarding ops to
-// element casts so a container default is not mistakenly applied to elements.
+// Global returns a copy of ops containing only the flags that apply
+// universally across all target types. Local flags (DEFAULT,
+// DUPLICATE_KEY_ERROR) are dropped; global flags (ABS, JSON, LENGTH, PRIVATE,
+// STRICT, UNIQUE_VALUES) are retained.
+//
+// Container converters call this when passing ops to element-level casts so
+// that a container's own local flags do not leak into nested conversions where
+// they carry no meaning or the wrong type.
+func (o ops) Global() ops {
+	return ops{
+		abs:        o.abs,
+		hasLength:  o.hasLength,
+		lengthVal:  o.lengthVal,
+		uniqueVals: o.uniqueVals,
+		jsonEncode: o.jsonEncode,
+		private:    o.private,
+		strict:     o.strict,
+	}
+}
+
+// Delete returns a copy of ops with the given flag cleared.
 func (o ops) Delete(key Flag) ops {
 	switch key {
 	case DEFAULT:

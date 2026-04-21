@@ -24,7 +24,6 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 		defaultValue = ops.defaultVal
-		ops = ops.Delete(DEFAULT) // Prevent DEFAULT from being passed to element casts.
 	}
 
 	size := 1
@@ -37,6 +36,10 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 	if size < 0 {
 		return defaultValue, errors.Errorf("invalid array length %d", size)
 	}
+
+	// Read local flags then strip them for element-level casts.
+	uniqueVals := ops.uniqueVals
+	elemOps := ops.Global()
 
 	slice := reflect.ValueOf(val)
 
@@ -84,13 +87,13 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 		sliceVal := reflect.MakeSlice(to.Type(), 0, size)
 		for a := 0; a < slice.Len(); a++ {
 			elm := slice.Index(a).Interface()
-			elem, err := castToType(elm, to.Type().Elem(), ops)
+			elem, err := castToType(elm, to.Type().Elem(), elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			sliceVal = reflect.Append(sliceVal, elem)
 		}
-		if ops.uniqueVals {
+		if uniqueVals {
 			sliceVal = dedupeSliceVal(sliceVal)
 		}
 		return sliceVal.Interface(), nil
@@ -102,103 +105,103 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 		case []any:
 			result = append(r, elm)
 		case []bool:
-			tval, err := toBool[bool](elm, ops)
+			tval, err := toBool[bool](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []complex64:
-			tval, err := toComplex[complex64](elm, ops)
+			tval, err := toComplex[complex64](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []complex128:
-			tval, err := toComplex[complex128](elm, ops)
+			tval, err := toComplex[complex128](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []float32:
-			tval, err := toFloat[float32](elm, ops)
+			tval, err := toFloat[float32](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []float64:
-			tval, err := toFloat[float64](elm, ops)
+			tval, err := toFloat[float64](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int:
-			tval, err := toInt[int](elm, ops)
+			tval, err := toInt[int](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int8:
-			tval, err := toInt[int8](elm, ops)
+			tval, err := toInt[int8](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int16:
-			tval, err := toInt[int16](elm, ops)
+			tval, err := toInt[int16](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int32:
-			tval, err := toInt[int32](elm, ops)
+			tval, err := toInt[int32](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int64:
-			tval, err := toInt[int64](elm, ops)
+			tval, err := toInt[int64](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint:
-			tval, err := toInt[uint](elm, ops)
+			tval, err := toInt[uint](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint8:
-			tval, err := toInt[uint8](elm, ops)
+			tval, err := toInt[uint8](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint16:
-			tval, err := toInt[uint16](elm, ops)
+			tval, err := toInt[uint16](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint32:
-			tval, err := toInt[uint32](elm, ops)
+			tval, err := toInt[uint32](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint64:
-			tval, err := toInt[uint64](elm, ops)
+			tval, err := toInt[uint64](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uintptr:
-			tval, err := toInt[uintptr](elm, ops)
+			tval, err := toInt[uintptr](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []string:
-			tval, err := toString(elm, ops)
+			tval, err := toString(elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
@@ -207,7 +210,7 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 		}
 	}
 
-	if ops.uniqueVals {
+	if uniqueVals {
 		rv := reflect.ValueOf(result)
 		result = dedupeSliceVal(rv).Interface()
 	}

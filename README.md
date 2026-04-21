@@ -4,28 +4,21 @@
     <a href="https://gopherize.me/gopher/0b8aa47b088b43d10817e8a13cb115fdd87c0bcb"><img src="https://github.com/bdlm/cast/wiki/assets/images/gopher.png" width="300px"></a>
 </p>
 
-Now with Generics! [![Go](https://github.com/bdlm/cast/actions/workflows/go.yml/badge.svg)](https://github.com/bdlm/cast/actions/workflows/go.yml)
-
-This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). You should expect package stability in <strong>Minor</strong> and <strong>Patch</strong> version releases
-
-- **Major**: backwards incompatible package updates
-- **Minor**: feature additions
-- **Patch**: bug fixes, backward compatible model and function changes, etc.
-
-<a href="https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#mature"><img src="https://img.shields.io/badge/stability-mature-008000.svg" alt="Mature"></a> Code has proven satisfactory and is ready for production use, cleanup of the underlying code may cause some minor changes. Backwards-compatibility is guaranteed.
-
-**[CHANGELOG](CHANGELOG.md)**<br>
+<p align="center">Now with Generics!</p>
 
 <p align="center">
+    <a href="https://github.com/bdlm/cast/actions/workflows/go.yml"><img src="https://github.com/bdlm/cast/actions/workflows/go.yml/badge.svg"></a>
     <a href="https://github.com/bdlm/cast/blob/master/CHANGELOG.md"><img src="https://img.shields.io/github/v/release/bdlm/cast" alt="Release"></a>
     <a href="https://pkg.go.dev/github.com/bdlm/cast/v2"><img src="https://godoc.org/github.com/bdlm/cast/v2?status.svg" alt="GoDoc"></a>
-    <a href="https://travis-ci.org/bdlm/cast"><img src="https://travis-ci.org/bdlm/cast.svg?branch=master" alt="Build status"></a>
-    <a href="https://codecov.io/gh/bdlm/cast"><img src="https://img.shields.io/codecov/c/github/bdlm/cast/master.svg" alt="Coverage status"></a>
-    <a href="https://goreportcard.com/report/github.com/bdlm/cast"><img src="https://goreportcard.com/badge/github.com/bdlm/cast" alt="Go Report Card"></a>
+    <a href="https://goreportcard.com/report/github.com/bdlm/cast"><img src="https://goreportcard.com/badge/github.com/bdlm/cast/v2" alt="Go Report Card"></a>
     <a href="https://github.com/bdlm/cast/issues"><img src="https://img.shields.io/github/issues-raw/bdlm/cast.svg" alt="Github issues"></a>
     <a href="https://github.com/bdlm/cast/pulls"><img src="https://img.shields.io/github/issues-pr/bdlm/cast.svg" alt="Github pull requests"></a>
     <a href="https://github.com/bdlm/cast/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
 </p>
+
+**[CHANGELOG](CHANGELOG.md)** - This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). You should expect API stability in <strong>Minor</strong> and <strong>Patch</strong> version releases
+
+<a href="https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#mature"><img src="https://img.shields.io/badge/stability-mature-008000.svg" alt="Mature"></a> Code has proven satisfactory and is in wide production use, cleanup of the underlying code may cause some minor changes. Backwards-compatibility is guaranteed.
 
 <sub>This project is inspired by [`spf13/cast`](https://github.com/spf13/cast)</sub>
 
@@ -57,6 +50,68 @@ func ToE[T Types](v any, o ...Op) (T, error)
 `To` returns the cast value and silently ignores errors. `ToE` returns both the cast value and any error. The type parameter `T` is constrained to `cast.Types`, which covers all scalar types, slices, maps, channels, and `cast.Func[T]`.
 
 ***If input cannot be converted to the specified type, the zero value for that type is returned***. Use `ToE` to distinguish between a successful zero-value cast and a conversion error. `ToE` returns an error describing any issue along with the cast value.
+
+### Supported Conversions
+
+`cast.To[T](v, opts...)` · `cast.ToE[T](v, opts...)` · Named types work everywhere: `type Celsius float32` → `cast.ToE[Celsius]("98.6")`
+
+**Legend:**\
+&nbsp;&nbsp;`✓` always succeeds\
+&nbsp;&nbsp;`~` succeeds for valid input\
+&nbsp;&nbsp;`✗` always errors
+
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Target →<br>↓ Source | `bool` | `int*` | `uint*` | `float*` · `complex*` | `string` | `[]T` | `map[K]V` | `chan T` · `Func[T]` | `any` |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `bool`                | ✓   | ✓   | ✓   | ✓    | ✓    | ✗   | ✗    | ✓   | ✓ |
+| `int*` (signed)       | ✓   | ✓   | ~¹  | ✓    | ✓    | ✗   | ✗    | ✓   | ✓ |
+| `uint*` (unsigned)    | ✓   | ✓   | ✓   | ✓    | ✓    | ✗   | ✗    | ✓   | ✓ |
+| `float*` · `complex*` | ✓   | ~²³ | ~¹² | ✓    | ✓    | ✗   | ✗    | ✓   | ✓ |
+| `string`              | ~⁴  | ~⁵  | ~⁵  | ~⁵   | ✓    | ✗   | ✗    | ~⁵  | ✓ |
+| `[]byte`              | ✗   | ✗   | ✗   | ✗    | ✓⁶   | ✗   | ✗    | ✗   | ✓ |
+| `[]T` · `[N]T`        | ✗   | ✗   | ✗   | ✗    | ~⁷   | ✓   | ✓⁸   | ✓   | ✓ |
+| `map[K]V`             | ✗   | ✗   | ✗   | ✗    | ~⁷   | ✗   | ✓    | ✗   | ✓ |
+| `struct`              | ✗   | ✗   | ✗   | ✗    | ~⁷   | ✗   | ✓⁹   | ✗   | ✓ |
+| `nil`                 | ✓   | ✓   | ✓   | ✓    | ✓    | ✗   | ✗    | ✗   | ✓ |
+| `error` · `Stringer`  | ~¹⁰ | ~¹⁰ | ~¹⁰ | ~¹⁰  | ✓¹⁰  | ✗   | ✗    | ~¹⁰ | ✓ |
+| `any` / interface     | ✓   | ✓   | ✓   | ✓    | ✓    | ✓   | ✓    | ✓   | ✓ |
+
+`int*` = int · int8 · int16 · int32 · int64
+`uint*` = uint · uint8 · uint16 · uint32 · uint64 · uintptr
+`float*` = float32 · float64  ·  `complex*` = complex64 · complex128
+
+---
+
+**Notes**
+
+¹ Negative signed or float value → `uint*`: error. Use `Op{ABS, true}` to take the absolute value instead.\
+² float/complex → `int*`: truncates toward zero via `math.Floor`. `1.9 → 1`, `-1.9 → -1`. Does not round.\
+³ complex → real numeric: the imaginary part is discarded; only the real component is used.\
+⁴ `string` → `bool`: only `"1"/"0"/"t"/"f"/"true"/"false"` and their case variants (`"True"`, `"TRUE"`, …) return `true`.\
+⁵ `string` → numeric: parsed as float64 via `strconv.ParseFloat`; non-numeric strings error. Float strings truncate when targeting `int*`.\
+⁶ `[]byte` → `string`: direct `string(b)`, not element-wise — bypasses JSON encoding.\
+⁷ → `string` fallback: complex types, maps, and structs stringify via `fmt.Sprintf("%v", v)`.\
+⁸ `[]T`/`[N]T` → `map[K]V`: element indices (0, 1, 2 …) become map keys, cast to key type K.\
+⁹ `struct` → `map[K]V`: exported field names become keys; embedded structs are inlined; nested structs recurse into nested maps when value type is `any` or `map`.\
+¹⁰ `error`/`Stringer` → any target: calls `.Error()` or `.String()` to obtain the string representation, then parses it the same way a plain `string` source would be. Succeeds whenever the string value would succeed for that target type.
+
+**`chan T` / `Func[T]`** wrap any value that can be cast to T — `source → chan T` succeeds whenever `source → T` succeeds. `chan T` returns a buffered channel (size 1) pre-loaded with the value; `Func[T]` returns a `func() T` closure. T may itself be `[]T`, `Func[T]`, or `chan T` (nesting supported).
+
+**Interface targets** (`error`, `fmt.Stringer`) — source must already implement the interface; the value is returned as-is. Values that do not implement the target interface always error.
+
+---
+
+**Options**
+
+| Flag | Applies to | Effect |
+|:---|:---|:---|
+| `DEFAULT` | all targets | Return this value on error instead of the zero value |
+| `ABS` | `uint*` targets | Use absolute value for negative signed inputs instead of erroring |
+| `LENGTH` | `[]T`, `chan T` | Pre-allocate slice capacity or set channel buffer size (≥ 1 for chan) |
+| `UNIQUE_VALUES` | `[]T` | Deduplicate after conversion, preserving first-seen order |
+| `JSON` | `string` | JSON-encode the resulting string (adds quotes and escaping) |
+| `PRIVATE` | map from struct | Include unexported scalar fields |
+| `STRICT` | map from struct | Error instead of silently skipping unconvertible fields |
+| `DUPLICATE_KEY_ERROR` | map from map | Error when two source keys cast to the same target key |
 
 ### Options
 
@@ -203,31 +258,3 @@ To capture any conversion errors, use the `ToE` method:
 cast.To[int]("Hi!")           // 0 (int)
 cast.ToE[int]("Hi!")          // 0 (int), error: unable to cast "Hi!" of type string to int
 ```
-
-### Supported Conversions
-| | To | `bool` | `complex64` | `complex128` | `float32` | `float64` | `int` | `int8` | `int16` | `int32` | `int64` | `uint` | `uint8` | `uint16` | `uint32` | `uint64` | `string` | `slice` | `map` | `func` | `chan` |
-|:---------|-----------------:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| **From** | **`any`**        | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y |
-|          | **`bool`**       | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`complex64`**  | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`complex128`** | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`float32`**    | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`float64`**    | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`int`**        | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`int8`**       | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`int16`**      | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`int32`**      | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`int64`**      | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`uint`**       | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`uint8`**      | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`uint16`**     | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`uint32`**     | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`uint64`**     | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`string`**     | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | y | n | n | y | y |
-|          | **`slice`**      | n | n | n | n | n | n | n | n | n | n | n | n | n | n | n | y | y | y | y | y |
-|          | **`map`**        | n | n | n | n | n | n | n | n | n | n | n | n | n | n | n | y | n | y | y | y |
-|          | **`struct`**     | n | n | n | n | n | n | n | n | n | n | n | n | n | n | n | n | n | y | n | n |
-|          | **`func`**       | n | n | n | n | n | n | n | n | n | n | n | n | n | n | n | y | n | n | n | n |
-|          | **`chan`**       | n | n | n | n | n | n | n | n | n | n | n | n | n | n | n | y | n | n | n | n |
-
-> **Interface targets (`error`, `fmt.Stringer`):** Casting to interface targets is supported when the source value already implements the target interface; the value is returned as-is. These are not reflected in the matrix above.

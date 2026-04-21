@@ -1,10 +1,49 @@
 package cast
 
 import (
+	"encoding"
+	"math/big"
+	"net"
+	"net/url"
 	"reflect"
+	"regexp"
+	"time"
 
 	"github.com/bdlm/errors/v2"
 )
+
+// namedConverters maps specific reflect.Types to their dedicated converter.
+// Both ToE (to.go) and castToType consult this table before the kind dispatch
+// so that supporting a new named type requires only one edit here.
+var namedConverters = map[reflect.Type]func(any, ops) (any, error){
+	reflect.TypeOf(time.Duration(0)):      toDuration,
+	reflect.TypeOf(time.Time{}):           toTime,
+	reflect.TypeOf(net.IP(nil)):           toNetIP,
+	reflect.TypeOf((*url.URL)(nil)):       toURL,
+	reflect.TypeOf((*regexp.Regexp)(nil)): toRegexp,
+	reflect.TypeOf((*big.Int)(nil)):       toBigInt,
+	reflect.TypeOf((*big.Float)(nil)):     toBigFloat,
+}
+
+// rawToValue converts the (raw, err) pair returned by a named-type converter
+// into the (reflect.Value, error) pair expected by castToType. On error, if
+// ops carries a DEFAULT value assignable to t, it is returned alongside the
+// error so the caller can propagate both.
+func rawToValue(raw any, t reflect.Type, ops ops, err error) (reflect.Value, error) {
+	if err == nil {
+		if raw == nil {
+			return reflect.Zero(t), nil
+		}
+		return reflect.ValueOf(raw), nil
+	}
+	if ops.hasDefault {
+		dv := reflect.ValueOf(ops.defaultVal)
+		if dv.IsValid() && dv.Type().AssignableTo(t) {
+			return dv, err
+		}
+	}
+	return reflect.Value{}, err
+}
 
 // castToKind casts v to the scalar Go type corresponding to kind and returns
 // the result as a reflect.Value. It only handles scalar kinds; for slices,
@@ -77,6 +116,14 @@ func castToKind(v any, kind reflect.Kind, ops ops) (reflect.Value, error) {
 
 // castToType casts v to the type t and returns the result as a reflect.Value.
 func castToType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
+	// Named types have dedicated converters; consult the table before the
+	// generic kind dispatch below so that adding a new named type only
+	// requires a single entry in namedConverters.
+	if fn, ok := namedConverters[t]; ok {
+		raw, err := fn(v, ops)
+		return rawToValue(raw, t, ops, err)
+	}
+
 	switch t.Kind() {
 	case reflect.Interface:
 		if v == nil {
@@ -94,7 +141,7 @@ func castToType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 		if t.NumIn() != 0 || t.NumOut() != 1 {
 			return reflect.Value{}, errors.Errorf("unsupported func type %v", t)
 		}
-		retVal, err := castToType(v, t.Out(0), ops)
+		retVal, err := castToType(v, t.Out(0), ops.Global())
 		if err != nil {
 			return reflect.Value{}, err
 		}
@@ -116,13 +163,23 @@ func castToType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 			}
 			size = s
 		}
-		elem, err := castToType(v, t.Elem(), ops.Delete(LENGTH))
+		elem, err := castToType(v, t.Elem(), ops.Global())
 		if err != nil {
 			return reflect.Value{}, err
 		}
 		ch := reflect.MakeChan(t, size)
 		ch.Send(elem)
 		return ch, nil
+	case reflect.Pointer:
+		elem, err := castToType(v, t.Elem(), ops.Global())
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		ptr := reflect.New(t.Elem())
+		ptr.Elem().Set(elem)
+		return ptr, nil
+	case reflect.Struct:
+		return castToStructType(v, t, ops)
 	default:
 		result, err := castToKind(v, t.Kind(), ops)
 		if err != nil {
@@ -139,6 +196,7 @@ func castToType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 }
 
 func castToSliceType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
+	elemOps := ops.Global()
 	srcVal := reflect.ValueOf(v)
 	if !srcVal.IsValid() {
 		return reflect.MakeSlice(t, 0, 0), nil
@@ -147,7 +205,7 @@ func castToSliceType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 	case reflect.Slice, reflect.Array:
 		result := reflect.MakeSlice(t, srcVal.Len(), srcVal.Len())
 		for i := 0; i < srcVal.Len(); i++ {
-			elem, err := castToType(srcVal.Index(i).Interface(), t.Elem(), ops)
+			elem, err := castToType(srcVal.Index(i).Interface(), t.Elem(), elemOps)
 			if err != nil {
 				return reflect.Value{}, err
 			}
@@ -155,7 +213,7 @@ func castToSliceType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 		}
 		return result, nil
 	default:
-		elem, err := castToType(v, t.Elem(), ops)
+		elem, err := castToType(v, t.Elem(), elemOps)
 		if err != nil {
 			return reflect.Value{}, err
 		}
@@ -165,3 +223,34 @@ func castToSliceType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 	}
 }
 
+// castToStructType casts v to the struct type t. It tries, in order:
+//  1. Direct assignment or convertible type (fast path for same-type values).
+//  2. encoding.TextUnmarshaler (handles struct types with text parsing).
+//  3. Struct hydration via toStruct (map or struct sources).
+//
+// time.Time is handled by namedConverters in castToType and never reaches here.
+func castToStructType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
+	if v != nil {
+		srcVal := reflect.ValueOf(v)
+		if srcVal.IsValid() {
+			if srcVal.Type() == t {
+				return srcVal, nil
+			}
+			if srcVal.Type().ConvertibleTo(t) {
+				return srcVal.Convert(t), nil
+			}
+		}
+	}
+
+	ptr := reflect.New(t)
+	if tu, ok := ptr.Interface().(encoding.TextUnmarshaler); ok {
+		if s, strErr := ToE[string](v); strErr == nil {
+			if umErr := tu.UnmarshalText([]byte(s)); umErr == nil {
+				return ptr.Elem(), nil
+			}
+		}
+	}
+
+	raw, err := toStruct(reflect.Zero(t), v, ops)
+	return rawToValue(raw, t, ops, err)
+}

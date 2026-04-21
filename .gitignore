@@ -1,6 +1,8 @@
 go.sum
 vendor/
 _*
+benchmark*
 .claude*
 claude*
 CLAUDE*
+coverage*

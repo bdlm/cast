@@ -21,7 +21,6 @@ func toMap(to reflect.Value, from any, ops ops) (any, error) {
 			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 		ret = ops.defaultVal
-		ops = ops.Delete(DEFAULT) // Prevent DEFAULT from being passed to element casts.
 	}
 
 	fromVal := reflect.Indirect(reflect.ValueOf(from))
@@ -57,19 +56,20 @@ func toMap(to reflect.Value, from any, ops ops) (any, error) {
 // and value individually. DUPLICATE_KEY_ERROR causes it to error on collision.
 func mapFromMap(to reflect.Value, src reflect.Value, ops ops) (any, error) {
 	dupKeyErr := ops.dupKeyErr
+	elemOps := ops.Global()
 	targetMap := reflect.MakeMap(to.Type())
 	keyType := to.Type().Key()
 	valType := to.Type().Elem()
 
 	for _, srcKey := range src.MapKeys() {
-		castKey, err := castToType(srcKey.Interface(), keyType, ops)
+		castKey, err := castToType(srcKey.Interface(), keyType, elemOps)
 		if err != nil {
 			return nil, err
 		}
 		if dupKeyErr && targetMap.MapIndex(castKey).IsValid() {
 			return nil, errors.Errorf("duplicate key %v", castKey.Interface())
 		}
-		castVal, err := castToType(src.MapIndex(srcKey).Interface(), valType, ops)
+		castVal, err := castToType(src.MapIndex(srcKey).Interface(), valType, elemOps)
 		if err != nil {
 			return nil, err
 		}
@@ -90,7 +90,7 @@ func mapFromStruct(to reflect.Value, src reflect.Value, ops ops) (any, error) {
 	keyType := to.Type().Key()
 	valType := to.Type().Elem()
 
-	if err := collectStructFields(targetMap, src, keyType, valType, private, strict, ops); err != nil {
+	if err := collectStructFields(targetMap, src, keyType, valType, private, strict, ops.Global()); err != nil {
 		return nil, err
 	}
 	return targetMap.Interface(), nil
@@ -205,12 +205,13 @@ func collectStructFields(
 
 // mapFromSlice converts a slice or array to a map using element indices as keys.
 func mapFromSlice(to reflect.Value, src reflect.Value, ops ops) (any, error) {
+	elemOps := ops.Global()
 	targetMap := reflect.MakeMap(to.Type())
 	keyType := to.Type().Key()
 	valType := to.Type().Elem()
 
 	for i := 0; i < src.Len(); i++ {
-		castKey, err := castToType(i, keyType, ops)
+		castKey, err := castToType(i, keyType, elemOps)
 		if err != nil {
 			return nil, errors.Errorf("cannot cast index %d to map key type %v: %v", i, keyType, err)
 		}
@@ -225,7 +226,7 @@ func mapFromSlice(to reflect.Value, src reflect.Value, ops ops) (any, error) {
 			}
 			elemIface = val
 		}
-		castVal, err := castToType(elemIface, valType, ops)
+		castVal, err := castToType(elemIface, valType, elemOps)
 		if err != nil {
 			return nil, err
 		}
