@@ -56,5 +56,8 @@ func toComplex[TTo complexNum](from any, ops ops) (TTo, error) {
 		}
 		return TTo(complex(f, 0)), nil
 	}
+
+	// Dead code, the above switch covers all complexNum types but the compiler
+	// doesn't know that.
 	return TTo(0), errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0))
 }

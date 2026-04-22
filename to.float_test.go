@@ -1,6 +1,7 @@
 package cast_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/bdlm/cast/v2"
@@ -230,4 +231,30 @@ func TestFloatDefaultOption(t *testing.T) {
 			t.Errorf("expected 1.5, got %v", result)
 		}
 	})
+}
+
+func TestFloatDefaultBranch(t *testing.T) {
+	// A named float type without fmt.Stringer falls through to the
+	// fmt.Sprintf("%v", from) default branch in toFloat. The Sprintf output
+	// is a valid decimal string, so the parse succeeds.
+	type myFloat float64
+	result, err := cast.ToE[float64](myFloat(3.14))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result != 3.14 {
+		t.Errorf("expected 3.14, got %v", result)
+	}
+}
+
+func TestFloatDefaultBranchError(t *testing.T) {
+	// A type whose Sprintf representation is not a parseable float must error.
+	type myStruct struct{ V int }
+	_, err := cast.ToE[float64](myStruct{V: 1})
+	if err == nil {
+		t.Error("expected error for struct→float64, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %T: %v", err, err)
+	}
 }

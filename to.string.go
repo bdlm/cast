@@ -40,7 +40,9 @@ func toString(from any, ops ops) (any, error) {
 		return "", nil
 	case string:
 		return val, nil
-	case []byte:
+	case []byte: // = []uint8
+		return string(val), nil
+	case []rune: // = []int32
 		return string(val), nil
 	case fmt.Stringer:
 		return val.String(), nil

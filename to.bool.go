@@ -61,6 +61,8 @@ func toBool[TTo bool](from any, ops ops) (TTo, error) {
 		return false, nil
 	case fmt.Stringer:
 		return toBool[TTo](from.String(), ops)
+	case error:
+		return toBool[TTo](from.Error(), ops)
 	case string:
 		r, e := strconv.ParseBool(from)
 		if nil != e {
@@ -71,7 +73,7 @@ func toBool[TTo bool](from any, ops ops) (TTo, error) {
 			return i != 0, nil
 		}
 		return TTo(r), nil
+	default:
+		return toBool[TTo](fmt.Sprintf("%v", from), ops)
 	}
-
-	return ret, errors.Errorf(ErrorStrUnableToCast, from, from, false)
 }

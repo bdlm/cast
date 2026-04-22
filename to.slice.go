@@ -24,7 +24,6 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 		defaultValue = ops.defaultVal
-		ops = ops.Delete(DEFAULT) // Prevent DEFAULT from being passed to element casts.
 	}
 
 	size := 1
@@ -38,7 +37,55 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 		return defaultValue, errors.Errorf("invalid array length %d", size)
 	}
 
+	// Read local flags then strip them for element-level casts.
+	uniqueVals := ops.uniqueVals
+	elemOps := ops.Global()
+
+	// Special cases mirroring Go's built-in string conversions:
+	//   string → []byte / []uint8      (and named variants with Uint8 element)
+	//   string → []rune / []int32      (and named variants with Int32 element)
+	// These must be handled before the source-kind guard below because a string
+	// is not a slice/array kind, and iterating bytes would give wrong results for
+	// []rune (bytes ≠ Unicode code points for multibyte UTF-8).
+	if s, ok := val.(string); ok {
+		var result any
+		switch to.Type().Elem().Kind() {
+		case reflect.Uint8: // []byte / []uint8 and named variants
+			bs := []byte(s)
+			if to.Type() == reflect.TypeOf(bs) {
+				result = bs
+			} else {
+				rv := reflect.MakeSlice(to.Type(), len(bs), len(bs))
+				for i, b := range bs {
+					rv.Index(i).SetUint(uint64(b))
+				}
+				result = rv.Interface()
+			}
+		case reflect.Int32: // []rune / []int32 and named variants (rune = int32)
+			rs := []rune(s)
+			if to.Type() == reflect.TypeOf(rs) {
+				result = rs
+			} else {
+				rv := reflect.MakeSlice(to.Type(), len(rs), len(rs))
+				for i, r := range rs {
+					rv.Index(i).SetInt(int64(r))
+				}
+				result = rv.Interface()
+			}
+		default:
+			return defaultValue, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
+		}
+		if uniqueVals {
+			rv := reflect.ValueOf(result)
+			result = dedupeSliceVal(rv).Interface()
+		}
+		return result, nil
+	}
+
 	slice := reflect.ValueOf(val)
+	if !slice.IsValid() || (slice.Kind() != reflect.Slice && slice.Kind() != reflect.Array) {
+		return defaultValue, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
+	}
 
 	// Initialize the result slice based on target element type.
 	var result any
@@ -80,17 +127,33 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 	case []string:
 		result = make([]string, 0, size)
 	default:
-		// Named slice type: use reflection.
+		// Named slice type (e.g. type MyInts []int): use reflection for slice
+		// construction since the concrete type is unknown at compile time.
+		// For scalar element kinds, call castToKind directly — the same converter
+		// the concrete switch uses above — to skip the castToType dispatch layer.
+		// The scalar check is hoisted before the loop so it runs once, not per element.
+		elemType := to.Type().Elem()
+		elemKind := elemType.Kind()
+		scalarElem := isScalarKind(elemKind)
 		sliceVal := reflect.MakeSlice(to.Type(), 0, size)
 		for a := 0; a < slice.Len(); a++ {
 			elm := slice.Index(a).Interface()
-			elem, err := castToType(elm, to.Type().Elem(), ops)
+			var elem reflect.Value
+			var err error
+			if scalarElem {
+				elem, err = castToKind(elm, elemKind, elemOps)
+				if err == nil && elem.Type() != elemType {
+					elem = elem.Convert(elemType)
+				}
+			} else {
+				elem, err = castToType(elm, elemType, elemOps)
+			}
 			if err != nil {
 				return defaultValue, err
 			}
 			sliceVal = reflect.Append(sliceVal, elem)
 		}
-		if ops.uniqueVals {
+		if uniqueVals {
 			sliceVal = dedupeSliceVal(sliceVal)
 		}
 		return sliceVal.Interface(), nil
@@ -102,103 +165,103 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 		case []any:
 			result = append(r, elm)
 		case []bool:
-			tval, err := toBool[bool](elm, ops)
+			tval, err := toBool[bool](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []complex64:
-			tval, err := toComplex[complex64](elm, ops)
+			tval, err := toComplex[complex64](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []complex128:
-			tval, err := toComplex[complex128](elm, ops)
+			tval, err := toComplex[complex128](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []float32:
-			tval, err := toFloat[float32](elm, ops)
+			tval, err := toFloat[float32](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []float64:
-			tval, err := toFloat[float64](elm, ops)
+			tval, err := toFloat[float64](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int:
-			tval, err := toInt[int](elm, ops)
+			tval, err := toInt[int](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int8:
-			tval, err := toInt[int8](elm, ops)
+			tval, err := toInt[int8](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int16:
-			tval, err := toInt[int16](elm, ops)
+			tval, err := toInt[int16](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int32:
-			tval, err := toInt[int32](elm, ops)
+			tval, err := toInt[int32](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []int64:
-			tval, err := toInt[int64](elm, ops)
+			tval, err := toInt[int64](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint:
-			tval, err := toInt[uint](elm, ops)
+			tval, err := toInt[uint](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint8:
-			tval, err := toInt[uint8](elm, ops)
+			tval, err := toInt[uint8](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint16:
-			tval, err := toInt[uint16](elm, ops)
+			tval, err := toInt[uint16](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint32:
-			tval, err := toInt[uint32](elm, ops)
+			tval, err := toInt[uint32](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uint64:
-			tval, err := toInt[uint64](elm, ops)
+			tval, err := toInt[uint64](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []uintptr:
-			tval, err := toInt[uintptr](elm, ops)
+			tval, err := toInt[uintptr](elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
 			result = append(r, tval)
 		case []string:
-			tval, err := toString(elm, ops)
+			tval, err := toString(elm, elemOps)
 			if err != nil {
 				return defaultValue, err
 			}
@@ -207,7 +270,7 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 		}
 	}
 
-	if ops.uniqueVals {
+	if uniqueVals {
 		rv := reflect.ValueOf(result)
 		result = dedupeSliceVal(rv).Interface()
 	}
@@ -241,4 +304,20 @@ func dedupeSliceVal(rv reflect.Value) reflect.Value {
 		}
 	}
 	return deduped
+}
+
+// isScalarKind reports whether k is a scalar kind handled by castToKind.
+// reflect.Interface is excluded: castToType enforces assignability checks that
+// castToKind skips, so interface element types must go through castToType.
+func isScalarKind(k reflect.Kind) bool {
+	switch k {
+	case reflect.Bool,
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr,
+		reflect.Float32, reflect.Float64,
+		reflect.Complex64, reflect.Complex128,
+		reflect.String:
+		return true
+	}
+	return false
 }

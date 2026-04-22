@@ -7,7 +7,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Patch**: bug fixes, backward compatible model and function changes, etc.
 
 
+## v2.1.1 - 2026-04-22
+Struct hydration, seven new named-type cast targets, and reflection infrastructure improvements.
+
+### Added
+
+#### Struct hydration (`to.struct.go`)
+Any map, struct, or `*struct` can now be cast into a user-defined struct type via `ToStruct[T]` / `ToStructE[T]`, or via the standard `To[T]` / `ToE[T]` entry points. Source map keys are matched case-sensitively to exported field names. Fields whose source value cannot be cast retain their zero value by default; the `STRICT` flag promotes mismatches and unknown keys to errors. Supported sources:
+- `map[string]any` and any map whose keys are string-castable
+- struct or `*struct` (exported field names become keys; anonymous/embedded fields are promoted)
+
+Nested structs, slices of structs, and embedded (anonymous) struct fields — including those from unexported embedded types and nil embedded pointer fields — are all handled recursively.
+
+#### Named-type cast targets
+Seven standard Go types are now first-class cast targets via `To[T]` / `ToE[T]`:
+
+| Target | File | Sources |
+|---|---|---|
+| `time.Time` | `to.time.go` | string (19 formats), `time.Time`, `*time.Time`, integer (Unix ns), float (Unix s) |
+| `time.Duration` | `to.duration.go` | `time.Duration`, string (`time.ParseDuration`), integer/float (nanoseconds) |
+| `net.IP` | `to.net.go` | `net.IP`, string, `[]byte` (4 or 16 bytes), `uint32` (packed IPv4) |
+| `*url.URL` | `to.url.go` | `*url.URL`, `url.URL`, string |
+| `*regexp.Regexp` | `to.regexp.go` | `*regexp.Regexp`, string |
+| `*big.Int` | `to.big.go` | `*big.Int`, `big.Int`, `*big.Float`, string (base auto-detect), integer types, float types |
+| `*big.Float` | `to.big.go` | `*big.Float`, `big.Float`, `*big.Int`, string, integer types, float types |
+
+All converters support the `DEFAULT` op (return the supplied fallback on error) and a `default:` string-cast fallback path for unrecognized source types.
+
+All new targets are also supported as struct field types during struct hydration.
+
+#### Named-type converter table and `rawToValue` helper (`util.reflect.go`)
+A single `namedConverters map[reflect.Type]func(any, ops)(any, error)` table is the authoritative registry for all named-type converters. Both `ToE` and `castToType` consult it before the generic kind dispatch, eliminating previously duplicated switch blocks. The companion `rawToValue` helper ensures that `DEFAULT` values are propagated to callers on converter failure instead of being silently dropped.
+
+#### Extended reflection infrastructure (`util.reflect.go`)
+`castToType` now handles `reflect.Struct` and `reflect.Pointer` kinds in addition to scalars, slices, funcs, and chans, enabling recursive hydration of arbitrary nested types during struct field casting.
+
+### Fixed
+- Nil `*T` anonymous (embedded) pointer fields are now allocated before recursion in `hydrateStruct`, so promoted fields are properly hydrated instead of being skipped.
+- `collectExportedFields` now recurses into unexported anonymous struct types (matching `hydrateStruct` semantics), fixing a gap where exported fields within unexported embedded types were missed during struct→struct conversion.
+- `DEFAULT` values supplied to `castToStructType` are now correctly propagated to the caller on error instead of being discarded.
+- `toStruct` no longer allocates a zero-value struct for `defaultVal` when a `DEFAULT` op is provided.
+
+### Tests
+Full test coverage added for all new functionality: `to.struct_test.go`, `to.time_test.go`, `to.duration_test.go`, `to.net_test.go`, `to.url_test.go`, `to.regexp_test.go`, `to.big_test.go`.
+
+
 ## v2.1.0 - 2026-04-20
+Map target implementations, extended channel targets, extended function targets, expanded type definitions, performance improvements, expanded test coverage.
 
 ### Added
 

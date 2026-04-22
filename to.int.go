@@ -43,7 +43,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 	case int:
 		if unsigned && val < 0 {
 			if abs {
-				return TTo(-val), nil
+				return TTo(-uint(val)), nil
 			}
 			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
@@ -51,7 +51,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 	case int64:
 		if unsigned && val < 0 {
 			if abs {
-				return TTo(-val), nil
+				return TTo(-uint64(val)), nil
 			}
 			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
@@ -59,7 +59,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 	case int32:
 		if unsigned && val < 0 {
 			if abs {
-				return TTo(-val), nil
+				return TTo(-uint32(val)), nil
 			}
 			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
@@ -67,7 +67,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 	case int16:
 		if unsigned && val < 0 {
 			if abs {
-				return TTo(-val), nil
+				return TTo(-uint16(val)), nil
 			}
 			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
@@ -75,7 +75,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 	case int8:
 		if unsigned && val < 0 {
 			if abs {
-				return TTo(-val), nil
+				return TTo(-uint8(val)), nil
 			}
 			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
@@ -87,9 +87,10 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			}
 			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
-		// Route through string to avoid float→int precision surprises; strToInt
-		// handles truncation consistently via math.Floor.
-		return strToInt[TTo](To[string](val), ops)
+		if val >= 0 {
+			return TTo(math.Floor(val)), nil
+		}
+		return TTo(math.Ceil(val)), nil
 	case float32:
 		if unsigned && val < 0 {
 			if abs {
@@ -97,7 +98,11 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			}
 			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
-		return strToInt[TTo](To[string](val), ops)
+		v64 := float64(val)
+		if v64 >= 0 {
+			return TTo(math.Floor(v64)), nil
+		}
+		return TTo(math.Ceil(v64)), nil
 	case uint:
 		return TTo(val), nil
 	case uintptr:
@@ -111,9 +116,9 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 	case uint8:
 		return TTo(val), nil
 	case fmt.Stringer:
-		return strToInt[TTo](val.String(), ops)
+		return strToInt[TTo](val.String(), unsigned, ops)
 	case string:
-		return strToInt[TTo](val, ops)
+		return strToInt[TTo](val, unsigned, ops)
 	case complex64:
 		return toInt[TTo](float32(real(val)), ops)
 	case complex128:
@@ -132,7 +137,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 //   - DEFAULT: integer, default 0. Default return value on error.
 //   - ABS: bool, default false. Return the absolute value of negative integers
 //     when casting to unsigned integers.
-func strToInt[TTo integer](from string, ops ops) (TTo, error) {
+func strToInt[TTo integer](from string, unsigned bool, ops ops) (TTo, error) {
 	var defaultValue TTo
 	var ok bool
 
@@ -167,8 +172,7 @@ func strToInt[TTo integer](from string, ops ops) (TTo, error) {
 		return TTo(math.Floor(val)), nil
 	}
 
-	switch reflect.TypeOf(TTo(0)).Kind() {
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+	if unsigned {
 		return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 	}
 

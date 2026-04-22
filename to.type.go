@@ -23,18 +23,28 @@ type Op struct {
 	Val  any
 }
 
-// Available option flags. Not all flags apply to every target type; see the
-// doc comment on each internal conversion function for which flags it honours.
+// Available option flags. Flags fall into two categories:
+//
+// Global flags propagate through the full conversion tree and are preserved by
+// [ops.Global]. They apply the same way at every level of a nested conversion:
+//   - ABS, JSON, LENGTH, PRIVATE, STRICT, UNIQUE_VALUES
+//
+// Local flags apply only to the conversion they are passed to and are stripped
+// by [ops.Global]. Container converters read their own local flags, then pass
+// [ops.Global] to element-level casts so the local flags do not leak into
+// nested conversions where they carry no meaning or the wrong type:
+//   - DEFAULT, DUPLICATE_KEY_ERROR
 const (
-	DEFAULT Flag = iota // TTo,  default: TTo zero value, value to return on error
+	DEFAULT Flag = iota // TTo,  LOCAL  — value to return on error; type-specific, not passed to nested casts
 
-	ABS                 // bool, default: false, use absolute value during uint conversion
-	DUPLICATE_KEY_ERROR // bool, default: false, error on duplicate map key
-	LENGTH              // int,  default: 1,     initial capacity for slices / buffer size for channels (slices allow 0; channels require >= 1)
-	UNIQUE_VALUES       // bool, default: false, dedupe slice values
-	JSON                // bool, default: false, encode strings as JSON
-	PRIVATE             // bool, default: false, include unexported struct fields in map output
-	STRICT              // bool, default: false, return error instead of skipping unconvertible fields
+	ABS                 // bool, GLOBAL — use absolute value during uint conversion
+	DUPLICATE_KEY_ERROR // bool, LOCAL  — error on duplicate key (map→map only); not meaningful in nested casts
+	FORMAT              // string, GLOBAL — Format string for time/duration parsing
+	JSON                // bool, GLOBAL — encode strings as JSON
+	LENGTH              // int,  GLOBAL — initial capacity for slices / buffer size for channels; applies to all slice and chan targets in the tree (slices allow 0; channels require >= 1)
+	PRIVATE             // bool, GLOBAL — include unexported struct fields in map output
+	STRICT              // bool, GLOBAL — return error instead of skipping unconvertible fields
+	UNIQUE_VALUES       // bool, GLOBAL — dedupe slice values; applies to all slice targets in the tree
 )
 
 // ops is the internal parsed representation of conversion options. A plain
@@ -45,10 +55,15 @@ const (
 // and error messages at each call site; all other flags are pre-parsed to
 // their concrete bool type by parseOps.
 type ops struct {
-	defaultVal any // DEFAULT value; meaningful only when hasDefault is true
-	lengthVal  any // LENGTH value preserved for ToE[int] parsing and error messages
 	hasDefault bool
-	hasLength  bool
+	defaultVal any // DEFAULT value; meaningful only when hasDefault is true
+
+	hasLength bool
+	lengthVal any // LENGTH value preserved for ToE[int] parsing and error messages
+
+	hasFormat bool
+	formatVal string // FORMAT value preserved for time/duration parsing and error messages
+
 	abs        bool
 	dupKeyErr  bool
 	uniqueVals bool
@@ -57,29 +72,52 @@ type ops struct {
 	strict     bool
 }
 
-// Delete returns a copy of ops with the given flag cleared. Container
-// conversion functions call this to strip DEFAULT before forwarding ops to
-// element casts so a container default is not mistakenly applied to elements.
+// Global returns a copy of ops containing only the flags that apply
+// universally across all target types. Local flags (DEFAULT,
+// DUPLICATE_KEY_ERROR) are dropped; global flags (ABS, JSON, LENGTH, PRIVATE,
+// STRICT, UNIQUE_VALUES) are retained.
+//
+// Container converters call this when passing ops to element-level casts so
+// that a container's own local flags do not leak into nested conversions where
+// they carry no meaning or the wrong type.
+func (o ops) Global() ops {
+	return ops{
+		abs:        o.abs,
+		hasLength:  o.hasLength,
+		lengthVal:  o.lengthVal,
+		hasFormat:  o.hasFormat,
+		formatVal:  o.formatVal,
+		uniqueVals: o.uniqueVals,
+		jsonEncode: o.jsonEncode,
+		private:    o.private,
+		strict:     o.strict,
+	}
+}
+
+// Delete returns a copy of ops with the given flag cleared.
 func (o ops) Delete(key Flag) ops {
 	switch key {
 	case DEFAULT:
 		o.hasDefault = false
 		o.defaultVal = nil
-	case LENGTH:
-		o.hasLength = false
-		o.lengthVal = nil
 	case ABS:
 		o.abs = false
 	case DUPLICATE_KEY_ERROR:
 		o.dupKeyErr = false
-	case UNIQUE_VALUES:
-		o.uniqueVals = false
+	case FORMAT:
+		o.hasFormat = false
+		o.formatVal = ""
 	case JSON:
 		o.jsonEncode = false
+	case LENGTH:
+		o.hasLength = false
+		o.lengthVal = nil
 	case PRIVATE:
 		o.private = false
 	case STRICT:
 		o.strict = false
+	case UNIQUE_VALUES:
+		o.uniqueVals = false
 	}
 	return o
 }
@@ -99,6 +137,9 @@ func (o ops) List() []Op {
 	}
 	if o.dupKeyErr {
 		list = append(list, Op{DUPLICATE_KEY_ERROR, true})
+	}
+	if o.hasFormat {
+		list = append(list, Op{FORMAT, o.formatVal})
 	}
 	if o.uniqueVals {
 		list = append(list, Op{UNIQUE_VALUES, true})
@@ -128,21 +169,24 @@ func parseOps(o []Op) ops {
 		case DEFAULT:
 			result.hasDefault = true
 			result.defaultVal = op.Val
-		case LENGTH:
-			result.hasLength = true
-			result.lengthVal = op.Val
 		case ABS:
 			result.abs, _ = op.Val.(bool)
 		case DUPLICATE_KEY_ERROR:
 			result.dupKeyErr, _ = op.Val.(bool)
-		case UNIQUE_VALUES:
-			result.uniqueVals, _ = op.Val.(bool)
+		case FORMAT:
+			result.hasFormat = true
+			result.formatVal, _ = op.Val.(string)
 		case JSON:
 			result.jsonEncode, _ = op.Val.(bool)
+		case LENGTH:
+			result.hasLength = true
+			result.lengthVal = op.Val
 		case PRIVATE:
 			result.private, _ = op.Val.(bool)
 		case STRICT:
 			result.strict, _ = op.Val.(bool)
+		case UNIQUE_VALUES:
+			result.uniqueVals, _ = op.Val.(bool)
 		}
 	}
 	return result

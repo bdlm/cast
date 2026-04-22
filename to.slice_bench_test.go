@@ -85,3 +85,39 @@ func BenchmarkTo_sliceInt_withLength(b *testing.B) {
 		_, _ = cast.ToE[[]int](strSlice10, cast.Op{Flag: cast.LENGTH, Val: 100})
 	}
 }
+
+// NamedIntSlice and NamedStringSlice are named slice types that hit the reflect
+// path in toSlice (the default: branch), as opposed to the concrete-type switch
+// that handles []int, []string, etc. directly.
+type NamedIntSlice []int
+type NamedStringSlice []string
+
+// BenchmarkTo_namedSliceInt_fromStrings measures the reflect path for a named
+// []int slice type, to compare against the concrete-type-switch path above.
+func BenchmarkTo_namedSliceInt_fromStrings_10(b *testing.B) {
+	b.SetBytes(int64(len(strSlice10)))
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[NamedIntSlice](strSlice10)
+	}
+}
+
+func BenchmarkTo_namedSliceInt_fromStrings_100(b *testing.B) {
+	b.SetBytes(int64(len(strSlice100)))
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[NamedIntSlice](strSlice100)
+	}
+}
+
+func BenchmarkTo_namedSliceString_fromInts_10(b *testing.B) {
+	b.SetBytes(int64(len(intSlice10)))
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[NamedStringSlice](intSlice10)
+	}
+}
+
+func BenchmarkTo_namedSliceString_fromInts_100(b *testing.B) {
+	b.SetBytes(int64(len(intSlice100)))
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[NamedStringSlice](intSlice100)
+	}
+}
