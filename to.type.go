@@ -36,13 +36,15 @@ type Op struct {
 //   - DEFAULT, DUPLICATE_KEY_ERROR
 const (
 	DEFAULT Flag = iota // TTo,  LOCAL  — value to return on error; type-specific, not passed to nested casts
+
 	ABS                 // bool, GLOBAL — use absolute value during uint conversion
 	DUPLICATE_KEY_ERROR // bool, LOCAL  — error on duplicate key (map→map only); not meaningful in nested casts
-	LENGTH              // int,  GLOBAL — initial capacity for slices / buffer size for channels; applies to all slice and chan targets in the tree (slices allow 0; channels require >= 1)
-	UNIQUE_VALUES       // bool, GLOBAL — dedupe slice values; applies to all slice targets in the tree
+	FORMAT              // string, GLOBAL — Format string for time/duration parsing
 	JSON                // bool, GLOBAL — encode strings as JSON
+	LENGTH              // int,  GLOBAL — initial capacity for slices / buffer size for channels; applies to all slice and chan targets in the tree (slices allow 0; channels require >= 1)
 	PRIVATE             // bool, GLOBAL — include unexported struct fields in map output
 	STRICT              // bool, GLOBAL — return error instead of skipping unconvertible fields
+	UNIQUE_VALUES       // bool, GLOBAL — dedupe slice values; applies to all slice targets in the tree
 )
 
 // ops is the internal parsed representation of conversion options. A plain
@@ -53,10 +55,15 @@ const (
 // and error messages at each call site; all other flags are pre-parsed to
 // their concrete bool type by parseOps.
 type ops struct {
-	defaultVal any // DEFAULT value; meaningful only when hasDefault is true
-	lengthVal  any // LENGTH value preserved for ToE[int] parsing and error messages
 	hasDefault bool
-	hasLength  bool
+	defaultVal any // DEFAULT value; meaningful only when hasDefault is true
+
+	hasLength bool
+	lengthVal any // LENGTH value preserved for ToE[int] parsing and error messages
+
+	hasFormat bool
+	formatVal string // FORMAT value preserved for time/duration parsing and error messages
+
 	abs        bool
 	dupKeyErr  bool
 	uniqueVals bool
@@ -78,6 +85,8 @@ func (o ops) Global() ops {
 		abs:        o.abs,
 		hasLength:  o.hasLength,
 		lengthVal:  o.lengthVal,
+		hasFormat:  o.hasFormat,
+		formatVal:  o.formatVal,
 		uniqueVals: o.uniqueVals,
 		jsonEncode: o.jsonEncode,
 		private:    o.private,
@@ -91,21 +100,24 @@ func (o ops) Delete(key Flag) ops {
 	case DEFAULT:
 		o.hasDefault = false
 		o.defaultVal = nil
-	case LENGTH:
-		o.hasLength = false
-		o.lengthVal = nil
 	case ABS:
 		o.abs = false
 	case DUPLICATE_KEY_ERROR:
 		o.dupKeyErr = false
-	case UNIQUE_VALUES:
-		o.uniqueVals = false
+	case FORMAT:
+		o.hasFormat = false
+		o.formatVal = ""
 	case JSON:
 		o.jsonEncode = false
+	case LENGTH:
+		o.hasLength = false
+		o.lengthVal = nil
 	case PRIVATE:
 		o.private = false
 	case STRICT:
 		o.strict = false
+	case UNIQUE_VALUES:
+		o.uniqueVals = false
 	}
 	return o
 }
@@ -125,6 +137,9 @@ func (o ops) List() []Op {
 	}
 	if o.dupKeyErr {
 		list = append(list, Op{DUPLICATE_KEY_ERROR, true})
+	}
+	if o.hasFormat {
+		list = append(list, Op{FORMAT, o.formatVal})
 	}
 	if o.uniqueVals {
 		list = append(list, Op{UNIQUE_VALUES, true})
@@ -154,21 +169,24 @@ func parseOps(o []Op) ops {
 		case DEFAULT:
 			result.hasDefault = true
 			result.defaultVal = op.Val
-		case LENGTH:
-			result.hasLength = true
-			result.lengthVal = op.Val
 		case ABS:
 			result.abs, _ = op.Val.(bool)
 		case DUPLICATE_KEY_ERROR:
 			result.dupKeyErr, _ = op.Val.(bool)
-		case UNIQUE_VALUES:
-			result.uniqueVals, _ = op.Val.(bool)
+		case FORMAT:
+			result.hasFormat = true
+			result.formatVal, _ = op.Val.(string)
 		case JSON:
 			result.jsonEncode, _ = op.Val.(bool)
+		case LENGTH:
+			result.hasLength = true
+			result.lengthVal = op.Val
 		case PRIVATE:
 			result.private, _ = op.Val.(bool)
 		case STRICT:
 			result.strict, _ = op.Val.(bool)
+		case UNIQUE_VALUES:
+			result.uniqueVals, _ = op.Val.(bool)
 		}
 	}
 	return result

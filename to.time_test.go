@@ -138,3 +138,66 @@ func TestToETimeReflectTypes(t *testing.T) {
 		t.Errorf("expected time.Time, got %T", result)
 	}
 }
+
+func TestToETimeCustomFormat(t *testing.T) {
+	const custom = "2006/01/02"
+
+	t.Run("custom format matches", func(t *testing.T) {
+		result, err := cast.ToE[time.Time]("2024/06/15", cast.Op{Flag: cast.FORMAT, Val: custom})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		expected := time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC)
+		if !result.Equal(expected) {
+			t.Errorf("expected %v, got %v", expected, result)
+		}
+	})
+
+	t.Run("custom format provided: standard formats not tried as fallback", func(t *testing.T) {
+		// "2024-06-15" matches time.DateOnly in the standard list but NOT the
+		// custom format "2006/01/02". With FORMAT set, the loop is skipped.
+		_, err := cast.ToE[time.Time]("2024-06-15", cast.Op{Flag: cast.FORMAT, Val: custom})
+		if err == nil {
+			t.Error("expected error: with custom FORMAT, standard formats must not be tried as a fallback")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		}
+	})
+}
+
+func TestToETimeAllFormats(t *testing.T) {
+	// Round-trip each format in the timeFormats list that is not already
+	// covered by TestToETime above (RFC3339, RFC3339Nano, DateOnly, DateTime).
+	ref := time.Date(2006, time.January, 2, 15, 4, 5, 0, time.UTC)
+	cases := []struct {
+		name   string
+		format string
+	}{
+		{"RFC1123", time.RFC1123},
+		{"RFC1123Z", time.RFC1123Z},
+		{"RFC822", time.RFC822},
+		{"RFC822Z", time.RFC822Z},
+		{"Layout", time.Layout},
+		{"ANSIC", time.ANSIC},
+		{"UnixDate", time.UnixDate},
+		{"RubyDate", time.RubyDate},
+		{"RFC850", time.RFC850},
+		{"Kitchen", time.Kitchen},
+		{"Stamp", time.Stamp},
+		{"StampMilli", time.StampMilli},
+		{"StampMicro", time.StampMicro},
+		{"StampNano", time.StampNano},
+		{"TimeOnly", time.TimeOnly},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			str := ref.Format(tc.format)
+			_, err := cast.ToE[time.Time](str)
+			if err != nil {
+				t.Errorf("failed to parse %q (format %s): %v", str, tc.name, err)
+			}
+		})
+	}
+}

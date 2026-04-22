@@ -115,10 +115,6 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 			}
 			retIface = result.Interface()
 		case reflect.Slice:
-			fromType := reflect.TypeOf(val)
-			if fromType == nil || (fromType.Kind() != reflect.Slice && fromType.Kind() != reflect.Array) {
-				return ret0Val, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface()))
-			}
 			retIface, err = toSlice(to, val, options)
 		case reflect.Func:
 			retIface, err = toFunc[TTo](to, val, options)

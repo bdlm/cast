@@ -351,6 +351,67 @@ func TestToStructWrapperError(t *testing.T) {
 	}
 }
 
+// ── PRIVATE: unexported field hydration via unsafe ───────────────────────────
+
+func TestStructPrivateFieldHydration(t *testing.T) {
+	// With PRIVATE=true, ToStructE must set unexported struct fields via the
+	// unsafe.Pointer path in hydrateStruct. Round-trip through ToE[map] with
+	// PRIVATE=true to verify the field was actually written.
+	type withPrivate struct {
+		Public  string
+		private string //nolint:unused
+	}
+	src := map[string]any{
+		"Public":  "hello",
+		"private": "secret",
+	}
+	result, err := cast.ToStructE[withPrivate](src, cast.Op{Flag: cast.PRIVATE, Val: true})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Public != "hello" {
+		t.Errorf("expected Public=hello, got %q", result.Public)
+	}
+	// Round-trip: convert the struct back to a map with PRIVATE=true so that
+	// extractFieldValue reads the unexported field. If the unsafe set worked,
+	// the value is "secret"; if not, it would be "" (zero value).
+	back, mapErr := cast.ToE[map[string]any](result, cast.Op{Flag: cast.PRIVATE, Val: true})
+	if mapErr != nil {
+		t.Fatalf("round-trip to map error: %v", mapErr)
+	}
+	if back["private"] != "secret" {
+		t.Errorf("expected private=secret (unsafe set succeeded), got %v", back["private"])
+	}
+}
+
+// ── castToType pointer branch ─────────────────────────────────────────────────
+
+func TestStructPointerField(t *testing.T) {
+	// A struct field of type *string causes castToType to hit the reflect.Pointer
+	// branch (lines 173-180 of util.reflect.go), which allocates a new pointer
+	// and sets its element.
+	type withPtr struct {
+		Name *string
+		Age  int
+	}
+	result, err := cast.ToStructE[withPtr](map[string]any{
+		"Name": "Alice",
+		"Age":  30,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Name == nil {
+		t.Fatal("expected Name to be non-nil pointer")
+	}
+	if *result.Name != "Alice" {
+		t.Errorf("expected *Name=Alice, got %q", *result.Name)
+	}
+	if result.Age != 30 {
+		t.Errorf("expected Age=30, got %d", result.Age)
+	}
+}
+
 // ── To[T] path: struct via ToE dispatch ──────────────────────────────────────
 
 func TestToEStructDispatch(t *testing.T) {

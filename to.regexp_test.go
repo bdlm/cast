@@ -68,6 +68,41 @@ func TestToERegexpDefault(t *testing.T) {
 	}
 }
 
+func TestToERegexpInvalidDefault(t *testing.T) {
+	// A non-*regexp.Regexp DEFAULT value must cause an error even with valid input.
+	_, err := cast.ToE[*regexp.Regexp](`\w+`, cast.Op{Flag: cast.DEFAULT, Val: "wrong-type"})
+	if err == nil {
+		t.Error("expected error for non-*regexp.Regexp DEFAULT, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %T: %v", err, err)
+	}
+}
+
+func TestToERegexpDefaultCase(t *testing.T) {
+	// Inputs that are not nil/*regexp.Regexp/string route through the default:
+	// branch of toRegexp, which tries toString then regexp.Compile.
+	t.Run("int source (valid regexp string) succeeds", func(t *testing.T) {
+		// toString(42) → "42", which is a valid regexp literal.
+		result, err := cast.ToE[*regexp.Regexp](int(42))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result == nil || result.String() != "42" {
+			t.Errorf("expected pattern \"42\", got %v", result)
+		}
+	})
+	t.Run("stringer with invalid regexp pattern returns error", func(t *testing.T) {
+		_, err := cast.ToE[*regexp.Regexp](testStringer{"[unclosed"})
+		if err == nil {
+			t.Error("expected error for invalid regexp pattern via default branch, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		}
+	})
+}
+
 func TestToERegexpMatch(t *testing.T) {
 	// Verify the compiled regexp actually works.
 	result, err := cast.ToE[*regexp.Regexp](`^\d{3}-\d{4}$`)

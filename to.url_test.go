@@ -77,6 +77,35 @@ func TestToEURLDefault(t *testing.T) {
 	}
 }
 
+func TestToEURLInvalidDefault(t *testing.T) {
+	// A non-*url.URL DEFAULT value must cause an error even with valid input.
+	_, err := cast.ToE[*url.URL]("https://example.com", cast.Op{Flag: cast.DEFAULT, Val: "wrong-type"})
+	if err == nil {
+		t.Error("expected error for non-*url.URL DEFAULT, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %T: %v", err, err)
+	}
+}
+
+func TestToEURLDefaultCase(t *testing.T) {
+	// Inputs that are not nil/*url.URL/url.URL/string route through the default:
+	// branch of toURL, which tries toString then url.Parse.
+	t.Run("int source converts to relative URL via default branch", func(t *testing.T) {
+		// toString(42) → "42", which url.Parse accepts as a relative path.
+		result, err := cast.ToE[*url.URL](int(42))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result == nil {
+			t.Fatal("expected non-nil URL")
+		}
+		if result.String() != "42" {
+			t.Errorf("expected URL path \"42\", got %q", result.String())
+		}
+	})
+}
+
 func TestToEURLStructField(t *testing.T) {
 	type Endpoint struct {
 		URL  *url.URL

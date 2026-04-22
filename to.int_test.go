@@ -2,6 +2,7 @@ package cast_test
 
 import (
 	"errors"
+	"math"
 	"testing"
 
 	"github.com/bdlm/cast/v2"
@@ -346,8 +347,9 @@ func TestStrToUint(t *testing.T) {
 	})
 }
 
-// TestABSWithSignedIntTypes covers the TTo(-val) branch in toInt for each
-// signed integer type (int8, int16, int32, int64) when casting to an unsigned target.
+// TestABSWithSignedIntTypes covers the TTo(-uint(val)) branch in toInt for each
+// signed integer type when casting to an unsigned target, including the minimum
+// value of each type (which would overflow with signed negation).
 func TestABSWithSignedIntTypes(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -376,6 +378,36 @@ func TestABSWithSignedIntTypes(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestABSMinValues verifies that ABS with the minimum value of each signed type
+// does not overflow. Signed negation of MinInt wraps; unsigned negation (-uint(v))
+// produces the correct absolute value for all minimum values.
+func TestABSMinValues(t *testing.T) {
+	t.Run("int8 MinInt8 → uint8", func(t *testing.T) {
+		result, err := cast.ToE[uint8](int8(math.MinInt8), cast.Op{cast.ABS, true})
+		if err != nil || result != 128 {
+			t.Errorf("expected 128, got %v (err %v)", result, err)
+		}
+	})
+	t.Run("int16 MinInt16 → uint16", func(t *testing.T) {
+		result, err := cast.ToE[uint16](int16(math.MinInt16), cast.Op{cast.ABS, true})
+		if err != nil || result != 32768 {
+			t.Errorf("expected 32768, got %v (err %v)", result, err)
+		}
+	})
+	t.Run("int32 MinInt32 → uint32", func(t *testing.T) {
+		result, err := cast.ToE[uint32](int32(math.MinInt32), cast.Op{cast.ABS, true})
+		if err != nil || result != 2147483648 {
+			t.Errorf("expected 2147483648, got %v (err %v)", result, err)
+		}
+	})
+	t.Run("int64 MinInt64 → uint64", func(t *testing.T) {
+		result, err := cast.ToE[uint64](int64(math.MinInt64), cast.Op{cast.ABS, true})
+		if err != nil || result != 9223372036854775808 {
+			t.Errorf("expected 9223372036854775808, got %v (err %v)", result, err)
+		}
+	})
 }
 
 // TestABSWithFloat32 covers the TTo(math.Floor(float64(-val))) branch in toInt

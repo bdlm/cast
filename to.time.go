@@ -20,11 +20,11 @@ func toTime(v any, ops ops) (any, error) {
 	var ret any = time.Time{}
 
 	if ops.hasDefault {
-		t, ok := ops.defaultVal.(time.Time)
+		defaultVal, ok := ops.defaultVal.(time.Time)
 		if !ok {
 			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
-		ret = t
+		ret = defaultVal
 	}
 
 	switch val := v.(type) {
@@ -38,13 +38,13 @@ func toTime(v any, ops ops) (any, error) {
 		}
 		return *val, nil
 	case string:
-		t, ok := parseTimeString(val)
+		t, ok := parseTimeString(val, ops.formatVal)
 		if !ok {
 			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
 		return t, nil
 	case []byte:
-		t, ok := parseTimeString(string(val))
+		t, ok := parseTimeString(string(val), ops.formatVal)
 		if !ok {
 			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
@@ -77,9 +77,7 @@ func toTime(v any, ops ops) (any, error) {
 		return time.Unix(0, int64(val*float64(time.Second))).UTC(), nil
 	default:
 		if s, err := toString(v, ops.Delete(DEFAULT)); err == nil {
-			if t, ok := parseTimeString(s.(string)); ok {
-				return t, nil
-			}
+			return toTime(s.(string), ops)
 		}
 	}
 
@@ -92,8 +90,8 @@ var timeFormats = []string{
 	// Commonly used formats — tz-aware first, then date-only.
 	time.RFC3339Nano,
 	time.RFC3339,
-	time.DateTime,  // "2006-01-02 15:04:05"
-	time.RFC1123Z,  // RFC1123 with numeric zone
+	time.DateTime, // "2006-01-02 15:04:05"
+	time.RFC1123Z, // RFC1123 with numeric zone
 	time.RFC1123,
 	time.RFC822Z,
 	time.RFC822,
@@ -114,11 +112,16 @@ var timeFormats = []string{
 }
 
 // parseTimeString tries each entry in timeFormats and returns the first match.
-func parseTimeString(s string) (time.Time, bool) {
-	for _, f := range timeFormats {
-		if parsed, err := time.Parse(f, s); err == nil {
-			return parsed, true
+func parseTimeString(str string, format string) (time.Time, bool) {
+	if format == "" {
+		for _, stdFormat := range timeFormats {
+			if parsed, err := time.Parse(stdFormat, str); err == nil {
+				return parsed, true
+			}
 		}
+	}
+	if parsed, err := time.Parse(format, str); err == nil {
+		return parsed, true
 	}
 	return time.Time{}, false
 }

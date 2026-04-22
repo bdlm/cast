@@ -83,6 +83,40 @@ func TestToENetIPDefault(t *testing.T) {
 	}
 }
 
+func TestToENetIPInvalidDefault(t *testing.T) {
+	// A non-net.IP DEFAULT value must cause an error even when the input is valid.
+	_, err := cast.ToE[net.IP]("192.168.1.1", cast.Op{Flag: cast.DEFAULT, Val: "wrong-type"})
+	if err == nil {
+		t.Error("expected error for non-net.IP DEFAULT, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %T: %v", err, err)
+	}
+}
+
+func TestToENetIPDefaultCase(t *testing.T) {
+	// Inputs that are not nil/net.IP/string/[]byte/uint32 route through the
+	// default: branch of toNetIP, which tries toString then net.ParseIP.
+	t.Run("stringer with valid IP succeeds", func(t *testing.T) {
+		result, err := cast.ToE[net.IP](testStringer{"10.0.0.1"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !result.Equal(net.ParseIP("10.0.0.1")) {
+			t.Errorf("expected 10.0.0.1, got %v", result)
+		}
+	})
+	t.Run("int source (non-IP string) returns error", func(t *testing.T) {
+		_, err := cast.ToE[net.IP](int(42))
+		if err == nil {
+			t.Error("expected error for int→net.IP (not a valid IP string), got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		}
+	})
+}
+
 func TestToENetIPStructField(t *testing.T) {
 	type Server struct {
 		Addr net.IP

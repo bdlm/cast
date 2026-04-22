@@ -210,3 +210,83 @@ func TestToEBigFloatStructField(t *testing.T) {
 		t.Errorf("unexpected Value: %s", result.Value.Text('f', 5))
 	}
 }
+
+// ── missing value (non-pointer) sources and stringer default branches ─────────
+
+func TestToEBigIntMissingCases(t *testing.T) {
+	t.Run("big.Float value (not pointer) truncates to int", func(t *testing.T) {
+		var f big.Float
+		f.SetFloat64(9.9)
+		result, err := cast.ToE[*big.Int](f)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result == nil || result.Int64() != 9 {
+			t.Errorf("expected 9, got %v", result)
+		}
+	})
+
+	t.Run("stringer default branch success", func(t *testing.T) {
+		// testStringer returns "42"; toBigInt's default: branch calls toString
+		// → "42" → SetString("42", 0) succeeds.
+		result, err := cast.ToE[*big.Int](testStringer{"42"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result == nil || result.Int64() != 42 {
+			t.Errorf("expected 42, got %v", result)
+		}
+	})
+
+	t.Run("stringer default branch error", func(t *testing.T) {
+		_, err := cast.ToE[*big.Int](testStringer{"not-a-number"})
+		if err == nil {
+			t.Error("expected error for invalid big.Int string, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		}
+	})
+}
+
+func TestToEBigFloatMissingCases(t *testing.T) {
+	t.Run("big.Int value (not pointer) converts exactly", func(t *testing.T) {
+		var i big.Int
+		i.SetInt64(42)
+		result, err := cast.ToE[*big.Float](i)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result == nil {
+			t.Fatal("expected non-nil")
+		}
+		f64, _ := result.Float64()
+		if f64 != 42.0 {
+			t.Errorf("expected 42.0, got %v", f64)
+		}
+	})
+
+	t.Run("stringer default branch success", func(t *testing.T) {
+		result, err := cast.ToE[*big.Float](testStringer{"3.14"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result == nil {
+			t.Fatal("expected non-nil")
+		}
+		f64, _ := result.Float64()
+		if f64 < 3.13 || f64 > 3.15 {
+			t.Errorf("expected ~3.14, got %v", f64)
+		}
+	})
+
+	t.Run("stringer default branch error", func(t *testing.T) {
+		_, err := cast.ToE[*big.Float](testStringer{"not-a-float"})
+		if err == nil {
+			t.Error("expected error for invalid big.Float string, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		}
+	})
+}

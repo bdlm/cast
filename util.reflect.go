@@ -134,8 +134,12 @@ func castToType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 			return reflect.Value{}, errors.Errorf(ErrorStrUnableToCast, v, v, t)
 		}
 		return src, nil
+	case reflect.Map:
+		raw, err := toMap(reflect.Zero(t), v, ops)
+		return rawToValue(raw, t, ops, err)
 	case reflect.Slice:
-		return castToSliceType(v, t, ops)
+		raw, err := toSlice(reflect.Zero(t), v, ops)
+		return rawToValue(raw, t, ops, err)
 	case reflect.Func:
 		// Only zero-arg, one-return functions are supported (matches Func[T]).
 		if t.NumIn() != 0 || t.NumOut() != 1 {
@@ -192,34 +196,6 @@ func castToType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 			return result.Convert(t), nil
 		}
 		return reflect.Value{}, errors.Errorf("cannot convert %v to %v", result.Type(), t)
-	}
-}
-
-func castToSliceType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
-	elemOps := ops.Global()
-	srcVal := reflect.ValueOf(v)
-	if !srcVal.IsValid() {
-		return reflect.MakeSlice(t, 0, 0), nil
-	}
-	switch srcVal.Kind() {
-	case reflect.Slice, reflect.Array:
-		result := reflect.MakeSlice(t, srcVal.Len(), srcVal.Len())
-		for i := 0; i < srcVal.Len(); i++ {
-			elem, err := castToType(srcVal.Index(i).Interface(), t.Elem(), elemOps)
-			if err != nil {
-				return reflect.Value{}, err
-			}
-			result.Index(i).Set(elem)
-		}
-		return result, nil
-	default:
-		elem, err := castToType(v, t.Elem(), elemOps)
-		if err != nil {
-			return reflect.Value{}, err
-		}
-		result := reflect.MakeSlice(t, 1, 1)
-		result.Index(0).Set(elem)
-		return result, nil
 	}
 }
 

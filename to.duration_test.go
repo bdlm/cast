@@ -132,3 +132,27 @@ func TestToEDurationReflectType(t *testing.T) {
 		t.Errorf("expected time.Duration, got %T", result)
 	}
 }
+
+func TestToEDurationStringerDefault(t *testing.T) {
+	// testStringer implements fmt.Stringer; toDuration's default: branch
+	// calls toString → val.String() → "1h30m" then retries time.ParseDuration.
+	result, err := cast.ToE[time.Duration](testStringer{"1h30m"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result != 90*time.Minute {
+		t.Errorf("expected 90m, got %v", result)
+	}
+}
+
+func TestToEDurationStringerDefaultFails(t *testing.T) {
+	// A Stringer whose String() is not a valid duration falls through to the
+	// final error return in toDuration.
+	_, err := cast.ToE[time.Duration](testStringer{"not-a-duration"})
+	if err == nil {
+		t.Error("expected error for unparseable Stringer duration, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %T: %v", err, err)
+	}
+}

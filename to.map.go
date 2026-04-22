@@ -97,8 +97,11 @@ func mapFromStruct(to reflect.Value, src reflect.Value, ops ops) (any, error) {
 }
 
 // collectStructFields iterates struct fields and populates targetMap.
-// Exported anonymous (embedded) structs are recursed into so promoted fields
-// appear at the top level, matching Go's promotion semantics.
+// Anonymous (embedded) struct fields are always recursed into regardless of
+// whether the embedding type is exported, matching Go's promotion semantics:
+// an exported field within an unexported embedded struct is publicly accessible
+// and should appear in the map. Individual field visibility (exported vs.
+// unexported) is then governed by the private flag in the normal way.
 func collectStructFields(
 	targetMap reflect.Value, src reflect.Value,
 	keyType reflect.Type, valType reflect.Type,
@@ -108,11 +111,10 @@ func collectStructFields(
 		field := src.Type().Field(i)
 		fieldVal := src.Field(i)
 
-		// Promoted anonymous (embedded) struct fields.
+		// Always recurse into anonymous (embedded) struct fields. Go promotes
+		// exported fields from unexported embedded types, so they are publicly
+		// accessible and must appear in the map regardless of private.
 		if field.Anonymous {
-			if !field.IsExported() && !private {
-				continue
-			}
 			embedded := reflect.Indirect(fieldVal)
 			if embedded.IsValid() && embedded.Kind() == reflect.Struct {
 				if err := collectStructFields(targetMap, embedded, keyType, valType, private, strict, ops); err != nil {
@@ -135,10 +137,14 @@ func collectStructFields(
 			continue
 		}
 
-		castKey, err := castToType(field.Name, keyType, ops)
+		key, tagOk := fieldKey(field)
+		if !tagOk {
+			continue // tagged with "-"
+		}
+		castKey, err := castToType(key, keyType, ops)
 		if err != nil {
 			if strict {
-				return errors.Errorf("cannot cast field name %q to map key: %v", field.Name, err)
+				return errors.Errorf("cannot cast field name %q to map key: %v", key, err)
 			}
 			continue
 		}

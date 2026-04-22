@@ -254,3 +254,57 @@ func ExampleToE_struct_to_map() {
 	)
 	// Output: p=(map[string]string), X=3 (string), Y=4 (string), A=hello (string), B=world (string), <nil>
 }
+
+func ExampleToE_struct_to_map_error() {
+	type YourStruct struct {
+		X int
+		Y int
+		A string
+		B string
+	}
+	yourStruct := YourStruct{
+		X: 3,
+		Y: 4,
+		A: "hello",
+		B: "world",
+	}
+	p, e := cast.ToE[map[string]int](yourStruct)
+	fmt.Printf(
+		"p=(%T), X=%v (%T), Y=%v (%T), A=%v (%T), B=%v (%T), %v",
+		p, p["X"], p["X"], p["Y"], p["Y"], p["A"], p["A"], p["B"], p["B"], e,
+	)
+	// Output: p=(map[string]int), X=3 (int), Y=4 (int), A=0 (int), B=0 (int), error
+}
+
+type Output struct {
+	fieldX string `cast:"X"`
+	fieldY int    `cast:"Y"`
+	fieldA string `cast:"a"`
+	fieldB []byte `cast:"b"`
+}
+
+func (o Output) Get(field string) any {
+	return ""
+}
+
+// func ExampleToE_generic() {
+// 	type Input struct {
+// 		X int
+// 		Y int
+// 		a string
+// 		b string
+// 	}
+
+// 	input := Input{
+// 		X: 3,
+// 		Y: 4,
+// 		a: "hello",
+// 		b: "world",
+// 	}
+// 	data := []Output{}
+// 	output, e := cast.ToE[Output](input, cast.Op{cast.PRIVATE, true})
+// 	data = append(data, output)
+
+// 	fmt.Printf("data=(%T), fieldX=%v (%T), fieldY=%v (%T), fieldA=%v (%T), fieldB=%v (%T), %v", data[0], data[0].fieldX, data[0].fieldX, data[0].fieldY, data[0].fieldY, data[0].fieldA, data[0].fieldA, data[0].fieldB, data[0].fieldB, e)
+// 	// Output: data=(cast_test.Output), fieldX=3 (string), fieldY=4 (int), fieldA=hello (string), fieldB=world (string), <nil>
+// }

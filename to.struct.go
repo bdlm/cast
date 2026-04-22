@@ -2,9 +2,33 @@ package cast
 
 import (
 	"reflect"
+	"strings"
+	"unsafe"
 
 	"github.com/bdlm/errors/v2"
 )
+
+// fieldKey returns the source-map key to use when matching this struct field.
+// Priority: cast tag > json tag (name portion only) > field name.
+// Returns ("", false) when the tag value is "-", meaning skip this field.
+func fieldKey(field reflect.StructField) (string, bool) {
+	if tag, ok := field.Tag.Lookup("cast"); ok {
+		if tag == "-" {
+			return "", false
+		}
+		return tag, true
+	}
+	if tag, ok := field.Tag.Lookup("json"); ok {
+		name := strings.SplitN(tag, ",", 2)[0]
+		if name == "-" {
+			return "", false
+		}
+		if name != "" {
+			return name, true
+		}
+	}
+	return field.Name, true
+}
 
 // ToStruct casts from into a struct of type T, ignoring errors. See ToStructE
 // for full documentation.
@@ -16,9 +40,11 @@ func ToStruct[T any](from any, ops ...Op) T {
 // ToStructE casts from into a struct of type T, returning any errors.
 //
 // T must be a struct type. The source may be a map with keys convertible to
-// string, or another struct whose exported field names overlap with T.
+// string, or another struct whose field names overlap with T.
 //
-// Field matching is case-sensitive. For each exported field in T:
+// Field matching is case-sensitive and tag-aware. The lookup key for each
+// target field is resolved by checking a cast tag first, then a json tag,
+// then the field name. For each target field in T:
 //   - If the source has no matching key, the field retains its zero value
 //     (or returns an error when STRICT is set).
 //   - If the source value cannot be cast to the field type, the field is
@@ -26,6 +52,7 @@ func ToStruct[T any](from any, ops ...Op) T {
 //
 // Options:
 //   - DEFAULT: T, value to return on error.
+//   - PRIVATE: bool, include unexported fields in source collection and target hydration.
 //   - STRICT: bool, error on unknown source keys or unconvertible field values.
 func ToStructE[T any](from any, ops ...Op) (T, error) {
 	var zero T
@@ -40,7 +67,7 @@ func ToStructE[T any](from any, ops ...Op) (T, error) {
 	}
 	result, ok := raw.(T)
 	if !ok {
-		return zero, errors.WrapE(Error, errors.Errorf("internal: toStruct returned %T, want %T", raw, zero))
+		return zero, errors.WrapE(Error, errors.Errorf("cast failed: returned %T, want %T", raw, zero))
 	}
 	return result, nil
 }
@@ -49,6 +76,7 @@ func ToStructE[T any](from any, ops ...Op) (T, error) {
 //
 // Options:
 //   - DEFAULT: target type, value to return on error.
+//   - PRIVATE: bool, include unexported fields.
 //   - STRICT: bool, error on unmatched source keys or unconvertible field values.
 func toStruct(to reflect.Value, from any, ops ops) (any, error) {
 	var defaultVal any
@@ -68,17 +96,16 @@ func toStruct(to reflect.Value, from any, ops ops) (any, error) {
 			return fromVal.Interface(), nil
 		}
 
-		// Different-type struct: build a reflect.Value index over the source
-		// (O(M) t.Field calls), then hydrate the target (O(N) t.Field calls).
-		// Boxing via Interface() is deferred until each field is actually used.
-		srcFields := make(map[string]reflect.Value, fromVal.Type().NumField())
-		collectSourceFieldValues(srcFields, fromVal)
+		// Different-type struct: build a value index over the source fields
+		// (O(M) field calls), then hydrate the target (O(N) field calls).
+		srcFields := make(map[string]any, fromVal.Type().NumField())
+		collectSourceFieldValues(srcFields, fromVal, ops.private)
 
 		var usedKeys map[string]bool
 		if ops.strict {
 			usedKeys = make(map[string]bool, len(srcFields))
 		}
-		if err := hydrateFromValues(result, srcFields, usedKeys, ops.Global()); err != nil {
+		if err := hydrateStruct(result, srcFields, usedKeys, ops.Global()); err != nil {
 			return defaultVal, err
 		}
 		if ops.strict {
@@ -120,10 +147,11 @@ func toStruct(to reflect.Value, from any, ops ops) (any, error) {
 	return result.Interface(), nil
 }
 
-// hydrateStruct sets exported fields of result from srcMap, recording matched
-// keys in usedKeys (nil when STRICT is not set). Anonymous (embedded) struct
-// fields are recursed into so their promoted field names are resolved at the
-// top level.
+// hydrateStruct sets fields of result from srcMap, recording matched keys in
+// usedKeys (nil when STRICT is not set). Anonymous (embedded) struct fields are
+// recursed into so their promoted field names are resolved at the top level.
+// Field lookup keys honour fieldKey priority (cast tag > json tag > field name).
+// When ops.private is true, unexported fields are set via unsafe.Pointer.
 func hydrateStruct(result reflect.Value, srcMap map[string]any, usedKeys map[string]bool, ops ops) error {
 	t := result.Type()
 	for i := 0; i < t.NumField(); i++ {
@@ -154,19 +182,24 @@ func hydrateStruct(result reflect.Value, srcMap map[string]any, usedKeys map[str
 			// found in srcMap.
 		}
 
-		if !field.IsExported() {
+		if !field.IsExported() && !ops.private {
 			continue
 		}
 
-		raw, ok := srcMap[field.Name]
+		key, tagOk := fieldKey(field)
+		if !tagOk {
+			continue // tagged with "-"
+		}
+
+		raw, ok := srcMap[key]
 		if !ok {
-			if ops.strict {
+			if ops.strict && field.IsExported() {
 				return errors.Errorf("no source key for required field %q", field.Name)
 			}
 			continue
 		}
 		if usedKeys != nil {
-			usedKeys[field.Name] = true
+			usedKeys[key] = true
 		}
 
 		castVal, err := castToType(raw, field.Type, ops)
@@ -176,84 +209,51 @@ func hydrateStruct(result reflect.Value, srcMap map[string]any, usedKeys map[str
 			}
 			continue
 		}
-		fieldVal.Set(castVal)
+		if fieldVal.CanSet() {
+			fieldVal.Set(castVal)
+		} else if ops.private && fieldVal.CanAddr() {
+			// Bypass the export check for unexported fields using unsafe.
+			reflect.NewAt(fieldVal.Type(), unsafe.Pointer(fieldVal.UnsafeAddr())).Elem().Set(castVal)
+		}
 	}
 	return nil
 }
 
-// collectSourceFieldValues populates dst with the exported fields of v as
-// reflect.Values, deferring Interface() boxing until each field is actually
-// used during hydration. Anonymous struct fields are inlined recursively to
-// match Go promotion semantics.
-func collectSourceFieldValues(dst map[string]reflect.Value, v reflect.Value) {
+// collectSourceFieldValues populates dst with each field's value from v.
+// When private is true, unexported scalar fields are included via extractFieldValue.
+// Anonymous struct fields are inlined recursively to match Go promotion semantics.
+// Keys are resolved via fieldKey (cast tag > json tag > field name).
+func collectSourceFieldValues(dst map[string]any, v reflect.Value, private bool) {
 	t := v.Type()
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		fieldVal := v.Field(i)
+
 		if field.Anonymous {
 			embedded := reflect.Indirect(fieldVal)
 			if embedded.IsValid() && embedded.Kind() == reflect.Struct {
-				collectSourceFieldValues(dst, embedded)
-				continue
-			}
-		}
-		if !field.IsExported() || !fieldVal.CanInterface() {
-			continue
-		}
-		dst[field.Name] = fieldVal
-	}
-}
-
-// hydrateFromValues sets exported fields of result from srcFields
-// (map[string]reflect.Value), recording matched keys in usedKeys (nil when
-// STRICT is not set). Anonymous embedded target fields are recursed into so
-// their promoted field names are resolved at the top level.
-func hydrateFromValues(result reflect.Value, srcFields map[string]reflect.Value, usedKeys map[string]bool, ops ops) error {
-	t := result.Type()
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		fieldVal := result.Field(i)
-
-		if field.Anonymous {
-			fv := fieldVal
-			if fv.Kind() == reflect.Pointer && fv.Type().Elem().Kind() == reflect.Struct && fv.IsNil() && fv.CanSet() {
-				newPtr := reflect.New(fv.Type().Elem())
-				fv.Set(newPtr)
-			}
-			embedded := reflect.Indirect(fv)
-			if embedded.IsValid() && embedded.Kind() == reflect.Struct {
-				if err := hydrateFromValues(embedded, srcFields, usedKeys, ops); err != nil {
-					return err
-				}
+				collectSourceFieldValues(dst, embedded, private)
 				continue
 			}
 		}
 
-		if !field.IsExported() {
+		if !field.IsExported() && !private {
 			continue
 		}
 
-		srcVal, ok := srcFields[field.Name]
+		key, ok := fieldKey(field)
 		if !ok {
-			if ops.strict {
-				return errors.Errorf("no source key for required field %q", field.Name)
-			}
-			continue
-		}
-		if usedKeys != nil {
-			usedKeys[field.Name] = true
+			continue // tagged with "-"
 		}
 
-		castVal, err := castToType(srcVal.Interface(), field.Type, ops)
-		if err != nil {
-			if ops.strict {
-				return errors.Errorf("field %q: %v", field.Name, err)
+		if fieldVal.CanInterface() {
+			dst[key] = fieldVal.Interface()
+		} else if private {
+			if val, canExtract := extractFieldValue(fieldVal); canExtract {
+				dst[key] = val
 			}
-			continue
 		}
-		fieldVal.Set(castVal)
 	}
-	return nil
 }
 
 // normalizeToStringMap converts from to a map[string]any. Accepts:
@@ -264,12 +264,12 @@ func normalizeToStringMap(from any) (map[string]any, error) {
 	if from == nil {
 		return nil, errors.Errorf("cannot convert nil to struct fields")
 	}
-	if m, ok := from.(map[string]any); ok {
-		return m, nil
+	if mapVal, ok := from.(map[string]any); ok {
+		return mapVal, nil
 	}
-	if m, ok := from.(map[string]string); ok {
-		result := make(map[string]any, len(m))
-		for k, v := range m {
+	if mapVal, ok := from.(map[string]string); ok {
+		result := make(map[string]any, len(mapVal))
+		for k, v := range mapVal {
 			result[k] = v
 		}
 		return result, nil
@@ -321,6 +321,10 @@ func collectExportedFields(dst map[string]any, v reflect.Value) {
 		if !field.IsExported() || !fieldVal.CanInterface() {
 			continue
 		}
-		dst[field.Name] = fieldVal.Interface()
+		key, ok := fieldKey(field)
+		if !ok {
+			continue
+		}
+		dst[key] = fieldVal.Interface()
 	}
 }

@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Patch**: bug fixes, backward compatible model and function changes, etc.
 
 
-## v2.1.1 - 2026-04-20
+## v2.1.1 - 2026-04-22
 Struct hydration, seven new named-type cast targets, and reflection infrastructure improvements.
 
 ### Added
