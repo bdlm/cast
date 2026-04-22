@@ -122,3 +122,135 @@ func ExampleToE_string_json() {
 	fmt.Printf("%v, %v", v, e)
 	// Output: "hello \"world\"", <nil>
 }
+
+func ExampleToE_map_to_struct() {
+	type MyStruct struct {
+		X int
+		Y int
+		A string
+		B string
+	}
+	yourData := map[string]string{
+		"X": "3",
+		"Y": "4",
+		"A": "hello",
+		"B": "world",
+	}
+	p, e := cast.ToE[MyStruct](yourData)
+	fmt.Printf(
+		"p=(%T), X=%v (%T), Y=%v (%T), A=%v (%T), B=%v (%T), %v",
+		p, p.X, p.X, p.Y, p.Y, p.A, p.A, p.B, p.B, e,
+	)
+	// Output: p=(cast_test.MyStruct), X=3 (int), Y=4 (int), A=hello (string), B=world (string), <nil>
+}
+
+func ExampleToE_struct_to_struct() {
+	type MyStruct struct {
+		X int
+		Y int
+		A string
+		B string
+	}
+	type YourStruct struct {
+		X string
+		Y string
+		A string
+		B string
+	}
+	yourStruct := YourStruct{
+		X: "3",
+		Y: "4",
+		A: "hello",
+		B: "world",
+	}
+	p, e := cast.ToE[MyStruct](yourStruct, cast.Op{cast.PRIVATE, true})
+	fmt.Printf("p=(%T), X=%v (%T), Y=%v (%T), A=%v (%T), B=%v (%T), %v", p, p.X, p.X, p.Y, p.Y, p.A, p.A, p.B, p.B, e)
+	// Output: p=(cast_test.MyStruct), X=3 (int), Y=4 (int), A=hello (string), B=world (string), <nil>
+}
+
+func ExampleToE_map_to_struct_tags() {
+	type MyStruct struct {
+		X int    `cast:"field_x"`
+		Y int    `cast:"field_y"`
+		A string `cast:"field_a"`
+		B string `cast:"field_b"`
+	}
+	yourData := map[string]string{
+		"field_x": "3",
+		"field_y": "4",
+		"field_a": "hello",
+		"field_b": "world",
+	}
+	p, e := cast.ToE[MyStruct](yourData)
+	fmt.Printf("p=(%T), X=%v (%T), Y=%v (%T), A=%v (%T), B=%v (%T), %v", p, p.X, p.X, p.Y, p.Y, p.A, p.A, p.B, p.B, e)
+	// Output: p=(cast_test.MyStruct), X=3 (int), Y=4 (int), A=hello (string), B=world (string), <nil>
+}
+
+func ExampleToE_struct_to_struct_private() {
+	type MyStruct struct {
+		X int
+		Y int
+		a string
+		b string
+	}
+	type YourStruct struct {
+		X string
+		Y string
+		a string
+		b string
+	}
+	yourStruct := YourStruct{
+		X: "3",
+		Y: "4",
+		a: "hello",
+		b: "world",
+	}
+	p, e := cast.ToE[MyStruct](yourStruct, cast.Op{cast.PRIVATE, true})
+	fmt.Printf("p=(%T), X=%v (%T), Y=%v (%T), a=%v (%T), b=%v (%T), %v", p, p.X, p.X, p.Y, p.Y, p.a, p.a, p.b, p.b, e)
+	// Output: p=(cast_test.MyStruct), X=3 (int), Y=4 (int), a=hello (string), b=world (string), <nil>
+}
+
+func ExampleToE_struct_to_struct_json_tags() {
+	type MyStruct struct {
+		X int    `json:"fieldX"`
+		Y int    `json:"fieldY"`
+		a string `json:"fieldA"`
+		b string `json:"fieldB"`
+	}
+	type YourStruct struct {
+		fieldX string
+		fieldY string
+		fieldA string
+		fieldB string
+	}
+	yourStruct := YourStruct{
+		fieldX: "3",
+		fieldY: "4",
+		fieldA: "hello",
+		fieldB: "world",
+	}
+	p, e := cast.ToE[MyStruct](yourStruct, cast.Op{cast.PRIVATE, true})
+	fmt.Printf("p=(%T), X=%v (%T), Y=%v (%T), a=%v (%T), b=%v (%T), %v", p, p.X, p.X, p.Y, p.Y, p.a, p.a, p.b, p.b, e)
+	// Output: p=(cast_test.MyStruct), X=3 (int), Y=4 (int), a=hello (string), b=world (string), <nil>
+}
+
+func ExampleToE_struct_to_map() {
+	type YourStruct struct {
+		X int
+		Y int
+		A string
+		B string
+	}
+	yourStruct := YourStruct{
+		X: 3,
+		Y: 4,
+		A: "hello",
+		B: "world",
+	}
+	p, e := cast.ToE[map[string]string](yourStruct)
+	fmt.Printf(
+		"p=(%T), X=%v (%T), Y=%v (%T), A=%v (%T), B=%v (%T), %v",
+		p, p["X"], p["X"], p["Y"], p["Y"], p["A"], p["A"], p["B"], p["B"], e,
+	)
+	// Output: p=(map[string]string), X=3 (string), Y=4 (string), A=hello (string), B=world (string), <nil>
+}
