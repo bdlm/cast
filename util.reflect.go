@@ -25,6 +25,20 @@ var namedConverters = map[reflect.Type]func(any, ops) (any, error){
 	reflect.TypeOf((*big.Float)(nil)):     toBigFloat,
 }
 
+// namedStructTypes is a pre-computed set of struct types (and struct types
+// whose pointer is registered in namedConverters) that have dedicated scalar
+// converters. Using a separate set avoids an init cycle: tryDecodeJSON calls
+// isNamedScalarStructType, which would otherwise access namedConverters,
+// creating a cycle through the converter functions stored in that map.
+// Keep in sync with namedConverters above.
+var namedStructTypes = map[reflect.Type]struct{}{
+	reflect.TypeOf(time.Time{}):      {},
+	reflect.TypeOf(big.Int{}):        {},
+	reflect.TypeOf(big.Float{}):      {},
+	reflect.TypeOf(url.URL{}):        {},
+	reflect.TypeOf(regexp.Regexp{}):  {},
+}
+
 // rawToValue converts the (raw, err) pair returned by a named-type converter
 // into the (reflect.Value, error) pair expected by castToType. On error, if
 // ops carries a DEFAULT value assignable to t, it is returned alongside the

@@ -3,6 +3,7 @@ package cast_test
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/bdlm/cast/v2"
 )
@@ -245,6 +246,36 @@ func TestFloatDefaultBranch(t *testing.T) {
 	if result != 3.14 {
 		t.Errorf("expected 3.14, got %v", result)
 	}
+}
+
+// TestTimeToFloat validates time.Time → float* conversions using Unix seconds
+// with sub-second precision encoded as fractional seconds.
+func TestTimeToFloat(t *testing.T) {
+	epoch := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+	testSimpleCases[float64](t, []testCase{
+		{epoch, float64(0), nil, false},
+		{epoch.Add(time.Second), float64(1.0), nil, false},
+		{epoch.Add(500 * time.Millisecond), float64(0.5), nil, false},
+	})
+	testSimpleCases[float32](t, []testCase{
+		{epoch, float32(0), nil, false},
+		{epoch.Add(time.Second), float32(1.0), nil, false},
+	})
+}
+
+// TestCharSeqToFloat validates that []byte and []rune reach strToFloat via the
+// default: branch → toString → strToFloat.
+func TestCharSeqToFloat(t *testing.T) {
+	testSimpleCases[float64](t, []testCase{
+		{[]byte("3.14"), float64(3.14), nil, false},
+		{[]byte("-2.5"), float64(-2.5), nil, false},
+		{[]byte("bad"), float64(0), nil, true},
+		{[]rune("1.5"), float64(1.5), nil, false},
+	})
+	testSimpleCases[float32](t, []testCase{
+		{[]byte("1.0"), float32(1.0), nil, false},
+		{[]rune("2.5"), float32(2.5), nil, false},
+	})
 }
 
 func TestFloatDefaultBranchError(t *testing.T) {

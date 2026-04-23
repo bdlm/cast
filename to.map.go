@@ -29,6 +29,14 @@ func toMap(to reflect.Value, from any, ops ops) (any, error) {
 	}
 
 	switch fromVal.Kind() {
+	case reflect.String:
+		s := fromVal.String()
+		if looksLikeCollection(s) {
+			if decoded, ok := unmarshalCollection(s); ok {
+				return toMap(to, decoded, ops)
+			}
+		}
+		return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 	case reflect.Map:
 		result, err := mapFromMap(to, fromVal, ops)
 		if err != nil {

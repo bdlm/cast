@@ -2,6 +2,7 @@ package cast
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/bdlm/errors/v2"
 )
@@ -73,6 +74,8 @@ func toBigInt(v any, ops ops) (any, error) {
 	case float64:
 		i, _ := new(big.Float).SetFloat64(val).Int(nil)
 		return i, nil
+	case time.Time:
+		return big.NewInt(val.Unix()), nil
 	default:
 		if s, err := toString(v, ops.Delete(DEFAULT)); err == nil {
 			i := new(big.Int)
@@ -148,6 +151,9 @@ func toBigFloat(v any, ops ops) (any, error) {
 		return new(big.Float).SetFloat64(float64(val)), nil
 	case float64:
 		return new(big.Float).SetFloat64(val), nil
+	case time.Time:
+		secs := float64(val.Unix()) + float64(val.Nanosecond())/1e9
+		return new(big.Float).SetFloat64(secs), nil
 	default:
 		if s, err := toString(v, ops.Delete(DEFAULT)); err == nil {
 			f := new(big.Float)

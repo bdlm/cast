@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/bdlm/errors/v2"
 )
@@ -115,16 +116,39 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 		return TTo(val), nil
 	case uint8:
 		return TTo(val), nil
+	case time.Time:
+		secs := val.Unix()
+		if unsigned && secs < 0 {
+			if abs {
+				secs = -secs
+			} else {
+				return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
+			}
+		}
+		result := TTo(secs)
+		if int64(result) != secs {
+			return defaultValue, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0))
+		}
+		return result, nil
 	case fmt.Stringer:
-		return strToInt[TTo](val.String(), unsigned, ops)
+		return toInt[TTo](val.String(), ops)
 	case string:
-		return strToInt[TTo](val, unsigned, ops)
+		result, err := strToInt[TTo](val, unsigned, ops)
+		if err != nil {
+			if decoded, ok, _ := tryDecodeJSON(val, ops); ok {
+				return toInt[TTo](decoded, ops.Delete(DECODE))
+			}
+		}
+		return result, err
 	case complex64:
 		return toInt[TTo](float32(real(val)), ops)
 	case complex128:
 		return toInt[TTo](float64(real(val)), ops)
 	default:
-		return toInt[TTo](fmt.Sprintf("%v", from), ops)
+		if s, err := toString(from, ops.Delete(DEFAULT)); err == nil {
+			return strToInt[TTo](s.(string), unsigned, ops)
+		}
+		return defaultValue, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0))
 	}
 }
 

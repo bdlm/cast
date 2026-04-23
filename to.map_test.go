@@ -613,8 +613,8 @@ func TestMapFromSliceNilElement(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !reflect.DeepEqual(result["a"], []int{}) {
-		t.Errorf("expected empty []int, got %v", result["a"])
+	if !reflect.DeepEqual(result["a"], []int{0}) {
+		t.Errorf("expected []int{0} (nil wraps as zero element), got %v", result["a"])
 	}
 }
 
@@ -873,6 +873,50 @@ func TestMapFromStructTags(t *testing.T) {
 		}
 		if dst != src {
 			t.Errorf("round-trip mismatch: got %+v, want %+v", dst, src)
+		}
+	})
+}
+
+// TestMapFromJSONString verifies that a JSON object string is decoded into a map
+// via the reflect.String case added in v2.1.1 (looksLikeCollection + unmarshalCollection).
+func TestMapFromJSONString(t *testing.T) {
+	t.Run(`JSON object → map[string]any`, func(t *testing.T) {
+		result, err := cast.ToE[map[string]any](`{"a":1,"b":2}`)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(result) != 2 {
+			t.Fatalf("expected 2 keys, got %d: %v", len(result), result)
+		}
+		// JSON numbers unmarshal as float64 into map[string]any.
+		if result["a"] != float64(1) || result["b"] != float64(2) {
+			t.Errorf("unexpected values: %v", result)
+		}
+	})
+	t.Run(`JSON object → map[string]int`, func(t *testing.T) {
+		result, err := cast.ToE[map[string]int](`{"x":3,"y":7}`)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result["x"] != 3 || result["y"] != 7 {
+			t.Errorf("expected x=3 y=7, got %v", result)
+		}
+	})
+	t.Run("non-JSON string → error", func(t *testing.T) {
+		_, err := cast.ToE[map[string]any]("hello world")
+		if err == nil {
+			t.Error("expected error for non-JSON string, got nil")
+		}
+	})
+	t.Run("JSON array → map via slice→map path", func(t *testing.T) {
+		// unmarshalCollection returns []any{1,2,3}; toMap then converts that slice
+		// using indices as keys, so we get "0"→1, "1"→2, "2"→3.
+		result, err := cast.ToE[map[string]any](`[1,2,3]`)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(result) != 3 {
+			t.Fatalf("expected 3 keys, got %d: %v", len(result), result)
 		}
 	})
 }

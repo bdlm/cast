@@ -35,11 +35,11 @@ func TestToETime(t *testing.T) {
 		{name: "[]byte RFC3339", in: []byte("2024-06-15T12:00:00Z"), expect: time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)},
 		{name: "[]byte DateOnly", in: []byte("1994-04-20"), expect: time.Date(1994, 4, 20, 0, 0, 0, 0, time.UTC)},
 
-		// Integer → Unix nanoseconds
+		// Integer → Unix seconds
 		{name: "int zero", in: int(0), expect: epoch},
 		{name: "int64 zero", in: int64(0), expect: epoch},
-		{name: "int64 1s", in: int64(time.Second), expect: epoch.Add(time.Second)},
-		{name: "uint64 1s", in: uint64(time.Second), expect: epoch.Add(time.Second)},
+		{name: "int64 1s", in: int64(1), expect: epoch.Add(time.Second)},
+		{name: "uint64 1s", in: uint64(1), expect: epoch.Add(time.Second)},
 
 		// Float → Unix seconds
 		{name: "float64 1.5s", in: float64(1.5), expect: epoch.Add(1500 * time.Millisecond)},

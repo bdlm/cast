@@ -1,6 +1,8 @@
 package cast
 
 import (
+	"strings"
+
 	"github.com/bdlm/errors/v2"
 )
 
@@ -37,14 +39,15 @@ type Op struct {
 const (
 	DEFAULT Flag = iota // TTo,  LOCAL  — value to return on error; type-specific, not passed to nested casts
 
-	ABS                 // bool, GLOBAL — use absolute value during uint conversion
-	DUPLICATE_KEY_ERROR // bool, LOCAL  — error on duplicate key (map→map only); not meaningful in nested casts
+	ABS                 // bool,   GLOBAL — use absolute value during uint conversion
+	DECODE              // string, LOCAL  — decode string source before conversion; only applies to string/error/Stringer sources; supported values: "JSON"/"json"
+	DUPLICATE_KEY_ERROR // bool,   LOCAL  — error on duplicate key (map→map only); not meaningful in nested casts
 	FORMAT              // string, GLOBAL — Format string for time/duration parsing
-	JSON                // bool, GLOBAL — encode strings as JSON
-	LENGTH              // int,  GLOBAL — initial capacity for slices / buffer size for channels; applies to all slice and chan targets in the tree (slices allow 0; channels require >= 1)
-	PRIVATE             // bool, GLOBAL — include unexported struct fields in map output
-	STRICT              // bool, GLOBAL — return error instead of skipping unconvertible fields
-	UNIQUE_VALUES       // bool, GLOBAL — dedupe slice values; applies to all slice targets in the tree
+	JSON                // bool,   GLOBAL — encode strings as JSON
+	LENGTH              // int,    GLOBAL — initial capacity for slices / buffer size for channels; applies to all slice and chan targets in the tree (slices allow 0; channels require >= 1)
+	PRIVATE             // bool,   GLOBAL — include unexported struct fields in map output
+	STRICT              // bool,   GLOBAL — return error instead of skipping unconvertible fields
+	UNIQUE_VALUES       // bool,   GLOBAL — dedupe slice values; applies to all slice targets in the tree
 )
 
 // ops is the internal parsed representation of conversion options. A plain
@@ -63,6 +66,9 @@ type ops struct {
 
 	hasFormat bool
 	formatVal string // FORMAT value preserved for time/duration parsing and error messages
+
+	hasDecode bool
+	decodeVal string // DECODE format, normalized to lowercase (e.g. "json")
 
 	abs        bool
 	dupKeyErr  bool
@@ -102,6 +108,9 @@ func (o ops) Delete(key Flag) ops {
 		o.defaultVal = nil
 	case ABS:
 		o.abs = false
+	case DECODE:
+		o.hasDecode = false
+		o.decodeVal = ""
 	case DUPLICATE_KEY_ERROR:
 		o.dupKeyErr = false
 	case FORMAT:
@@ -128,6 +137,9 @@ func (o ops) List() []Op {
 	var list []Op
 	if o.hasDefault {
 		list = append(list, Op{DEFAULT, o.defaultVal})
+	}
+	if o.hasDecode {
+		list = append(list, Op{DECODE, o.decodeVal})
 	}
 	if o.hasLength {
 		list = append(list, Op{LENGTH, o.lengthVal})
@@ -171,6 +183,11 @@ func parseOps(o []Op) ops {
 			result.defaultVal = op.Val
 		case ABS:
 			result.abs, _ = op.Val.(bool)
+		case DECODE:
+			if s, ok := op.Val.(string); ok && s != "" {
+				result.hasDecode = true
+				result.decodeVal = strings.ToLower(s)
+			}
 		case DUPLICATE_KEY_ERROR:
 			result.dupKeyErr, _ = op.Val.(bool)
 		case FORMAT:

@@ -41,12 +41,26 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 	uniqueVals := ops.uniqueVals
 	elemOps := ops.Global()
 
+	// DECODE=json: JSON-decode the source before conversion. This applies to
+	// string, error, and non-named-scalar Stringer sources; named scalar struct
+	// types (time.Time, etc.) are excluded. A decoded array becomes a normal
+	// slice source; a decoded scalar becomes a scalar-wrap source; this bypasses
+	// the []byte/[]rune special cases below.
+	if decoded, applied, decErr := tryDecodeJSON(val, ops); decErr != nil {
+		return defaultValue, decErr
+	} else if applied {
+		val = decoded
+		ops = ops.Delete(DECODE)
+		elemOps = ops.Global()
+	}
+
 	// Special cases mirroring Go's built-in string conversions:
 	//   string → []byte / []uint8      (and named variants with Uint8 element)
 	//   string → []rune / []int32      (and named variants with Int32 element)
-	// These must be handled before the source-kind guard below because a string
-	// is not a slice/array kind, and iterating bytes would give wrong results for
-	// []rune (bytes ≠ Unicode code points for multibyte UTF-8).
+	// These must be handled before the source-kind dispatch below because a
+	// string is not a slice/array kind, and iterating bytes would give wrong
+	// results for []rune (bytes ≠ Unicode code points for multibyte UTF-8).
+	// For other element types, try scalar wrap first, then JSON as a last resort.
 	if s, ok := val.(string); ok {
 		var result any
 		switch to.Type().Elem().Kind() {
@@ -73,7 +87,18 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 				result = rv.Interface()
 			}
 		default:
-			return defaultValue, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
+			// Try scalar wrap (e.g. "true" → []bool{true}, "42" → []int{42}).
+			if r, err := sliceFromSingle(s, to, elemOps, nil); err == nil {
+				result = r
+			} else if looksLikeCollection(s) {
+				// Last resort: decode JSON array/object and recurse.
+				if decoded, ok := unmarshalCollection(s); ok {
+					return toSlice(to, decoded, ops)
+				}
+				return defaultValue, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
+			} else {
+				return defaultValue, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
+			}
 		}
 		if uniqueVals {
 			rv := reflect.ValueOf(result)
@@ -82,10 +107,60 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 		return result, nil
 	}
 
-	slice := reflect.ValueOf(val)
-	if !slice.IsValid() || (slice.Kind() != reflect.Slice && slice.Kind() != reflect.Array) {
-		return defaultValue, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
+	// Nil source: wrap as single-element slice containing the zero value.
+	if val == nil {
+		return sliceFromSingle(nil, to, elemOps, defaultValue)
 	}
+
+	fromVal := reflect.Indirect(reflect.ValueOf(val))
+	if !fromVal.IsValid() {
+		// Nil pointer or nil interface after dereferencing.
+		return sliceFromSingle(nil, to, elemOps, defaultValue)
+	}
+
+	switch fromVal.Kind() {
+	case reflect.Map:
+		result, err := sliceFromMap(to, fromVal, uniqueVals, elemOps)
+		if err != nil {
+			return defaultValue, err
+		}
+		return result, nil
+	case reflect.Struct:
+		if isNamedScalarStructType(fromVal.Type()) {
+			// Well-known named types (time.Time, big.Int, url.URL, etc.) have
+			// meaningful scalar representations registered in namedConverters.
+			// Scalar-wrap them directly rather than iterating their (mostly
+			// unexported) fields.
+			r, err := sliceFromSingle(fromVal.Interface(), to, elemOps, nil)
+			if err != nil {
+				return defaultValue, err
+			}
+			if uniqueVals {
+				rv := reflect.ValueOf(r)
+				r = dedupeSliceVal(rv).Interface()
+			}
+			return r, nil
+		}
+		// General struct: iterate exported fields first. If no fields convert
+		// to the target type, fall back to scalar wrap (Stringer, then JSON).
+		result, err := sliceFromStruct(to, fromVal, uniqueVals, elemOps)
+		if err != nil {
+			return defaultValue, err
+		}
+		if reflect.ValueOf(result).Len() == 0 {
+			if r, sErr := sliceFromSingle(fromVal.Interface(), to, elemOps, nil); sErr == nil {
+				return r, nil
+			}
+		}
+		return result, nil
+	case reflect.Slice, reflect.Array:
+		// fall through to element-wise conversion below
+	default:
+		// Scalar or other non-iterable kind: wrap as single-element slice.
+		return sliceFromSingle(fromVal.Interface(), to, elemOps, defaultValue)
+	}
+
+	slice := fromVal
 
 	// Initialize the result slice based on target element type.
 	var result any
@@ -278,6 +353,115 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 	return result, nil
 }
 
+// sliceFromSingle casts v to the element type of to and returns a one-element
+// slice. Returns (defaultValue, err) on cast failure.
+func sliceFromSingle(v any, to reflect.Value, ops ops, defaultValue any) (any, error) {
+	elemType := to.Type().Elem()
+	elemKind := elemType.Kind()
+
+	var elem reflect.Value
+	var err error
+	if isScalarKind(elemKind) {
+		elem, err = castToKind(v, elemKind, ops)
+		if err == nil && elem.Type() != elemType {
+			elem = elem.Convert(elemType)
+		}
+	} else {
+		elem, err = castToType(v, elemType, ops)
+	}
+	if err != nil {
+		return defaultValue, err
+	}
+
+	result := reflect.MakeSlice(to.Type(), 0, 1)
+	result = reflect.Append(result, elem)
+	return result.Interface(), nil
+}
+
+// sliceFromMap builds a slice from a map's values, casting each to the
+// target element type.
+func sliceFromMap(to reflect.Value, src reflect.Value, uniqueVals bool, ops ops) (any, error) {
+	elemType := to.Type().Elem()
+	elemKind := elemType.Kind()
+	scalarElem := isScalarKind(elemKind)
+	sliceVal := reflect.MakeSlice(to.Type(), 0, src.Len())
+
+	for _, key := range src.MapKeys() {
+		mv := src.MapIndex(key)
+		var rawVal any
+		if mv.CanInterface() {
+			rawVal = mv.Interface()
+		} else {
+			v, ok := extractFieldValue(mv)
+			if !ok {
+				continue
+			}
+			rawVal = v
+		}
+
+		var elem reflect.Value
+		var err error
+		if scalarElem {
+			elem, err = castToKind(rawVal, elemKind, ops)
+			if err == nil && elem.Type() != elemType {
+				elem = elem.Convert(elemType)
+			}
+		} else {
+			elem, err = castToType(rawVal, elemType, ops)
+		}
+		if err != nil {
+			return nil, err
+		}
+		sliceVal = reflect.Append(sliceVal, elem)
+	}
+
+	if uniqueVals {
+		sliceVal = dedupeSliceVal(sliceVal)
+	}
+	return sliceVal.Interface(), nil
+}
+
+// sliceFromStruct builds a slice from a struct's exported field values,
+// casting each to the target element type. Unconvertible fields are skipped.
+func sliceFromStruct(to reflect.Value, src reflect.Value, uniqueVals bool, ops ops) (any, error) {
+	elemType := to.Type().Elem()
+	elemKind := elemType.Kind()
+	scalarElem := isScalarKind(elemKind)
+	sliceVal := reflect.MakeSlice(to.Type(), 0, src.NumField())
+
+	for i := 0; i < src.NumField(); i++ {
+		field := src.Type().Field(i)
+		if !field.IsExported() {
+			continue
+		}
+		fieldVal := src.Field(i)
+		rawVal, ok := extractFieldValue(fieldVal)
+		if !ok {
+			continue
+		}
+
+		var elem reflect.Value
+		var err error
+		if scalarElem {
+			elem, err = castToKind(rawVal, elemKind, ops)
+			if err == nil && elem.Type() != elemType {
+				elem = elem.Convert(elemType)
+			}
+		} else {
+			elem, err = castToType(rawVal, elemType, ops)
+		}
+		if err != nil {
+			continue
+		}
+		sliceVal = reflect.Append(sliceVal, elem)
+	}
+
+	if uniqueVals {
+		sliceVal = dedupeSliceVal(sliceVal)
+	}
+	return sliceVal.Interface(), nil
+}
+
 // dedupeSliceVal removes duplicate elements from rv, preserving first-seen
 // order. Comparable elements are tracked in a map; non-comparable elements
 // (e.g. slices) fall back to reflect.DeepEqual.
@@ -304,6 +488,19 @@ func dedupeSliceVal(rv reflect.Value) reflect.Value {
 		}
 	}
 	return deduped
+}
+
+// isNamedScalarStructType reports whether t is a struct type that has a
+// meaningful scalar representation — i.e., types in namedStructTypes (which
+// mirrors the struct entries of namedConverters without creating an init cycle).
+// These types produce a single-element scalar-wrapped slice rather than
+// iterating exported fields, which are typically absent or non-public.
+func isNamedScalarStructType(t reflect.Type) bool {
+	if t.Kind() != reflect.Struct {
+		return false
+	}
+	_, ok := namedStructTypes[t]
+	return ok
 }
 
 // isScalarKind reports whether k is a scalar kind handled by castToKind.

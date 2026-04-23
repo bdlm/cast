@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/bdlm/errors/v2"
 )
@@ -57,27 +58,29 @@ func toFloat[TTo float](from any, ops ops) (TTo, error) {
 		return TTo(typ), nil
 	case uintptr:
 		return TTo(typ), nil
+	case time.Time:
+		secs := float64(typ.Unix()) + float64(typ.Nanosecond())/1e9
+		return TTo(secs), nil
 	case fmt.Stringer:
-		result, err := strToFloat[TTo](typ.String())
-		if err != nil {
-			return defaultValue, err
-		}
-		return result, nil
+		return toFloat[TTo](typ.String(), ops)
 	case string:
 		result, err := strToFloat[TTo](typ)
 		if err != nil {
+			if decoded, ok, _ := tryDecodeJSON(typ, ops); ok {
+				return toFloat[TTo](decoded, ops.Delete(DECODE))
+			}
 			return defaultValue, err
 		}
 		return result, nil
 	}
 
-	// Fall back to string conversion for any other type (e.g. named numerics,
-	// structs with a String method that were not matched above).
-	result, err := toFloat[TTo](fmt.Sprintf("%v", from), ops)
-	if nil != err {
-		return defaultValue, errors.Wrap(err, ErrorStrUnableToCast, from, from, TTo(0))
+	if s, err := toString(from, ops.Delete(DEFAULT)); err == nil {
+		result, e := toFloat[TTo](s.(string), ops)
+		if e == nil {
+			return result, nil
+		}
 	}
-	return result, nil
+	return defaultValue, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0))
 }
 
 // strToFloat converts a string to a float type. On initial parse failure it

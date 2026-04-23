@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/bdlm/cast/v2"
 )
@@ -617,6 +618,51 @@ func TestToIntFromUintTypes(t *testing.T) {
 	if v, err := cast.ToE[int](uint16(7)); err != nil || v != 7 {
 		t.Errorf("ToE[int](uint16(7)): expected 7/nil, got %v/%v", v, err)
 	}
+}
+
+// TestTimeToInt validates time.Time → int*/uint* conversions using Unix seconds.
+// The full overflow and sign tests live in to.time_numeric_test.go; these cases
+// confirm the basic happy path via testSimpleCases.
+func TestTimeToInt(t *testing.T) {
+	epoch := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+	oneSecond := epoch.Add(time.Second)
+	preEpoch := epoch.Add(-time.Second)
+
+	testSimpleCases[int](t, []testCase{
+		{epoch, int(0), nil, false},
+		{oneSecond, int(1), nil, false},
+		{preEpoch, int(-1), nil, false},
+	})
+	testSimpleCases[int64](t, []testCase{
+		{epoch, int64(0), nil, false},
+		{oneSecond, int64(1), nil, false},
+		{preEpoch, int64(-1), nil, false},
+	})
+	testSimpleCases[uint64](t, []testCase{
+		{epoch, uint64(0), nil, false},
+		{oneSecond, uint64(1), nil, false},
+		{preEpoch, uint64(0), nil, true}, // negative Unix seconds error for unsigned
+	})
+}
+
+// TestCharSeqToInt validates that []byte and []rune reach strToInt via the
+// default: branch → toString → strToInt, rather than producing an error.
+func TestCharSeqToInt(t *testing.T) {
+	testSimpleCases[int](t, []testCase{
+		{[]byte("42"), int(42), nil, false},
+		{[]byte("-7"), int(-7), nil, false},
+		{[]byte("1.9"), int(1), nil, false}, // truncated toward zero
+		{[]byte("bad"), int(0), nil, true},
+	})
+	testSimpleCases[int64](t, []testCase{
+		{[]byte("1000"), int64(1000), nil, false},
+		{[]rune("99"), int64(99), nil, false},
+		{[]rune("-5"), int64(-5), nil, false},
+	})
+	testSimpleCases[uint](t, []testCase{
+		{[]byte("10"), uint(10), nil, false},
+		{[]byte("-1"), uint(0), nil, true}, // negative string → unsigned errors
+	})
 }
 
 // TestStrToIntDefaultWrongType2 covers the DEFAULT type-assertion failure in

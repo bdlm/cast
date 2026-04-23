@@ -68,12 +68,18 @@ func toBool[TTo bool](from any, ops ops) (TTo, error) {
 		if nil != e {
 			i, e2 := ToE[int](from)
 			if nil != e2 {
+				if decoded, ok, _ := tryDecodeJSON(from, ops); ok {
+					return toBool[TTo](decoded, ops.Delete(DECODE))
+				}
 				return ret, errors.Wrap(errors.WrapE(e2, e), ErrorStrUnableToCast, from, from, false)
 			}
 			return i != 0, nil
 		}
 		return TTo(r), nil
 	default:
-		return toBool[TTo](fmt.Sprintf("%v", from), ops)
+		if s, err := toString(from, ops.Delete(DEFAULT)); err == nil {
+			return toBool[TTo](s.(string), ops)
+		}
+		return ret, errors.Errorf(ErrorStrUnableToCast, from, from, false)
 	}
 }

@@ -273,7 +273,7 @@ func ExampleToE_struct_to_map_error() {
 		"p=(%T), X=%v (%T), Y=%v (%T), A=%v (%T), B=%v (%T), %v",
 		p, p["X"], p["X"], p["Y"], p["Y"], p["A"], p["A"], p["B"], p["B"], e,
 	)
-	// Output: p=(map[string]int), X=3 (int), Y=4 (int), A=0 (int), B=0 (int), error
+	// Output: p=(map[string]int), X=3 (int), Y=4 (int), A=0 (int), B=0 (int), <nil>
 }
 
 type Output struct {

@@ -80,19 +80,19 @@ Struct hydration: `cast.ToStruct[T](v, opts...)` · `cast.ToStructE[T](v, opts..
 
 | Source | `bool` | `int*` | `uint*` | `float*` · `complex*` | `string` | `[]T` | `map[K]V` | `struct` | `chan T` · `Func[T]` | `any` |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| `bool`                | ✓   | ✓   | ✓   | ✓    | ✓    | ✗   | ✗    | ✗    | ✓   | ✓ |
-| `int*` (signed)       | ✓   | ✓   | ~¹  | ✓    | ✓    | ✗   | ✗    | ✗    | ✓   | ✓ |
-| `uint*` (unsigned)    | ✓   | ✓   | ✓   | ✓    | ✓    | ✗   | ✗    | ✗    | ✓   | ✓ |
-| `float*` · `complex*` | ✓   | ~²³ | ~¹² | ✓    | ✓    | ✗   | ✗    | ✗    | ✓   | ✓ |
-| `string`              | ~⁴  | ~⁵  | ~⁵  | ~⁵   | ✓    | ✗   | ✗    | ✗    | ~⁵  | ✓ |
-| `[]byte`              | ✗   | ✗   | ✗   | ✗    | ✓⁶   | ✗   | ✗    | ✗    | ✗   | ✓ |
+| `bool`                | ✓   | ✓   | ✓   | ✓    | ✓    | ~ˢ  | ✗    | ✗    | ✓   | ✓ |
+| `int*` (signed)       | ✓   | ✓   | ~¹  | ✓    | ✓    | ~ˢ  | ✗    | ✗    | ✓   | ✓ |
+| `uint*` (unsigned)    | ✓   | ✓   | ✓   | ✓    | ✓    | ~ˢ  | ✗    | ✗    | ✓   | ✓ |
+| `float*` · `complex*` | ✓   | ~²³ | ~¹² | ~ᵏ   | ✓    | ~ˢ  | ✗    | ✗    | ✓   | ✓ |
+| `string`              | ~⁴  | ~⁵  | ~⁵  | ~⁵   | ✓    | ~ˡ  | ✗    | ✗    | ~⁵  | ✓ |
+| `[]byte`              | ✗   | ✗   | ✗   | ✗    | ✓⁶   | ~ᵐ  | ~ᵐ   | ✗    | ~ᵐ  | ✓ |
 | `[]T` · `[N]T`        | ✗   | ✗   | ✗   | ✗    | ~⁷   | ✓   | ✓⁸   | ✗    | ✓   | ✓ |
-| `map[K]V`             | ✗   | ✗   | ✗   | ✗    | ~⁷   | ✗   | ✓    | ~¹¹  | ✗   | ✓ |
-| `struct`              | ✗   | ✗   | ✗   | ✗    | ~⁷   | ✗   | ✓⁹   | ~¹¹  | ✗   | ✓ |
-| `nil`                 | ✓   | ✓   | ✓   | ✓    | ✓    | ✗   | ✗    | ✗    | ✗   | ✓ |
-| `error` · `Stringer`  | ~¹⁰ | ~¹⁰ | ~¹⁰ | ~¹⁰  | ✓¹⁰  | ✗   | ✗    | ✗    | ~¹⁰ | ✓ |
+| `map[K]V`             | ✗   | ✗   | ✗   | ✗    | ~⁷   | ~ˢ  | ✓    | ~¹¹  | ~   | ✓ |
+| `struct`              | ✗   | ✗   | ✗   | ✗    | ~⁷   | ~ˢ  | ✓⁹   | ~¹¹  | ~   | ✓ |
+| `nil`                 | ✓   | ✓   | ✓   | ✓    | ✓    | ✓   | ✗    | ✗    | ~   | ✓ |
+| `error` · `Stringer`  | ~¹⁰ | ~¹⁰ | ~¹⁰ | ~¹⁰  | ✓¹⁰  | ~ˢ  | ✗    | ✗    | ~¹⁰ | ✓ |
 | `any` / interface     | ✓   | ✓   | ✓   | ✓    | ✓    | ✓   | ✓    | ✓    | ✓   | ✓ |
-| Named types†          | ~   | ~   | ~   | ~    | ✓    | ✗   | ✗    | ✗    | ~   | ✓ |
+| Named types†          | ~   | ~   | ~   | ~    | ✓    | ~ˢ  | ✗    | ✗    | ~   | ✓ |
 
 `int*` = int · int8 · int16 · int32 · int64
 `uint*` = uint · uint8 · uint16 · uint32 · uint64 · uintptr
@@ -105,7 +105,7 @@ Struct hydration: `cast.ToStruct[T](v, opts...)` · `cast.ToStructE[T](v, opts..
 
 ¹ Negative signed or float value → `uint*`: error. Use `Op{ABS, true}` to take the absolute value instead.\
 ² float/complex → `int*`: truncates toward zero via `math.Floor`. `1.9 → 1`, `-1.9 → -1`. Does not round.\
-³ complex → real numeric: the imaginary part is discarded; only the real component is used.\
+³ complex → int*/uint*: the imaginary part is discarded; only the real component is used (see ᵏ for float* targets).\
 ⁴ `string` → `bool`: only `"1"/"0"/"t"/"f"/"true"/"false"` and their case variants (`"True"`, `"TRUE"`, …) return `true`.\
 ⁵ `string` → numeric: parsed as float64 via `strconv.ParseFloat`; non-numeric strings error. Float strings truncate when targeting `int*`.\
 ⁶ `[]byte` → `string`: direct `string(b)`, not element-wise — bypasses JSON encoding.\
@@ -113,7 +113,11 @@ Struct hydration: `cast.ToStruct[T](v, opts...)` · `cast.ToStructE[T](v, opts..
 ⁸ `[]T`/`[N]T` → `map[K]V`: element indices (0, 1, 2 …) become map keys, cast to key type K.\
 ⁹ `struct` → `map[K]V`: exported field names become keys; embedded structs are inlined; nested structs recurse into nested maps when value type is `any` or `map`.\
 ¹⁰ `error`/`Stringer` → any target: calls `.Error()` or `.String()` to obtain the string representation, then parses it the same way a plain `string` source would be. Succeeds whenever the string value would succeed for that target type.\
-¹¹ `map`/`struct` → `struct`: source map keys (or source struct exported field names) are matched case-sensitively to the target struct's exported fields. Fields with no matching source key retain their zero value; `STRICT` promotes mismatches and unmatched keys to errors. Anonymous (embedded) fields are promoted on both sides. `ToStruct[T]` / `ToStructE[T]` accept any struct type for `T` (`T any`, not constrained to `Types`).
+¹¹ `map`/`struct` → `struct`: source map keys (or source struct exported field names) are matched case-sensitively to the target struct's exported fields. Fields with no matching source key retain their zero value; `STRICT` promotes mismatches and unmatched keys to errors. Anonymous (embedded) fields are promoted on both sides. `ToStruct[T]` / `ToStructE[T]` accept any struct type for `T` (`T any`, not constrained to `Types`).\
+ᵏ `complex*` → `float*` · `complex*`: `complex*` → `complex*` succeeds; `complex*` → `float*` does not — there is no float case in the converter, so the cast falls through to string parsing where `"(1+2i)"` is rejected as an invalid float. Cast to `int*`/`uint*` (note ³) to extract the real component as an integer.\
+ˡ `string` → `[]T`: `[]byte` and `[]rune` use direct Go string conversion. All other element types attempt scalar wrap (e.g. `"42"` → `[]int{42}`, `"true"` → `[]bool{true}`); if scalar wrap fails and the string looks like a JSON collection, it is decoded automatically as a last resort. Pass `Op{DECODE, "json"}` to force JSON decoding first, skipping the `[]byte`/`[]rune` special cases.\
+ᵐ `[]byte` is `[]uint8` and is treated as a slice source: elements are cast individually when converting → `[]T` or → `map[K]V`; → `chan T` succeeds for element types that a single `uint8` byte can be cast to. → `string` uses `string(b)` directly (note ⁶).\
+ˢ Non-collection sources wrap as single-element slices when converting to `[]T`: scalars, `error`/`Stringer`, and named types produce `[value]`; structs iterate exported fields first (named scalar struct types like `time.Time` scalar-wrap instead); maps iterate values; `nil` always produces `[zero_T]`. Element-type constraints apply (e.g. negative signed → `[]uint*` errors without `ABS`).
 
 **`chan T` / `Func[T]`** wrap any value that can be cast to T — `source → chan T` succeeds whenever `source → T` succeeds. `chan T` returns a buffered channel (size 1) pre-loaded with the value; `Func[T]` returns a `func() T` closure. T may itself be `[]T`, `Func[T]`, or `chan T` (nesting supported).
 
@@ -125,29 +129,33 @@ Struct hydration: `cast.ToStruct[T](v, opts...)` · `cast.ToStructE[T](v, opts..
 
 | Source | `time.Time` | `time.Duration` | `net.IP` | `*url.URL` | `*regexp.Regexp` | `*big.Int` | `*big.Float` |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| same named type              | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ᵃ  | ✓ᵃ  |
-| `*time.Time`                 | ~ᵇ  | ✗   | ✗   | ✗   | ✗   | ✗   | ✗   |
-| `url.URL` (value, not ptr)   | ✗   | ✗   | ✗   | ✓   | ✗   | ✗   | ✗   |
-| `big.Int` · `big.Float` (values) | ✗ | ✗ | ✗  | ✗   | ✗   | ✓ᶜ  | ✓   |
-| `*big.Float` → `*big.Int`    | ✗   | ✗   | ✗   | ✗   | ✗   | ~ᶜ  | —   |
-| `*big.Int` → `*big.Float`    | ✗   | ✗   | ✗   | ✗   | ✗   | —   | ✓   |
-| `int*` · `uint*`             | ✓ᵈ  | ✓   | ✗   | ✗   | ✗   | ✓   | ✓   |
-| `float*`                     | ✓ᵉ  | ✓   | ✗   | ✗   | ✗   | ~ᶜ  | ✓   |
-| `string`                     | ~ᶠ  | ~ᵍ  | ~   | ~   | ~   | ~ʰ  | ~   |
-| `[]byte`                     | ~ᶠ  | ✗   | ~ⁱ  | ✗   | ✗   | ✗   | ✗   |
-| `uint32`                     | ✗   | ✗   | ✓ⁱ  | ✗   | ✗   | ✓   | ✓   |
-| `nil`                        | ✗   | ✗   | ✗   | ✗   | ✗   | ✗   | ✗   |
-| `any` / interface            | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
+| same named type                  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ᵃ  | ✓ᵃ  |
+| `*time.Time`                     | ~ᵇ  | ✗   | ✗   | ~ʲ  | ~ʲ  | ✗   | ✗   |
+| `time.Time` (as source)          | ✓   | ✗   | ✗   | ~ʲ  | ~ʲ  | ✓   | ✓   |
+| `url.URL` (value, not ptr)       | ✗   | ✗   | ✗   | ✓   | ~ʲ  | ✗   | ✗   |
+| `big.Int` · `big.Float` (values) | ✓ᵗ  | ✓ᵗ  | ~   | ~ʲ  | ~ʲ  | ✓ᶜ  | ✓   |
+| `*big.Float` → `*big.Int`        | ✓ᵗ  | ✓ᵗ  | ~   | ~ʲ  | ~ʲ  | ~ᶜ  | —   |
+| `*big.Int` → `*big.Float`        | ✓ᵗ  | ✓ᵗ  | ~   | ~ʲ  | ~ʲ  | —   | ✓   |
+| `int*` · `uint*`                 | ✓ᵈ  | ✓   | ~ᵖ  | ~ʲ  | ~ʲ  | ✓   | ✓   |
+| `float*`                         | ✓ᵉ  | ✓   | ✗   | ~ʲ  | ~ʲ  | ~ᶜ  | ✓   |
+| `string`                         | ~ᶠ  | ~ᵍ  | ~   | ~   | ~   | ~ʰ  | ~   |
+| `[]byte`                         | ~ᶠ  | ~   | ~ⁱ  | ~ʲ  | ~ʲ  | ~   | ~   |
+| `uint32`                         | ✓ᵈ  | ✓   | ✓ⁱ  | ~ʲ  | ~ʲ  | ✓   | ✓   |
+| `nil`                            | ✗   | ✗   | ✗   | ✗   | ✗   | ✗   | ✗   |
+| `any` / interface                | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
 
 ᵃ Returns an independent copy — `new(big.Int).Set(src)` / `new(big.Float).Copy(src)`.\
 ᵇ `*time.Time` → `time.Time`: dereferenced when non-nil; nil pointer errors.\
 ᶜ `*big.Float` / `big.Float` / `float*` → `*big.Int`: truncated toward zero. NaN/±Inf float inputs error.\
-ᵈ `int*` / `uint*` → `time.Time`: treated as Unix nanoseconds — `time.Unix(0, n).UTC()`.\
+ᵈ `int*` / `uint*` → `time.Time`: treated as Unix seconds — `time.Unix(n, 0).UTC()`. `uint32` follows the same rule.\
 ᵉ `float*` → `time.Time`: treated as Unix seconds; fractional seconds preserved via nanosecond conversion.\
 ᶠ `string` / `[]byte` → `time.Time`: 19 formats tried in order — RFC3339Nano, RFC3339, DateTime, RFC1123Z, RFC1123, RFC822Z, RFC822, DateOnly, then Layout/ANSIC/UnixDate/RubyDate/RFC850/Kitchen/Stamp/StampMilli/StampMicro/StampNano/TimeOnly.\
 ᵍ `string` → `time.Duration`: via `time.ParseDuration`; accepts units "ns", "µs"/"us", "ms", "s", "m", "h" and combinations (e.g. "1h30m45s").\
 ʰ `string` → `*big.Int`: base auto-detected from prefix — `0x` hex, `0o` octal, `0b` binary, decimal otherwise.\
-ⁱ `uint32` → `net.IP`: packed IPv4 in host byte order. `[]byte` of exactly 4 or 16 bytes: direct copy into `net.IP`; other lengths parsed as string.
+ⁱ `uint32` / `int32` → `net.IP`: packed big-endian IPv4 — `net.IPv4(b3, b2, b1, b0)`. `int32` requires a non-negative value; negative values error. `[]byte` of exactly 4 or 16 bytes: direct copy into `net.IP`; other lengths parsed as string.\
+ʲ Via `toString` fallback — any source that successfully stringifies is passed to the named-type converter's string-parse path. `*url.URL` almost always succeeds (`url.Parse` accepts relative URLs, bare paths, and nearly any string). `*regexp.Regexp` succeeds whenever the stringified form is a syntactically valid regexp pattern (numeric strings, formatted values, and most structured strings qualify).\
+ᵖ Only `int32` → `net.IP` is supported among `int*`; other sizes (`int8`, `int16`, `int64`) error. Non-negative `int32` values are treated identically to `uint32` (note ⁱ). For `uint*`, only `uint32` has a dedicated IPv4 path; other sizes fall through to the string-parse path.\
+ᵗ `big.Int` / `big.Float` (and pointer variants) → `time.Time`: treated as Unix seconds (integer part only). → `time.Duration`: treated as nanoseconds. `*big.Int` must fit in `int64`; `*big.Float` is truncated toward zero and then treated as nanoseconds. NaN/±Inf errors. → `net.IP`: the integer value is zero-padded to 16 bytes (big-endian) to produce an IPv6 address; negative or > 128-bit values error.
 
 ### Options
 
@@ -167,6 +175,7 @@ result, err := cast.ToE[[]string](items, cast.Op{cast.UNIQUE_VALUES, true})
 |:---|:---|:---|
 | `DEFAULT` | all targets | Return this value on error instead of the zero value |
 | `ABS` | `uint*` targets | Use absolute value for negative signed inputs instead of erroring |
+| `DECODE` | `bool`, `int*`, `uint*`, `float*`, `complex*`, `[]T` (string/error/Stringer source) | Decode the source string as the specified format before converting; only `"json"` is supported. For scalar targets it fires as a fallback after normal parsing fails (e.g. `"\"1\""` → `1`). For `[]T` it forces JSON decoding first, bypassing `[]byte`/`[]rune` special-casing. Note: `map[K]V` already auto-decodes JSON-like strings without this flag. |
 | `LENGTH` | `[]T`, `chan T` | Pre-allocate slice capacity or set channel buffer size (≥ 1 for chan) |
 | `UNIQUE_VALUES` | `[]T` | Deduplicate after conversion, preserving first-seen order |
 | `JSON` | `string` | JSON-encode the resulting string (adds quotes and escaping) |
@@ -222,15 +231,35 @@ jsonStr, _ := cast.ToE[string](`hello "world"`, cast.Op{cast.JSON, true})
 
 #### Slices
 
-The source must be a slice, array, or map; scalar sources always error.
+Slices, arrays, and maps convert element-wise. Scalar sources, `nil`, structs, and `error`/`Stringer` values are wrapped as single-element slices. `nil` always produces `[zero_T]`.
 
 ```go
 cast.To[[]int]([]string{"1", "2", "3"})           // []int{1, 2, 3}
 cast.To[[]string]([]int{1, 2, 3})                 // []string{"1", "2", "3"}
 cast.To[[]bool]([]int{1, 0, 1})                   // []bool{true, false, true}
 
+// Scalar sources wrap as single-element slices
+cast.To[[]int](42)        // []int{42}
+cast.To[[]string](3.14)   // []string{"3.14"}
+cast.To[[]int](nil)       // []int{0}  — nil produces [zero_T]
+
 // Map source: map values become slice elements; iteration order is undefined
 cast.To[[]string](map[string]int{"a": 1, "b": 2}) // []string{"1", "2"} (order varies)
+
+// Struct source: exported field values become slice elements
+type Point struct{ X, Y int }
+cast.To[[]int](Point{X: 3, Y: 4})    // []int{3, 4}
+cast.To[[]string](Point{X: 3, Y: 4}) // []string{"3", "4"}
+
+// DECODE=json for scalars: fallback after normal parse fails
+// `"1"` is a JSON-encoded string containing "1", which then parses to 1
+cast.To[int](`"1"`, cast.Op{cast.DECODE, "json"})              // 1
+cast.To[float64](`"1.5"`, cast.Op{cast.DECODE, "json"})        // 1.5
+cast.To[bool](`"true"`, cast.Op{cast.DECODE, "json"})          // true
+
+// DECODE=json for slices: decode a JSON array/object string before converting
+cast.To[[]int](`[1, 2, 3]`, cast.Op{cast.DECODE, "json"})      // []int{1, 2, 3}
+cast.To[[]string](`["a","b"]`, cast.Op{cast.DECODE, "json"})   // []string{"a", "b"}
 
 // UNIQUE_VALUES: deduplicate after conversion, preserving first-seen order
 cast.ToE[[]int]([]int{1, 2, 1, 3}, cast.Op{cast.UNIQUE_VALUES, true})
@@ -367,11 +396,11 @@ nestedFunc := cast.To[cast.Func[chan int]](42)    // func() chan int
 `time.Time`, `time.Duration`, `net.IP`, `*url.URL`, `*regexp.Regexp`, `*big.Int`, and `*big.Float` are direct cast targets via `To[T]` / `ToE[T]`. See [Named-type targets](#named-type-targets) for the full source compatibility matrix.
 
 ```go
-// time.Time — string (19 formats tried), int/uint (Unix ns), float (Unix s)
-rfcTime, _    := cast.ToE[time.Time]("2024-04-22T12:00:00Z")    // RFC3339
-dateTime, _   := cast.ToE[time.Time]("2024-04-22")              // DateOnly
-unixNsTime    := cast.To[time.Time](int64(1713787200000000000)) // Unix nanoseconds
-unixSecTime   := cast.To[time.Time](float64(1713787200.5))      // Unix seconds (fractional)
+// time.Time — string (19 formats tried), int/uint (Unix seconds), float (Unix seconds)
+rfcTime, _    := cast.ToE[time.Time]("2024-04-22T12:00:00Z") // RFC3339
+dateTime, _   := cast.ToE[time.Time]("2024-04-22")           // DateOnly
+unixSecTime   := cast.To[time.Time](int64(1713787200))        // Unix seconds
+unixSecTime2  := cast.To[time.Time](float64(1713787200.5))    // Unix seconds (fractional)
 
 // time.Duration — time.ParseDuration syntax, or int/float as nanoseconds
 duration, _  := cast.ToE[time.Duration]("1h30m45s")

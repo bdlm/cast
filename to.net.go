@@ -1,6 +1,7 @@
 package cast
 
 import (
+	"math/big"
 	"net"
 
 	"github.com/bdlm/errors/v2"
@@ -49,8 +50,33 @@ func toNetIP(v any, ops ops) (any, error) {
 			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, net.IP(nil))
 		}
 		return ip, nil
+	case int32:
+		if val < 0 {
+			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, net.IP(nil))
+		}
+		u32 := uint32(val)
+		return net.IPv4(byte(u32>>24), byte(u32>>16), byte(u32>>8), byte(u32)), nil
 	case uint32:
 		return net.IPv4(byte(val>>24), byte(val>>16), byte(val>>8), byte(val)), nil
+	case *big.Int:
+		if val == nil {
+			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, net.IP(nil))
+		}
+		return bigIntToIPv6(val, v, ret)
+	case big.Int:
+		return bigIntToIPv6(&val, v, ret)
+	case *big.Float:
+		if val == nil || val.IsInf() {
+			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, net.IP(nil))
+		}
+		i, _ := val.Int(nil)
+		return toNetIP(i, ops)
+	case big.Float:
+		if val.IsInf() {
+			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, net.IP(nil))
+		}
+		i, _ := val.Int(nil)
+		return toNetIP(i, ops)
 	default:
 		if s, err := toString(v, ops.Delete(DEFAULT)); err == nil {
 			if ip := net.ParseIP(s.(string)); ip != nil {
@@ -60,4 +86,19 @@ func toNetIP(v any, ops ops) (any, error) {
 	}
 
 	return ret, errors.Errorf(ErrorStrUnableToCast, v, v, net.IP(nil))
+}
+
+// bigIntToIPv6 converts a *big.Int to a 16-byte IPv6 net.IP. The value must
+// be non-negative and representable in 16 bytes (i.e. fit within 128 bits).
+func bigIntToIPv6(val *big.Int, v any, ret any) (any, error) {
+	if val.Sign() < 0 {
+		return ret, errors.Errorf(ErrorStrUnableToCast, v, v, net.IP(nil))
+	}
+	b := val.Bytes() // big-endian, no leading zeros
+	if len(b) > net.IPv6len {
+		return ret, errors.Errorf(ErrorStrUnableToCast, v, v, net.IP(nil))
+	}
+	ip := make(net.IP, net.IPv6len)
+	copy(ip[net.IPv6len-len(b):], b)
+	return ip, nil
 }

@@ -140,10 +140,14 @@ func TestNamedSliceType(t *testing.T) {
 			t.Errorf("expected %v, got %v", expect, result)
 		}
 	})
-	t.Run("negative: scalar source → error", func(t *testing.T) {
-		_, err := cast.ToE[tags]("not a slice")
-		if err == nil {
-			t.Error("expected error for scalar source, got nil")
+	t.Run("scalar string wraps as single-element slice", func(t *testing.T) {
+		result, err := cast.ToE[tags]("not a slice")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		expect := tags{"not a slice"}
+		if !reflect.DeepEqual(result, expect) {
+			t.Errorf("expected %v, got %v", expect, result)
 		}
 	})
 }

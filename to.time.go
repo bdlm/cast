@@ -1,6 +1,8 @@
 package cast
 
 import (
+	"math"
+	"math/big"
 	"time"
 
 	"github.com/bdlm/errors/v2"
@@ -8,9 +10,12 @@ import (
 
 // toTime converts v to time.Time.
 //
-// Integer and unsigned-integer values are treated as Unix nanoseconds.
-// Floating-point values are treated as Unix seconds (fractional seconds are
-// preserved by converting to nanoseconds before calling time.Unix).
+// Integer and unsigned-integer values are treated as Unix seconds.
+// Floating-point values are treated as Unix seconds with fractional second
+// precision preserved in the nanosecond field.
+// *big.Int and big.Int values are treated as Unix seconds (int64 range only).
+// *big.Float and big.Float values are treated as Unix seconds with fractional
+// second precision (converted via float64).
 // String and []byte values are tried against each format in timeFormats.
 // fmt.Stringer values are converted via String() and then parsed.
 //
@@ -50,31 +55,60 @@ func toTime(v any, ops ops) (any, error) {
 		}
 		return t, nil
 	case int:
-		return time.Unix(0, int64(val)).UTC(), nil
+		return time.Unix(int64(val), 0).UTC(), nil
 	case int8:
-		return time.Unix(0, int64(val)).UTC(), nil
+		return time.Unix(int64(val), 0).UTC(), nil
 	case int16:
-		return time.Unix(0, int64(val)).UTC(), nil
+		return time.Unix(int64(val), 0).UTC(), nil
 	case int32:
-		return time.Unix(0, int64(val)).UTC(), nil
+		return time.Unix(int64(val), 0).UTC(), nil
 	case int64:
-		return time.Unix(0, val).UTC(), nil
+		return time.Unix(val, 0).UTC(), nil
 	case uint:
-		return time.Unix(0, int64(val)).UTC(), nil
+		return time.Unix(int64(val), 0).UTC(), nil
 	case uint8:
-		return time.Unix(0, int64(val)).UTC(), nil
+		return time.Unix(int64(val), 0).UTC(), nil
 	case uint16:
-		return time.Unix(0, int64(val)).UTC(), nil
+		return time.Unix(int64(val), 0).UTC(), nil
 	case uint32:
-		return time.Unix(0, int64(val)).UTC(), nil
+		return time.Unix(int64(val), 0).UTC(), nil
 	case uint64:
-		return time.Unix(0, int64(val)).UTC(), nil
+		return time.Unix(int64(val), 0).UTC(), nil
 	case uintptr:
-		return time.Unix(0, int64(val)).UTC(), nil
+		return time.Unix(int64(val), 0).UTC(), nil
 	case float32:
-		return time.Unix(0, int64(float64(val)*float64(time.Second))).UTC(), nil
+		secs := float64(val)
+		return time.Unix(int64(secs), int64((secs-math.Floor(secs))*1e9)).UTC(), nil
 	case float64:
-		return time.Unix(0, int64(val*float64(time.Second))).UTC(), nil
+		return time.Unix(int64(val), int64((val-math.Floor(val))*1e9)).UTC(), nil
+	case *big.Int:
+		if val == nil || !val.IsInt64() {
+			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+		}
+		return time.Unix(val.Int64(), 0).UTC(), nil
+	case big.Int:
+		if !val.IsInt64() {
+			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+		}
+		return time.Unix(val.Int64(), 0).UTC(), nil
+	case *big.Float:
+		if val == nil || val.IsInf() {
+			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+		}
+		f64, _ := val.Float64()
+		if math.IsInf(f64, 0) || math.IsNaN(f64) {
+			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+		}
+		return time.Unix(int64(f64), int64((f64-math.Floor(f64))*1e9)).UTC(), nil
+	case big.Float:
+		if val.IsInf() {
+			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+		}
+		f64, _ := val.Float64()
+		if math.IsInf(f64, 0) || math.IsNaN(f64) {
+			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+		}
+		return time.Unix(int64(f64), int64((f64-math.Floor(f64))*1e9)).UTC(), nil
 	default:
 		if s, err := toString(v, ops.Delete(DEFAULT)); err == nil {
 			return toTime(s.(string), ops)

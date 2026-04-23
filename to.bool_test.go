@@ -186,3 +186,17 @@ func TestStringerToBool(t *testing.T) {
 		}
 	})
 }
+
+// TestCharSeqToBool validates that []byte and []rune reach toBool via the
+// default: branch → toString → toBool.
+func TestCharSeqToBool(t *testing.T) {
+	testSimpleCases[bool](t, []testCase{
+		{[]byte("1"), true, nil, false},
+		{[]byte("0"), false, nil, false},
+		{[]byte("true"), true, nil, false},
+		{[]byte("false"), false, nil, false},
+		{[]rune("1"), true, nil, false},
+		{[]rune("0"), false, nil, false},
+		{[]byte("bad"), false, nil, true},
+	})
+}

@@ -2,6 +2,8 @@ package cast_test
 
 import (
 	"errors"
+	"math"
+	"math/big"
 	"reflect"
 	"testing"
 	"time"
@@ -154,5 +156,94 @@ func TestToEDurationStringerDefaultFails(t *testing.T) {
 	}
 	if !errors.Is(err, cast.Error) {
 		t.Errorf("expected cast.Error, got %T: %v", err, err)
+	}
+}
+
+// TestBigIntToDuration validates *big.Int, big.Int, *big.Float, and big.Float
+// sources converted to time.Duration (nanoseconds).
+func TestBigIntToDuration(t *testing.T) {
+	cases := []struct {
+		name      string
+		in        any
+		expect    time.Duration
+		expectErr bool
+	}{
+		{name: "*big.Int zero", in: big.NewInt(0), expect: 0},
+		{name: "*big.Int 1µs", in: big.NewInt(1000), expect: time.Microsecond},
+		{name: "*big.Int 1s in ns", in: big.NewInt(int64(time.Second)), expect: time.Second},
+		{name: "*big.Int negative", in: big.NewInt(-100), expect: -100 * time.Nanosecond},
+		{name: "*big.Int nil → error", in: (*big.Int)(nil), expectErr: true},
+		{name: "*big.Int too large → error", in: new(big.Int).Add(
+			new(big.Int).SetInt64(math.MaxInt64), big.NewInt(1),
+		), expectErr: true},
+
+		// big.Int value (non-pointer)
+		{name: "big.Int value zero", in: *big.NewInt(0), expect: 0},
+		{name: "big.Int value 1µs", in: *big.NewInt(1000), expect: time.Microsecond},
+		{name: "big.Int value too large → error", in: func() big.Int {
+			v := new(big.Int).Add(new(big.Int).SetInt64(math.MaxInt64), big.NewInt(1))
+			return *v
+		}(), expectErr: true},
+
+		// *big.Float sources (nanoseconds, floor semantics)
+		{name: "*big.Float zero", in: new(big.Float).SetFloat64(0), expect: 0},
+		{name: "*big.Float 1s in ns", in: new(big.Float).SetFloat64(float64(time.Second)), expect: time.Second},
+		{name: "*big.Float nil → error", in: (*big.Float)(nil), expectErr: true},
+		{name: "*big.Float +Inf → error", in: new(big.Float).SetInf(false), expectErr: true},
+		{name: "*big.Float -Inf → error", in: new(big.Float).SetInf(true), expectErr: true},
+
+		// big.Float value (non-pointer)
+		{name: "big.Float value zero", in: *new(big.Float).SetFloat64(0), expect: 0},
+		{name: "big.Float value +Inf → error", in: func() big.Float {
+			var f big.Float
+			f.SetInf(false)
+			return f
+		}(), expectErr: true},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := cast.ToE[time.Duration](tc.in)
+			if err != nil && !tc.expectErr {
+				t.Errorf("unexpected error: %v", err)
+			} else if err == nil && tc.expectErr {
+				t.Error("expected error, got nil")
+			} else if err != nil && !errors.Is(err, cast.Error) {
+				t.Errorf("expected cast.Error, got %T: %v", err, err)
+			} else if err == nil && result != tc.expect {
+				t.Errorf("expected %v, got %v", tc.expect, result)
+			}
+		})
+	}
+}
+
+// TestFloatDurationFloor verifies that math.Floor semantics are used for
+// float→duration, so negative fractional nanoseconds round toward -∞ rather
+// than toward zero (the behavior of a plain int64 cast).
+func TestFloatDurationFloor(t *testing.T) {
+	cases := []struct {
+		name   string
+		in     any
+		expect time.Duration
+	}{
+		{name: "float64 +1.7ns floors to 1", in: float64(1.7), expect: 1},
+		{name: "float64 -1.7ns floors to -2", in: float64(-1.7), expect: -2},
+		{name: "float64 -0.3ns floors to -1", in: float64(-0.3), expect: -1},
+		{name: "float32 -1.7ns floors to -2", in: float32(-1.7), expect: -2},
+		{name: "*big.Float -1.7ns floors to -2", in: new(big.Float).SetFloat64(-1.7), expect: -2},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := cast.ToE[time.Duration](tc.in)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if result != tc.expect {
+				t.Errorf("expected %v, got %v", tc.expect, result)
+			}
+		})
 	}
 }
