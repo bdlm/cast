@@ -20,7 +20,7 @@
 
 <a href="https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#mature"><img src="https://img.shields.io/badge/stability-mature-008000.svg" alt="Mature"></a> Code has proven satisfactory and is in wide production use, cleanup of the underlying code may cause some minor changes. Backwards-compatibility is guaranteed.
 
-<sub>This project is inspired by [`spf13/cast`](https://github.com/spf13/cast)</sub>
+<sub>This project is inspired by [`spf13/cast`](https://github.com/spf13/cast). [More about `cast`](ABOUT.md).</sub>
 
 ## Table of Contents
 
@@ -47,7 +47,7 @@
 
 A concrete example: casting `"6.789"` to `int` yields `6`, not `7`. Cast converts to `float64` first, then calls `math.Floor()` — because there is no integer that is _almost_ `7`, but there _is_ a `6` that can be contained within the original value.
 
-The primary use-case is consuming untyped or loosely typed data from external sources (YAML, TOML, JSON, API responses) without repetitive type-assertion boilerplate. [More about `cast`](ABOUT.md).
+The primary use-case is consuming untyped or loosely typed data from external sources (YAML, TOML, JSON, API responses) without repetitive type-assertion boilerplate.
 
 ## Usage
 
