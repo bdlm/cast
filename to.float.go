@@ -58,6 +58,10 @@ func toFloat[TTo float](from any, ops ops) (TTo, error) {
 		return TTo(typ), nil
 	case uintptr:
 		return TTo(typ), nil
+	case complex64:
+		return TTo(real(typ)), nil
+	case complex128:
+		return TTo(real(typ)), nil
 	case time.Time:
 		secs := float64(typ.Unix()) + float64(typ.Nanosecond())/1e9
 		return TTo(secs), nil
