@@ -79,10 +79,9 @@ cast.ToE[T](v, opts...)  // (T, error)
 
 > [!IMPORTANT]
 > **Things that may surprise you**
-> - **Float → int truncates, not rounds** — `1.9 → 1`, `-1.9 → -1`
-> - **`string` → `bool` is strict** — only `"1"`, `"t"`, `"true"` and their case variants; `"yes"`, `"on"`, etc. are not accepted
+> - **Float → int truncates, it doesn't round** — `1.9 → 1`, `-1.9 → -1`
+> - **`string` → `bool` is strict** — only `"1"`, `"t"`, `"true"` and [their case variants](https://pkg.go.dev/strconv#ParseBool); `"yes"`, `"on"`, etc. are not accepted
 > - **Negative → `uint*` errors** — use `Op{ABS, true}` to use the absolute value instead
-> - **`[]byte` → scalar targets fail** — `[]byte` is `[]uint8` (a slice), not a string
 
 **Legend:** `✓` always succeeds · `~` succeeds for valid input · `✗` always errors
 
@@ -95,12 +94,12 @@ cast.ToE[T](v, opts...)  // (T, error)
 | `uint*` (unsigned)    | ✓   | ✓   | ✓   | ✓    | ✓    | ~ˢ  | ✗    | ✗    |
 | `float*` · `complex*` | ✓   | ~²³ | ~¹² | ✓³   | ✓    | ~ˢ  | ✗    | ✗    |
 | `string`              | ~⁴  | ~⁵  | ~⁵  | ~⁵   | ✓    | ~ˡ  | ✗    | ✗    |
-| `[]byte`              | ✗   | ✗   | ✗   | ✗    | ✓⁶   | ~ᵐ  | ~ᵐ   | ✗    |
+| `[]byte` · `[]rune`   | ~   | ~   | ~   | ~    | ✓⁶   | ~ᵐ  | ~ᵐ   | ✗    |
 | `[]T` · `[N]T`        | ✗   | ✗   | ✗   | ✗    | ~⁷   | ✓   | ✓⁸   | ✗    |
-| `map[K]V`             | ✗   | ✗   | ✗   | ✗    | ~⁷   | ~ˢ  | ✓    | ~¹¹  |
-| `struct`              | ✗   | ✗   | ✗   | ✗    | ~⁷   | ~ˢ  | ✓⁹   | ~¹¹  |
+| `map[K]V`             | ✗   | ✗   | ✗   | ✗    | ~⁷   | ~ˢ  | ✓    | ~ᵇ  |
+| `struct`              | ✗   | ✗   | ✗   | ✗    | ~⁷   | ~ˢ  | ✓⁹   | ~ᵇ  |
 | `nil`                 | ✓   | ✓   | ✓   | ✓    | ✓    | ✓   | ✗    | ✗    |
-| `error` · `Stringer`  | ~¹⁰ | ~¹⁰ | ~¹⁰ | ~¹⁰  | ✓¹⁰  | ~ˢ  | ✗    | ✗    |
+| `error` · `Stringer`  | ~ᵃ | ~ᵃ | ~ᵃ | ~ᵃ  | ✓ᵃ  | ~ˢ  | ✗    | ✗    |
 | `any` / interface     | ✓   | ✓   | ✓   | ✓    | ✓    | ✓   | ✓    | ✓    |
 | Named types†          | ~   | ~   | ~   | ~    | ✓    | ~ˢ  | ✗    | ✗    |
 
@@ -120,17 +119,17 @@ cast.ToE[T](v, opts...)  // (T, error)
 
 ⁴ `string` → `bool`: only `"1"/"0"/"t"/"f"/"true"/"false"` and their case variants are accepted.\
 ⁵ `string` → numeric: parsed as `float64` via `strconv.ParseFloat`; non-numeric strings error. Float strings truncate when targeting `int*`.\
-⁶ `[]byte` → `string`: uses `string(b)` directly — not element-wise and not JSON-encoded.\
+⁶ `[]byte` and `[]rune` → `string`: uses `string(b)` / `string(r)` directly — not element-wise and not JSON-encoded. Scalar targets work the same way, via this string representation.\
 ⁷ Complex types, maps, and structs → `string`: stringified via `fmt.Sprintf("%v", v)`.
 
 **Container conversions**
 
 ⁸ `[]T`/`[N]T` → `map[K]V`: element indices (0, 1, 2 …) become map keys, cast to key type `K`.\
 ⁹ `struct` → `map[K]V`: exported field names become keys; embedded structs are inlined; nested structs recurse into nested maps when the value type is `any` or `map`.\
-¹⁰ `error`/`Stringer` → any target: calls `.Error()` or `.String()`, then parses the result the same way a plain `string` source would. Succeeds whenever the string value would succeed.\
-¹¹ `map`/`struct` → `struct`: source keys/fields matched **case-sensitively** to target exported fields. Unmatched fields retain their zero value; `STRICT` promotes mismatches to errors. Anonymous fields are promoted on both sides. Use `ToStruct[T]` / `ToStructE[T]` for arbitrary struct types.\
+ᵃ `error`/`Stringer` → any target: calls `.Error()` or `.String()`, then parses the result the same way a plain `string` source would. Succeeds whenever the string value would succeed.\
+ᵇ `map`/`struct` → `struct`: source keys/fields matched **case-sensitively** to target exported fields. Unmatched fields retain their zero value; `STRICT` promotes mismatches to errors. Anonymous fields are promoted on both sides. Use `ToStruct[T]` / `ToStructE[T]` for arbitrary struct types.\
 ˡ `string` → `[]T`: `[]byte` and `[]rune` use direct Go string conversion. All other element types attempt scalar wrap (e.g. `"42"` → `[]int{42}`); if that fails and the string looks like a JSON collection, it is decoded automatically. Pass `Op{DECODE, "json"}` to force JSON decoding first.\
-ᵐ `[]byte` is `[]uint8` and treated as a slice: elements are cast individually when converting to `[]T` or `map[K]V`.\
+ᵐ `[]byte` (`[]uint8`) and `[]rune` (`[]int32`) are treated as slices for container targets: elements are cast individually when converting to `[]T` or `map[K]V`.\
 ˢ Non-collection sources wrap as single-element slices for `[]T` targets: `42 → []int{42}`. Structs iterate exported fields; maps iterate values; `nil` produces `[zero_T]`.
 
 **Interface targets** (`error`, `fmt.Stringer`) — the source must already implement the interface; no parsing occurs. Sources that don't implement the interface always error.
