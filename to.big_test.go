@@ -290,3 +290,51 @@ func TestToEBigFloatMissingCases(t *testing.T) {
 		}
 	})
 }
+
+// TestDefaultBranchBigIntErrors verifies that types without a dedicated case
+// in toBigInt route through the default: branch (toString → SetString), and
+// that types whose string form is not a valid integer produce an error.
+func TestDefaultBranchBigIntErrors(t *testing.T) {
+	t.Run("bool → error (\"true\" is not a valid big.Int)", func(t *testing.T) {
+		_, err := cast.ToE[*big.Int](true)
+		if err == nil {
+			t.Error("expected error for bool→*big.Int, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		}
+	})
+	t.Run("complex128 → error (\"(1+2i)\" is not a valid big.Int)", func(t *testing.T) {
+		_, err := cast.ToE[*big.Int](complex(1, 2))
+		if err == nil {
+			t.Error("expected error for complex→*big.Int, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		}
+	})
+}
+
+// TestDefaultBranchBigFloatErrors verifies that types without a dedicated
+// case in toBigFloat route through default: (toString → SetString) and that
+// non-numeric string forms produce an error.
+func TestDefaultBranchBigFloatErrors(t *testing.T) {
+	t.Run("bool → error (\"true\" is not a valid big.Float)", func(t *testing.T) {
+		_, err := cast.ToE[*big.Float](true)
+		if err == nil {
+			t.Error("expected error for bool→*big.Float, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		}
+	})
+	t.Run("complex128 → error (\"(1+2i)\" is not a valid big.Float)", func(t *testing.T) {
+		_, err := cast.ToE[*big.Float](complex(1, 2))
+		if err == nil {
+			t.Error("expected error for complex→*big.Float, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		}
+	})
+}

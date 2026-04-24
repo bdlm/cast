@@ -1,6 +1,7 @@
 package cast_test
 
 import (
+	"math/big"
 	"testing"
 	"time"
 
@@ -57,5 +58,13 @@ func BenchmarkToE_time_fromInvalid(b *testing.B) {
 	// All timeFormats tried and failed — worst-case string parse.
 	for i := 0; i < b.N; i++ {
 		_, _ = cast.ToE[time.Time]("not-a-time")
+	}
+}
+
+func BenchmarkTo_time_fromBigInt(b *testing.B) {
+	src := new(big.Int).SetInt64(1718448000)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[time.Time](src)
 	}
 }

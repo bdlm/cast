@@ -1,9 +1,8 @@
 package cast
 
 import (
+	"fmt"
 	"reflect"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // toChan returns a channel of the specified reflect.Value type with a buffer of
@@ -20,7 +19,7 @@ func toChan(to reflect.Value, from any, ops ops) (any, error) {
 	if ops.hasDefault {
 		defaultVal := reflect.ValueOf(ops.defaultVal)
 		if defaultVal.IsValid() && !defaultVal.Type().AssignableTo(to.Type()) {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return defaultValue, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 		defaultValue = ops.defaultVal
 	}
@@ -29,11 +28,11 @@ func toChan(to reflect.Value, from any, ops ops) (any, error) {
 	if ops.hasLength {
 		var sizeErr error
 		if size, sizeErr = ToE[int](ops.lengthVal); sizeErr != nil {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "LENGTH", ops.lengthVal)
+			return defaultValue, fmt.Errorf(ErrorInvalidOption, "LENGTH", ops.lengthVal)
 		}
 	}
 	if size < 1 {
-		return defaultValue, errors.Errorf("invalid channel buffer size %d", size)
+		return defaultValue, fmt.Errorf("invalid channel buffer size %d", size)
 	}
 
 	// Strip local flags before element-level casts.
@@ -46,7 +45,7 @@ func toChan(to reflect.Value, from any, ops ops) (any, error) {
 	//case reflect.Map:
 	//case reflect.Pointer:
 	default:
-		return defaultValue, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
+		return defaultValue, fmt.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
 
 	case reflect.Interface:
 		returnValue, err = makeChan[interface{}](from, size, elemOps)
@@ -91,7 +90,7 @@ func toChan(to reflect.Value, from any, ops ops) (any, error) {
 	case reflect.Slice:
 		switch to.Type().Elem().Elem().Kind() {
 		default:
-			return defaultValue, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
+			return defaultValue, fmt.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
 		case reflect.Interface:
 			returnValue, err = makeChan[[]any](from, size, elemOps)
 		case reflect.Bool:
@@ -133,11 +132,11 @@ func toChan(to reflect.Value, from any, ops ops) (any, error) {
 	// Funcs — chan Func[T]
 	case reflect.Func:
 		if to.Type().Elem().NumOut() < 1 {
-			return defaultValue, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
+			return defaultValue, fmt.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
 		}
 		switch to.Type().Elem().Out(0).Kind() {
 		default:
-			return defaultValue, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
+			return defaultValue, fmt.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
 		case reflect.Interface:
 			returnValue, err = makeChan[Func[any]](from, size, elemOps)
 		case reflect.Bool:
@@ -177,7 +176,7 @@ func toChan(to reflect.Value, from any, ops ops) (any, error) {
 		case reflect.Slice:
 			switch to.Type().Elem().Out(0).Elem().Kind() {
 			default:
-				return defaultValue, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
+				return defaultValue, fmt.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
 			case reflect.Interface:
 				returnValue, err = makeChan[Func[[]any]](from, size, elemOps)
 			case reflect.Bool:
@@ -221,7 +220,7 @@ func toChan(to reflect.Value, from any, ops ops) (any, error) {
 	case reflect.Chan:
 		switch to.Type().Elem().Elem().Kind() {
 		default:
-			return defaultValue, errors.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
+			return defaultValue, fmt.Errorf("unable to cast %#.10v of type %T to %T", from, from, to.Interface())
 		case reflect.Interface:
 			returnValue, err = makeChan[chan any](from, size, elemOps)
 		case reflect.Bool:

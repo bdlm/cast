@@ -1,9 +1,8 @@
 package cast
 
 import (
+	"fmt"
 	"net/url"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // toURL converts v to *url.URL.
@@ -19,14 +18,14 @@ func toURL(v any, ops ops) (any, error) {
 	if ops.hasDefault {
 		u, ok := ops.defaultVal.(*url.URL)
 		if !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return ret, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 		ret = u
 	}
 
 	switch val := v.(type) {
 	case nil:
-		return ret, errors.Errorf(ErrorStrUnableToCast, v, v, (*url.URL)(nil))
+		return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*url.URL)(nil))
 	case *url.URL:
 		return val, nil
 	case url.URL:
@@ -34,16 +33,16 @@ func toURL(v any, ops ops) (any, error) {
 	case string:
 		u, err := url.Parse(val)
 		if err != nil {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, (*url.URL)(nil))
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*url.URL)(nil))
 		}
 		return u, nil
 	default:
 		if s, err := toString(v, ops.Delete(DEFAULT)); err == nil {
-			if u, urlErr := url.Parse(s.(string)); urlErr == nil {
+			if u, urlErr := url.Parse(s); urlErr == nil {
 				return u, nil
 			}
 		}
 	}
 
-	return ret, errors.Errorf(ErrorStrUnableToCast, v, v, (*url.URL)(nil))
+	return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*url.URL)(nil))
 }

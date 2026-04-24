@@ -48,3 +48,15 @@ func BenchmarkToE_bool_fromInvalid(b *testing.B) {
 		_, _ = cast.ToE[bool]("not-a-bool")
 	}
 }
+
+func BenchmarkTo_bool_fromComplex128(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[bool](complex128(1 + 0i))
+	}
+}
+
+func BenchmarkTo_bool_fromByteSlice(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[bool]([]byte("true"))
+	}
+}

@@ -106,6 +106,33 @@ func TestToEURLDefaultCase(t *testing.T) {
 	})
 }
 
+// TestToEURLStringerDefaultBranch validates that fmt.Stringer values reach
+// toURL via the default: branch (toString → url.Parse).
+func TestToEURLStringerDefaultBranch(t *testing.T) {
+	t.Run("Stringer with valid URL succeeds", func(t *testing.T) {
+		result, err := cast.ToE[*url.URL](testStringer{"https://stringer.example.com"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result == nil || result.Host != "stringer.example.com" {
+			t.Errorf("expected host stringer.example.com, got %v", result)
+		}
+	})
+	// url.Parse accepts almost any string as a relative reference, so even
+	// clearly-not-a-URL strings succeed. This is documented behavior.
+	t.Run("Stringer with non-URL string produces relative URL (url.Parse is permissive)", func(t *testing.T) {
+		result, err := cast.ToE[*url.URL](testStringer{"not a url"})
+		// url.Parse does not error on this input; it returns a URL with spaces
+		// or a path component. The test just asserts no panic and non-nil result.
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result == nil {
+			t.Error("expected non-nil URL for permissive url.Parse input")
+		}
+	})
+}
+
 func TestToEURLStructField(t *testing.T) {
 	type Endpoint struct {
 		URL  *url.URL

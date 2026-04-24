@@ -121,3 +121,38 @@ func BenchmarkTo_namedSliceString_fromInts_100(b *testing.B) {
 		_ = cast.To[NamedStringSlice](intSlice100)
 	}
 }
+
+var benchMapStrInt5 = map[string]int{"a": 1, "b": 2, "c": 3, "d": 4, "e": 5}
+
+func BenchmarkTo_sliceString_fromMap(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[[]string](benchMapStrInt5)
+	}
+}
+
+type benchSlicePoint struct{ X, Y int }
+
+var benchSliceStruct = benchSlicePoint{X: 1, Y: 2}
+
+func BenchmarkTo_sliceInt_fromStruct(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[[]int](benchSliceStruct)
+	}
+}
+
+func BenchmarkTo_sliceInt_decodeJSON_10(b *testing.B) {
+	// JSON string → []int via DECODE=json; measures JSON decode + element conversion.
+	src := `[1,2,3,4,5,6,7,8,9,10]`
+	for i := 0; i < b.N; i++ {
+		_, _ = cast.ToE[[]int](src, cast.Op{Flag: cast.DECODE, Val: "json"})
+	}
+}
+
+func BenchmarkTo_sliceInt_fromStrings_1000(b *testing.B) {
+	src := makeStrSlice(1000)
+	b.SetBytes(int64(len(src)))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[[]int](src)
+	}
+}

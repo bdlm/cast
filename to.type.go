@@ -1,15 +1,14 @@
 package cast
 
 import (
+	"fmt"
 	"strings"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // Sentinel errors and reusable format strings used throughout the package.
 var (
-	Error                    = errors.Errorf("unable to cast value")
-	ErrorSignedToUnsigned    = errors.Wrap(Error, "cannot cast signed value to unsigned integer")
+	Error                    = fmt.Errorf("unable to cast value")
+	ErrorSignedToUnsigned    = fmt.Errorf("cannot cast signed value to unsigned integer")
 	ErrorInvalidOption       = "invalid %s value '%v'"
 	ErrorStrErrorCastingFunc = "error casting %T to %T during function generation"
 	ErrorStrUnableToCast     = "unable to cast %#.10v of type %T to %T"

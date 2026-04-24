@@ -1,10 +1,9 @@
 package cast
 
 import (
+	"fmt"
 	"reflect"
 	"slices"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // toSlice returns a slice containing the specified reflect.Value type
@@ -21,7 +20,7 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 	if ops.hasDefault {
 		defaultVal := reflect.ValueOf(ops.defaultVal)
 		if defaultVal.IsValid() && !defaultVal.Type().AssignableTo(to.Type()) {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return defaultValue, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 		defaultValue = ops.defaultVal
 	}
@@ -30,11 +29,11 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 	if ops.hasLength {
 		var sizeErr error
 		if size, sizeErr = ToE[int](ops.lengthVal); sizeErr != nil {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "LENGTH", ops.lengthVal)
+			return defaultValue, fmt.Errorf(ErrorInvalidOption, "LENGTH", ops.lengthVal)
 		}
 	}
 	if size < 0 {
-		return defaultValue, errors.Errorf("invalid array length %d", size)
+		return defaultValue, fmt.Errorf("invalid array length %d", size)
 	}
 
 	// Read local flags then strip them for element-level casts.
@@ -95,9 +94,9 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 				if decoded, ok := unmarshalCollection(s); ok {
 					return toSlice(to, decoded, ops)
 				}
-				return defaultValue, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
+				return defaultValue, fmt.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
 			} else {
-				return defaultValue, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
+				return defaultValue, fmt.Errorf(ErrorStrUnableToCast, val, val, to.Interface())
 			}
 		}
 		if uniqueVals {
@@ -204,12 +203,25 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 	default:
 		// Named slice type (e.g. type MyInts []int): use reflection for slice
 		// construction since the concrete type is unknown at compile time.
-		// For scalar element kinds, call castToKind directly — the same converter
-		// the concrete switch uses above — to skip the castToType dispatch layer.
-		// The scalar check is hoisted before the loop so it runs once, not per element.
 		elemType := to.Type().Elem()
 		elemKind := elemType.Kind()
 		scalarElem := isScalarKind(elemKind)
+
+		// For named slice types whose element is an unnamed base scalar
+		// (PkgPath == ""), redirect through the concrete type-switch path
+		// above and convert the result. The Convert is O(1): named and
+		// unnamed slices share the backing array.
+		if scalarElem && elemType.PkgPath() == "" {
+			baseTarget := reflect.Zero(reflect.SliceOf(elemType))
+			raw, err := toSlice(baseTarget, val, ops.Delete(DEFAULT))
+			if err != nil {
+				return defaultValue, err
+			}
+			return reflect.ValueOf(raw).Convert(to.Type()).Interface(), nil
+		}
+
+		// Non-base-scalar element types (named scalars like type MyInt int,
+		// structs, pointers, etc.): use the general reflection path.
 		sliceVal := reflect.MakeSlice(to.Type(), 0, size)
 		for a := 0; a < slice.Len(); a++ {
 			elm := slice.Index(a).Interface()
@@ -340,8 +352,7 @@ func toSlice(to reflect.Value, val any, ops ops) (any, error) {
 			if err != nil {
 				return defaultValue, err
 			}
-			s, _ := tval.(string)
-			result = append(r, s)
+			result = append(r, tval)
 		}
 	}
 

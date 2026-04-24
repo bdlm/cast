@@ -11,6 +11,7 @@ import (
 	"github.com/bdlm/cast/v2"
 )
 
+
 func TestToEDuration(t *testing.T) {
 	cases := []struct {
 		name      string
@@ -216,6 +217,41 @@ func TestBigIntToDuration(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestDefaultBranchToDuration verifies that source types without a dedicated
+// case in toDuration route through the default: branch (toString → ParseDuration).
+// Types whose string form is not a valid duration string must return an error.
+func TestDefaultBranchToDuration(t *testing.T) {
+	t.Run("time.Time → error (not a duration string)", func(t *testing.T) {
+		// time.Time implements fmt.Stringer; its String() form is not parseable
+		// by time.ParseDuration, so toDuration must return an error.
+		_, err := cast.ToE[time.Duration](time.Now())
+		if err == nil {
+			t.Error("expected error for time.Time→time.Duration, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		}
+	})
+	t.Run("bool → error (not a duration string)", func(t *testing.T) {
+		_, err := cast.ToE[time.Duration](true)
+		if err == nil {
+			t.Error("expected error for bool→time.Duration, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		}
+	})
+	t.Run("complex128 → error (not a duration string)", func(t *testing.T) {
+		_, err := cast.ToE[time.Duration](complex(1, 2))
+		if err == nil {
+			t.Error("expected error for complex→time.Duration, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		}
+	})
 }
 
 // TestFloatDurationFloor verifies that math.Floor semantics are used for

@@ -14,7 +14,7 @@ func ExampleToE_string() {
 func ExampleToE_error_with_default() {
 	v, e := cast.ToE[int]("Hi!", cast.Op{cast.DEFAULT, 10})
 	fmt.Printf("%#v (%T), %v", v, v, e)
-	// Output: 10 (int), unable to cast "Hi!" of type string to int
+	// Output: 10 (int), strconv.ParseFloat: parsing "Hi!": invalid syntax: strconv.ParseFloat: parsing "Hi!": invalid syntax: unable to cast "Hi!" of type string to int
 }
 
 func ExampleTo_string() {
@@ -38,7 +38,7 @@ func ExampleToE_int() {
 func ExampleToE_uint_err() {
 	v, e := cast.ToE[uint]("-1")
 	fmt.Printf("%v (%T), %v", v, v, e)
-	// Output: 0 (uint), unable to cast "-1" of type string to uint
+	// Output: 0 (uint), cannot cast signed value to unsigned integer: unable to cast "-1" of type string to uint
 }
 
 func ExampleToE_uint_abs() {

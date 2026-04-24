@@ -1,9 +1,8 @@
 package cast
 
 import (
+	"fmt"
 	"reflect"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // toMap returns a map of the specified reflect.Value type built from from.
@@ -18,14 +17,14 @@ func toMap(to reflect.Value, from any, ops ops) (any, error) {
 	if ops.hasDefault {
 		defaultVal := reflect.ValueOf(ops.defaultVal)
 		if defaultVal.IsValid() && !defaultVal.Type().AssignableTo(to.Type()) {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return ret, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 		ret = ops.defaultVal
 	}
 
 	fromVal := reflect.Indirect(reflect.ValueOf(from))
 	if !fromVal.IsValid() {
-		return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+		return ret, fmt.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 	}
 
 	switch fromVal.Kind() {
@@ -36,7 +35,7 @@ func toMap(to reflect.Value, from any, ops ops) (any, error) {
 				return toMap(to, decoded, ops)
 			}
 		}
-		return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+		return ret, fmt.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 	case reflect.Map:
 		result, err := mapFromMap(to, fromVal, ops)
 		if err != nil {
@@ -56,7 +55,7 @@ func toMap(to reflect.Value, from any, ops ops) (any, error) {
 		}
 		return result, nil
 	default:
-		return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+		return ret, fmt.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 	}
 }
 
@@ -75,7 +74,7 @@ func mapFromMap(to reflect.Value, src reflect.Value, ops ops) (any, error) {
 			return nil, err
 		}
 		if dupKeyErr && targetMap.MapIndex(castKey).IsValid() {
-			return nil, errors.Errorf("duplicate key %v", castKey.Interface())
+			return nil, fmt.Errorf("duplicate key %v", castKey.Interface())
 		}
 		castVal, err := castToType(src.MapIndex(srcKey).Interface(), valType, elemOps)
 		if err != nil {
@@ -140,7 +139,7 @@ func collectStructFields(
 		rawVal, canExtract := extractFieldValue(fieldVal)
 		if !canExtract {
 			if strict {
-				return errors.Errorf("cannot extract unexported non-scalar field %q (%v)", field.Name, fieldVal.Kind())
+				return fmt.Errorf("cannot extract unexported non-scalar field %q (%v)", field.Name, fieldVal.Kind())
 			}
 			continue
 		}
@@ -152,7 +151,7 @@ func collectStructFields(
 		castKey, err := castToType(key, keyType, ops)
 		if err != nil {
 			if strict {
-				return errors.Errorf("cannot cast field name %q to map key: %v", key, err)
+				return fmt.Errorf("cannot cast field name %q to map key: %v", key, err)
 			}
 			continue
 		}
@@ -227,7 +226,7 @@ func mapFromSlice(to reflect.Value, src reflect.Value, ops ops) (any, error) {
 	for i := 0; i < src.Len(); i++ {
 		castKey, err := castToType(i, keyType, elemOps)
 		if err != nil {
-			return nil, errors.Errorf("cannot cast index %d to map key type %v: %v", i, keyType, err)
+			return nil, fmt.Errorf("cannot cast index %d to map key type %v: %v", i, keyType, err)
 		}
 		elem := src.Index(i)
 		var elemIface any
@@ -236,7 +235,7 @@ func mapFromSlice(to reflect.Value, src reflect.Value, ops ops) (any, error) {
 		} else {
 			val, ok := extractFieldValue(elem)
 			if !ok {
-				return nil, errors.Errorf("cannot extract slice element at index %d", i)
+				return nil, fmt.Errorf("cannot extract slice element at index %d", i)
 			}
 			elemIface = val
 		}

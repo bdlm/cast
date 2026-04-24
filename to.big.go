@@ -1,10 +1,9 @@
 package cast
 
 import (
+	"fmt"
 	"math/big"
 	"time"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // toBigInt converts v to *big.Int.
@@ -22,14 +21,14 @@ func toBigInt(v any, ops ops) (any, error) {
 	if ops.hasDefault {
 		i, ok := ops.defaultVal.(*big.Int)
 		if !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return ret, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 		ret = i
 	}
 
 	switch val := v.(type) {
 	case nil:
-		return ret, errors.Errorf(ErrorStrUnableToCast, v, v, (*big.Int)(nil))
+		return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*big.Int)(nil))
 	case *big.Int:
 		return new(big.Int).Set(val), nil
 	case big.Int:
@@ -43,7 +42,7 @@ func toBigInt(v any, ops ops) (any, error) {
 	case string:
 		i := new(big.Int)
 		if _, ok := i.SetString(val, 0); !ok {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, (*big.Int)(nil))
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*big.Int)(nil))
 		}
 		return i, nil
 	case int:
@@ -79,13 +78,13 @@ func toBigInt(v any, ops ops) (any, error) {
 	default:
 		if s, err := toString(v, ops.Delete(DEFAULT)); err == nil {
 			i := new(big.Int)
-			if _, ok := i.SetString(s.(string), 0); ok {
+			if _, ok := i.SetString(s, 0); ok {
 				return i, nil
 			}
 		}
 	}
 
-	return ret, errors.Errorf(ErrorStrUnableToCast, v, v, (*big.Int)(nil))
+	return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*big.Int)(nil))
 }
 
 // toBigFloat converts v to *big.Float.
@@ -103,14 +102,14 @@ func toBigFloat(v any, ops ops) (any, error) {
 	if ops.hasDefault {
 		f, ok := ops.defaultVal.(*big.Float)
 		if !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return ret, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 		ret = f
 	}
 
 	switch val := v.(type) {
 	case nil:
-		return ret, errors.Errorf(ErrorStrUnableToCast, v, v, (*big.Float)(nil))
+		return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*big.Float)(nil))
 	case *big.Float:
 		return new(big.Float).Copy(val), nil
 	case big.Float:
@@ -122,7 +121,7 @@ func toBigFloat(v any, ops ops) (any, error) {
 	case string:
 		f := new(big.Float)
 		if _, ok := f.SetString(val); !ok {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, (*big.Float)(nil))
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*big.Float)(nil))
 		}
 		return f, nil
 	case int:
@@ -157,11 +156,11 @@ func toBigFloat(v any, ops ops) (any, error) {
 	default:
 		if s, err := toString(v, ops.Delete(DEFAULT)); err == nil {
 			f := new(big.Float)
-			if _, ok := f.SetString(s.(string)); ok {
+			if _, ok := f.SetString(s); ok {
 				return f, nil
 			}
 		}
 	}
 
-	return ret, errors.Errorf(ErrorStrUnableToCast, v, v, (*big.Float)(nil))
+	return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*big.Float)(nil))
 }

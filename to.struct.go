@@ -1,11 +1,10 @@
 package cast
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"unsafe"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // fieldKey returns the source-map key to use when matching this struct field.
@@ -58,16 +57,16 @@ func ToStructE[T any](from any, ops ...Op) (T, error) {
 	var zero T
 	to := reflect.ValueOf(&zero).Elem()
 	if to.Kind() != reflect.Struct {
-		return zero, errors.WrapE(Error, errors.Errorf("ToStructE requires a struct target type, got %T", zero))
+		return zero, fmt.Errorf("%w, %w", Error, fmt.Errorf("ToStructE requires a struct target type, got %T", zero))
 	}
 	options := parseOps(ops)
 	raw, err := toStruct(to, from, options)
 	if err != nil {
-		return zero, errors.WrapE(Error, err)
+		return zero, fmt.Errorf("%w, %w", Error, err)
 	}
 	result, ok := raw.(T)
 	if !ok {
-		return zero, errors.WrapE(Error, errors.Errorf("cast failed: returned %T, want %T", raw, zero))
+		return zero, fmt.Errorf("%w, %w", Error, fmt.Errorf("cast failed: returned %T, want %T", raw, zero))
 	}
 	return result, nil
 }
@@ -111,7 +110,7 @@ func toStruct(to reflect.Value, from any, ops ops) (any, error) {
 		if ops.strict {
 			for k := range srcFields {
 				if !usedKeys[k] {
-					return defaultVal, errors.Errorf("source key %q has no matching field in %v", k, to.Type())
+					return defaultVal, fmt.Errorf("source key %q has no matching field in %v", k, to.Type())
 				}
 			}
 		}
@@ -121,7 +120,7 @@ func toStruct(to reflect.Value, from any, ops ops) (any, error) {
 	// General path: normalize source to map[string]any then hydrate.
 	srcMap, err := normalizeToStringMap(from)
 	if err != nil {
-		return defaultVal, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+		return defaultVal, fmt.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 	}
 
 	var usedKeys map[string]bool
@@ -139,7 +138,7 @@ func toStruct(to reflect.Value, from any, ops ops) (any, error) {
 		// here as unused keys and will not trigger a STRICT error.
 		for k := range srcMap {
 			if !usedKeys[k] {
-				return defaultVal, errors.Errorf("source key %q has no matching field in %v", k, to.Type())
+				return defaultVal, fmt.Errorf("source key %q has no matching field in %v", k, to.Type())
 			}
 		}
 	}
@@ -194,7 +193,7 @@ func hydrateStruct(result reflect.Value, srcMap map[string]any, usedKeys map[str
 		raw, ok := srcMap[key]
 		if !ok {
 			if ops.strict && field.IsExported() {
-				return errors.Errorf("no source key for required field %q", field.Name)
+				return fmt.Errorf("no source key for required field %q", field.Name)
 			}
 			continue
 		}
@@ -205,7 +204,7 @@ func hydrateStruct(result reflect.Value, srcMap map[string]any, usedKeys map[str
 		castVal, err := castToType(raw, field.Type, ops)
 		if err != nil {
 			if ops.strict {
-				return errors.Errorf("field %q: %v", field.Name, err)
+				return fmt.Errorf("field %q: %v", field.Name, err)
 			}
 			continue
 		}
@@ -262,7 +261,7 @@ func collectSourceFieldValues(dst map[string]any, v reflect.Value, private bool)
 //   - struct or *struct (exported fields become keys; embedded fields inlined)
 func normalizeToStringMap(from any) (map[string]any, error) {
 	if from == nil {
-		return nil, errors.Errorf("cannot convert nil to struct fields")
+		return nil, fmt.Errorf("cannot convert nil to struct fields")
 	}
 	if mapVal, ok := from.(map[string]any); ok {
 		return mapVal, nil
@@ -277,7 +276,7 @@ func normalizeToStringMap(from any) (map[string]any, error) {
 
 	v := reflect.Indirect(reflect.ValueOf(from))
 	if !v.IsValid() {
-		return nil, errors.Errorf("cannot convert %T to string map", from)
+		return nil, fmt.Errorf("cannot convert %T to string map", from)
 	}
 
 	switch v.Kind() {
@@ -286,7 +285,7 @@ func normalizeToStringMap(from any) (map[string]any, error) {
 		for _, key := range v.MapKeys() {
 			k, err := ToE[string](key.Interface())
 			if err != nil {
-				return nil, errors.Errorf("map key %v cannot be cast to string: %v", key.Interface(), err)
+				return nil, fmt.Errorf("map key %v cannot be cast to string: %v", key.Interface(), err)
 			}
 			if elem := v.MapIndex(key); elem.CanInterface() {
 				result[k] = elem.Interface()
@@ -298,7 +297,7 @@ func normalizeToStringMap(from any) (map[string]any, error) {
 		collectExportedFields(result, v)
 		return result, nil
 	default:
-		return nil, errors.Errorf("cannot convert %T (kind %v) to struct fields", from, v.Kind())
+		return nil, fmt.Errorf("cannot convert %T (kind %v) to struct fields", from, v.Kind())
 	}
 }
 

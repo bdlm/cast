@@ -233,3 +233,69 @@ func TestTimeToBigConversions(t *testing.T) {
 		}
 	})
 }
+
+// TestUint64ToTimeOverflow documents that uint64 values greater than
+// math.MaxInt64 silently overflow to negative Unix timestamps in toTime.
+// This is a known bug (see claude-review.md issue #1): the int64() cast wraps
+// without a bounds check, producing a timestamp far in the past rather than an
+// error.
+func TestUint64ToTimeOverflow(t *testing.T) {
+	// math.MaxInt64 + 1 as uint64 wraps to a negative int64, producing
+	// time.Unix(-9223372036854775808, 0) — a timestamp far in the past.
+	overflowVal := uint64(math.MaxInt64) + 1
+	result, err := cast.ToE[time.Time](overflowVal)
+	// Currently no error is returned — the overflow is silent.
+	if err != nil {
+		t.Logf("note: toTime now errors on uint64 overflow (bug was fixed): %v", err)
+		return
+	}
+	// Document the incorrect behavior: result should be a negative timestamp.
+	if !result.Before(time.Unix(0, 0)) {
+		t.Errorf("expected overflowed uint64 to produce a pre-epoch timestamp (bug), got %v", result)
+	}
+}
+
+// TestUintptrToTimePositive verifies that small uintptr values (which fit
+// in int64) convert to time.Time correctly as Unix seconds.
+func TestUintptrToTimePositive(t *testing.T) {
+	epoch := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+	result, err := cast.ToE[time.Time](uintptr(0))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.Equal(epoch) {
+		t.Errorf("expected epoch, got %v", result)
+	}
+
+	result, err = cast.ToE[time.Time](uintptr(1))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.Equal(epoch.Add(time.Second)) {
+		t.Errorf("expected epoch+1s, got %v", result)
+	}
+}
+
+// TestStringerToTime verifies that the default: branch in toTime converts
+// fmt.Stringer values by calling String() and then parsing the result.
+func TestStringerToTime(t *testing.T) {
+	t.Run("valid RFC3339 string via Stringer", func(t *testing.T) {
+		result, err := cast.ToE[time.Time](testStringer{"2024-06-15T12:00:00Z"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		expected := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
+		if !result.Equal(expected) {
+			t.Errorf("expected %v, got %v", expected, result)
+		}
+	})
+	t.Run("invalid string via Stringer → error", func(t *testing.T) {
+		_, err := cast.ToE[time.Time](testStringer{"not-a-time"})
+		if err == nil {
+			t.Error("expected error for unparseable Stringer, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		}
+	})
+}

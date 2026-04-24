@@ -2,14 +2,13 @@ package cast
 
 import (
 	"encoding"
+	"fmt"
 	"math/big"
 	"net"
 	"net/url"
 	"reflect"
 	"regexp"
 	"time"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // namedConverters maps specific reflect.Types to their dedicated converter.
@@ -32,11 +31,11 @@ var namedConverters = map[reflect.Type]func(any, ops) (any, error){
 // creating a cycle through the converter functions stored in that map.
 // Keep in sync with namedConverters above.
 var namedStructTypes = map[reflect.Type]struct{}{
-	reflect.TypeOf(time.Time{}):      {},
-	reflect.TypeOf(big.Int{}):        {},
-	reflect.TypeOf(big.Float{}):      {},
-	reflect.TypeOf(url.URL{}):        {},
-	reflect.TypeOf(regexp.Regexp{}):  {},
+	reflect.TypeOf(time.Time{}):     {},
+	reflect.TypeOf(big.Int{}):       {},
+	reflect.TypeOf(big.Float{}):     {},
+	reflect.TypeOf(url.URL{}):       {},
+	reflect.TypeOf(regexp.Regexp{}): {},
 }
 
 // rawToValue converts the (raw, err) pair returned by a named-type converter
@@ -118,14 +117,13 @@ func castToKind(v any, kind reflect.Kind, ops ops) (reflect.Value, error) {
 		r, err := toComplex[complex128](v, ops)
 		return reflect.ValueOf(r), err
 	case reflect.String:
-		r, err := toString(v, ops)
+		s, err := toString(v, ops)
 		if err != nil {
 			return reflect.Value{}, err
 		}
-		s, _ := r.(string)
 		return reflect.ValueOf(s), nil
 	}
-	return reflect.Value{}, errors.Errorf("unsupported kind %v", kind)
+	return reflect.Value{}, fmt.Errorf("unsupported kind %v", kind)
 }
 
 // castToType casts v to the type t and returns the result as a reflect.Value.
@@ -145,7 +143,7 @@ func castToType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 		}
 		src := reflect.ValueOf(v)
 		if !src.Type().AssignableTo(t) {
-			return reflect.Value{}, errors.Errorf(ErrorStrUnableToCast, v, v, t)
+			return reflect.Value{}, fmt.Errorf(ErrorStrUnableToCast, v, v, t)
 		}
 		return src, nil
 	case reflect.Map:
@@ -157,7 +155,7 @@ func castToType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 	case reflect.Func:
 		// Only zero-arg, one-return functions are supported (matches Func[T]).
 		if t.NumIn() != 0 || t.NumOut() != 1 {
-			return reflect.Value{}, errors.Errorf("unsupported func type %v", t)
+			return reflect.Value{}, fmt.Errorf("unsupported func type %v", t)
 		}
 		retVal, err := castToType(v, t.Out(0), ops.Global())
 		if err != nil {
@@ -174,10 +172,10 @@ func castToType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 		if ops.hasLength {
 			s, sErr := ToE[int](ops.lengthVal)
 			if sErr != nil {
-				return reflect.Value{}, errors.Errorf(ErrorInvalidOption, "LENGTH", ops.lengthVal)
+				return reflect.Value{}, fmt.Errorf(ErrorInvalidOption, "LENGTH", ops.lengthVal)
 			}
 			if s < 1 {
-				return reflect.Value{}, errors.Errorf("invalid channel buffer size %d", s)
+				return reflect.Value{}, fmt.Errorf("invalid channel buffer size %d", s)
 			}
 			size = s
 		}
@@ -209,7 +207,7 @@ func castToType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 		if result.Type().ConvertibleTo(t) {
 			return result.Convert(t), nil
 		}
-		return reflect.Value{}, errors.Errorf("cannot convert %v to %v", result.Type(), t)
+		return reflect.Value{}, fmt.Errorf("cannot convert %v to %v", result.Type(), t)
 	}
 }
 

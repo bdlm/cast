@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // looksLikeCollection is a cheap syntactic pre-check that reports whether s
@@ -66,7 +64,7 @@ func tryDecodeJSON(val any, ops ops) (any, bool, error) {
 	}
 	var decoded any
 	if err := json.Unmarshal([]byte(srcStr), &decoded); err != nil {
-		return nil, false, errors.Errorf("DECODE=json: unable to decode %#.10v as JSON: %v", val, err)
+		return nil, false, fmt.Errorf("DECODE=json: unable to decode %#.10v as JSON: %v", val, err)
 	}
 	return decoded, true, nil
 }

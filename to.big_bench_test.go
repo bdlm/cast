@@ -3,9 +3,12 @@ package cast_test
 import (
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/bdlm/cast/v2"
 )
+
+var benchBigTime = time.Date(2024, 6, 15, 12, 0, 0, 500000000, time.UTC)
 
 func BenchmarkTo_bigInt_fromString(b *testing.B) {
 	for i := 0; i < b.N; i++ {
@@ -50,5 +53,24 @@ func BenchmarkTo_bigFloat_fromBigFloat(b *testing.B) {
 func BenchmarkToE_bigInt_fromInvalid(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = cast.ToE[*big.Int]("not-a-number")
+	}
+}
+
+func BenchmarkTo_bigInt_fromTime(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[*big.Int](benchBigTime)
+	}
+}
+
+func BenchmarkTo_bigFloat_fromTime(b *testing.B) {
+	// time.Time → *big.Float preserves fractional seconds.
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[*big.Float](benchBigTime)
+	}
+}
+
+func BenchmarkTo_bigInt_fromFloat64(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[*big.Int](float64(3.14))
 	}
 }

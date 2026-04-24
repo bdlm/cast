@@ -1,13 +1,12 @@
 package cast
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // toFloat casts an interface to a float type.
@@ -20,7 +19,7 @@ func toFloat[TTo float](from any, ops ops) (TTo, error) {
 
 	if ops.hasDefault {
 		if defaultValue, ok = ops.defaultVal.(TTo); !ok {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return defaultValue, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
 
@@ -70,8 +69,18 @@ func toFloat[TTo float](from any, ops ops) (TTo, error) {
 	case string:
 		result, err := strToFloat[TTo](typ)
 		if err != nil {
-			if decoded, ok, _ := tryDecodeJSON(typ, ops); ok {
-				return toFloat[TTo](decoded, ops.Delete(DECODE))
+			if ops.hasDecode && ops.decodeVal == "json" {
+				// Fast path: unmarshal into typed targets instead of any to avoid
+				// the boxing overhead of tryDecodeJSON. JSON strings ("42") decode
+				// into a Go string; JSON numbers (42) decode into json.Number.
+				var s string
+				if json.Unmarshal([]byte(typ), &s) == nil {
+					return toFloat[TTo](s, ops.Delete(DECODE))
+				}
+				var n json.Number
+				if json.Unmarshal([]byte(typ), &n) == nil {
+					return toFloat[TTo](string(n), ops.Delete(DECODE))
+				}
 			}
 			return defaultValue, err
 		}
@@ -79,12 +88,12 @@ func toFloat[TTo float](from any, ops ops) (TTo, error) {
 	}
 
 	if s, err := toString(from, ops.Delete(DEFAULT)); err == nil {
-		result, e := toFloat[TTo](s.(string), ops)
+		result, e := toFloat[TTo](s, ops)
 		if e == nil {
 			return result, nil
 		}
 	}
-	return defaultValue, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0))
+	return defaultValue, fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0))
 }
 
 // strToFloat converts a string to a float type. On initial parse failure it
@@ -108,7 +117,7 @@ func strToFloat[TTo float](from string) (TTo, error) {
 		)
 		val2, e := strconv.ParseFloat(stripped, bitSize)
 		if e != nil {
-			err = errors.WrapE(err, e)
+			err = fmt.Errorf("%w: %v", err, e)
 			return TTo(0), err
 		}
 		val = val2

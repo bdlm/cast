@@ -1,11 +1,10 @@
 package cast
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 	"time"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // toTime converts v to time.Time.
@@ -27,31 +26,31 @@ func toTime(v any, ops ops) (any, error) {
 	if ops.hasDefault {
 		defaultVal, ok := ops.defaultVal.(time.Time)
 		if !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return ret, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 		ret = defaultVal
 	}
 
 	switch val := v.(type) {
 	case nil:
-		return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+		return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 	case time.Time:
 		return val, nil
 	case *time.Time:
 		if val == nil {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
 		return *val, nil
 	case string:
 		t, ok := parseTimeString(val, ops.formatVal)
 		if !ok {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
 		return t, nil
 	case []byte:
 		t, ok := parseTimeString(string(val), ops.formatVal)
 		if !ok {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
 		return t, nil
 	case int:
@@ -83,53 +82,53 @@ func toTime(v any, ops ops) (any, error) {
 		return time.Unix(int64(val), int64((val-math.Floor(val))*1e9)).UTC(), nil
 	case *big.Int:
 		if val == nil || !val.IsInt64() {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
 		return time.Unix(val.Int64(), 0).UTC(), nil
 	case big.Int:
 		if !val.IsInt64() {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
 		return time.Unix(val.Int64(), 0).UTC(), nil
 	case *big.Float:
 		if val == nil || val.IsInf() {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
 		f64, _ := val.Float64()
 		if math.IsInf(f64, 0) || math.IsNaN(f64) {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
 		return time.Unix(int64(f64), int64((f64-math.Floor(f64))*1e9)).UTC(), nil
 	case big.Float:
 		if val.IsInf() {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
 		f64, _ := val.Float64()
 		if math.IsInf(f64, 0) || math.IsNaN(f64) {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
 		return time.Unix(int64(f64), int64((f64-math.Floor(f64))*1e9)).UTC(), nil
 	default:
 		if s, err := toString(v, ops.Delete(DEFAULT)); err == nil {
-			return toTime(s.(string), ops)
+			return toTime(s, ops)
 		}
 	}
 
-	return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
+	return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 }
 
 // timeFormats is the ordered list of formats tried when parsing a string into
 // time.Time. Formats with time zone information are tried first; date-only last.
 var timeFormats = []string{
 	// Commonly used formats — tz-aware first, then date-only.
-	time.RFC3339Nano,
 	time.RFC3339,
+	time.RFC3339Nano,
+	time.DateOnly, // "2006-01-02"
 	time.DateTime, // "2006-01-02 15:04:05"
 	time.RFC1123Z, // RFC1123 with numeric zone
 	time.RFC1123,
 	time.RFC822Z,
 	time.RFC822,
-	time.DateOnly, // "2006-01-02"
 
 	// Other formats defined in the time package, in no particular order.
 	time.Layout, // The reference time, in numerical order.

@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // toString casts an interface to a string type.
@@ -13,13 +11,13 @@ import (
 // Options:
 //   - DEFAULT: string, default return value on error.
 //   - JSON: bool, encode the string representation as a JSON string literal.
-func toString(from any, ops ops) (any, error) {
-	var ret any
+func toString(from any, ops ops) (string, error) {
+	var ret string
 	var ok bool
 
 	if ops.hasDefault {
 		if ret, ok = ops.defaultVal.(string); !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return ret, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
 
@@ -30,7 +28,7 @@ func toString(from any, ops ops) (any, error) {
 		}
 		b, mErr := json.Marshal(s)
 		if mErr != nil {
-			return ret, errors.Wrap(mErr, "JSON encoding failed")
+			return ret, fmt.Errorf("%w: JSON encoding failed", mErr)
 		}
 		return string(b), nil
 	}
@@ -59,7 +57,7 @@ func toString(from any, ops ops) (any, error) {
 		}
 		b, err := json.Marshal(val)
 		if err != nil {
-			return ret, errors.Wrap(err, "JSON encoding failed")
+			return ret, fmt.Errorf("%w: JSON encoding failed", err)
 		}
 		return string(b), nil
 	}

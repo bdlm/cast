@@ -47,3 +47,41 @@ func BenchmarkTo_map_fromSlice_to_intStr(b *testing.B) {
 		_, _ = cast.ToE[map[int]string](src)
 	}
 }
+
+var benchLargeStrMap = makeLargeStrMap(50)
+
+func makeLargeStrMap(n int) map[string]string {
+	m := make(map[string]string, n)
+	for i := 0; i < n; i++ {
+		m[makeKey(i)] = "42"
+	}
+	return m
+}
+
+func makeKey(i int) string {
+	keys := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j"}
+	return keys[i%10] + keys[(i/10)%10]
+}
+
+func BenchmarkTo_map_fromLargeMap_50(b *testing.B) {
+	b.SetBytes(int64(len(benchLargeStrMap)))
+	for i := 0; i < b.N; i++ {
+		_, _ = cast.ToE[map[string]int](benchLargeStrMap)
+	}
+}
+
+type benchNestedPoint struct {
+	Inner benchPoint
+	Label string
+}
+
+var benchNestedStruct = benchNestedPoint{
+	Inner: benchPoint{X: 1, Y: 2, Name: "inner"},
+	Label: "outer",
+}
+
+func BenchmarkTo_map_fromNestedStruct(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = cast.ToE[map[string]any](benchNestedStruct)
+	}
+}

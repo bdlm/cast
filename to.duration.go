@@ -1,11 +1,10 @@
 package cast
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 	"time"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // toDuration converts v to time.Duration.
@@ -25,20 +24,20 @@ func toDuration(v any, ops ops) (any, error) {
 	if ops.hasDefault {
 		d, ok := ops.defaultVal.(time.Duration)
 		if !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return ret, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 		ret = d
 	}
 
 	switch val := v.(type) {
 	case nil:
-		return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
+		return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
 	case time.Duration:
 		return val, nil
 	case string:
 		d, err := time.ParseDuration(val)
 		if err != nil {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
 		}
 		return d, nil
 	case int:
@@ -69,39 +68,39 @@ func toDuration(v any, ops ops) (any, error) {
 		return time.Duration(int64(math.Floor(val))), nil
 	case *big.Int:
 		if val == nil || !val.IsInt64() {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
 		}
 		return time.Duration(val.Int64()), nil
 	case big.Int:
 		if !val.IsInt64() {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
 		}
 		return time.Duration(val.Int64()), nil
 	case *big.Float:
 		if val == nil || val.IsInf() {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
 		}
 		f64, _ := val.Float64()
 		if math.IsInf(f64, 0) || math.IsNaN(f64) {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
 		}
 		return time.Duration(int64(math.Floor(f64))), nil
 	case big.Float:
 		if val.IsInf() {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
 		}
 		f64, _ := val.Float64()
 		if math.IsInf(f64, 0) || math.IsNaN(f64) {
-			return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
 		}
 		return time.Duration(int64(math.Floor(f64))), nil
 	default:
 		if s, err := toString(v, ops.Delete(DEFAULT)); err == nil {
-			if d, err := time.ParseDuration(s.(string)); err == nil {
+			if d, err := time.ParseDuration(s); err == nil {
 				return d, nil
 			}
 		}
 	}
 
-	return ret, errors.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
+	return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Duration(0))
 }

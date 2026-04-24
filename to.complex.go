@@ -1,7 +1,8 @@
 package cast
 
 import (
-	"github.com/bdlm/errors/v2"
+	"fmt"
+	"strconv"
 )
 
 // toComplex casts an interface to a complex number.
@@ -18,7 +19,7 @@ func toComplex[TTo complexNum](from any, ops ops) (TTo, error) {
 
 	if ops.hasDefault {
 		if ret, ok = ops.defaultVal.(TTo); !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return ret, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
 
@@ -37,6 +38,25 @@ func toComplex[TTo complexNum](from any, ops ops) (TTo, error) {
 			return TTo(complex64(v)), nil
 		case complex128:
 			return TTo(v), nil
+		}
+	}
+
+	// String and []byte sources: strconv.ParseComplex handles the full complex
+	// number syntax including imaginary parts (e.g. "(1+2i)", "3.14+0i").
+	// Falls through to toFloat only when ParseComplex fails (e.g. comma-
+	// formatted numbers or DECODE=JSON inputs).
+	bitSize := 128
+	if _, ok := any(TTo(0)).(complex64); ok {
+		bitSize = 64
+	}
+	switch v := from.(type) {
+	case string:
+		if c, err := strconv.ParseComplex(v, bitSize); err == nil {
+			return TTo(c), nil
+		}
+	case []byte:
+		if c, err := strconv.ParseComplex(string(v), bitSize); err == nil {
+			return TTo(c), nil
 		}
 	}
 
@@ -59,5 +79,5 @@ func toComplex[TTo complexNum](from any, ops ops) (TTo, error) {
 
 	// Dead code, the above switch covers all complexNum types but the compiler
 	// doesn't know that.
-	return TTo(0), errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0))
+	return TTo(0), fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0))
 }

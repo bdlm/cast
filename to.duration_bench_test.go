@@ -1,6 +1,7 @@
 package cast_test
 
 import (
+	"math/big"
 	"testing"
 	"time"
 
@@ -37,5 +38,28 @@ func BenchmarkTo_duration_fromFloat(b *testing.B) {
 func BenchmarkToE_duration_fromInvalid(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = cast.ToE[time.Duration]("not-a-duration")
+	}
+}
+
+func BenchmarkTo_duration_fromBigInt(b *testing.B) {
+	src := big.NewInt(int64(time.Second))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[time.Duration](src)
+	}
+}
+
+func BenchmarkTo_duration_fromBigFloat(b *testing.B) {
+	src := new(big.Float).SetFloat64(float64(time.Second))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[time.Duration](src)
+	}
+}
+
+func BenchmarkToE_duration_fromComplexDefaultBranch(b *testing.B) {
+	// complex128 hits the default: branch (toString + ParseDuration), which fails.
+	for i := 0; i < b.N; i++ {
+		_, _ = cast.ToE[time.Duration](complex128(1 + 0i))
 	}
 }

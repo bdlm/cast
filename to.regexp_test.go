@@ -92,6 +92,15 @@ func TestToERegexpDefaultCase(t *testing.T) {
 			t.Errorf("expected pattern \"42\", got %v", result)
 		}
 	})
+	t.Run("stringer with valid pattern succeeds", func(t *testing.T) {
+		result, err := cast.ToE[*regexp.Regexp](testStringer{`\d+`})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result == nil || result.String() != `\d+` {
+			t.Errorf("expected pattern `\\d+`, got %v", result)
+		}
+	})
 	t.Run("stringer with invalid regexp pattern returns error", func(t *testing.T) {
 		_, err := cast.ToE[*regexp.Regexp](testStringer{"[unclosed"})
 		if err == nil {

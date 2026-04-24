@@ -1,14 +1,13 @@
 package cast
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // toInt casts an interface to an int type.
@@ -22,7 +21,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 
 	if ops.hasDefault {
 		if defaultValue, ok = ops.defaultVal.(TTo); !ok {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return defaultValue, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
 	abs := ops.abs
@@ -46,7 +45,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				return TTo(-uint(val)), nil
 			}
-			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
+			return defaultValue, fmt.Errorf("%w: %w", ErrorSignedToUnsigned, fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case int64:
@@ -54,7 +53,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				return TTo(-uint64(val)), nil
 			}
-			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
+			return defaultValue, fmt.Errorf("%w: %w", ErrorSignedToUnsigned, fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case int32:
@@ -62,7 +61,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				return TTo(-uint32(val)), nil
 			}
-			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
+			return defaultValue, fmt.Errorf("%w: %w", ErrorSignedToUnsigned, fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case int16:
@@ -70,7 +69,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				return TTo(-uint16(val)), nil
 			}
-			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
+			return defaultValue, fmt.Errorf("%w: %w", ErrorSignedToUnsigned, fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case int8:
@@ -78,7 +77,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				return TTo(-uint8(val)), nil
 			}
-			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
+			return defaultValue, fmt.Errorf("%w: %w", ErrorSignedToUnsigned, fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		return TTo(val), nil
 	case float64:
@@ -86,7 +85,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				return TTo(math.Floor(-val)), nil
 			}
-			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
+			return defaultValue, fmt.Errorf("%w: %w", ErrorSignedToUnsigned, fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		if val >= 0 {
 			return TTo(math.Floor(val)), nil
@@ -97,7 +96,7 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				return TTo(math.Floor(float64(-val))), nil
 			}
-			return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
+			return defaultValue, fmt.Errorf("%w: %w", ErrorSignedToUnsigned, fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		v64 := float64(val)
 		if v64 >= 0 {
@@ -122,12 +121,12 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 			if abs {
 				secs = -secs
 			} else {
-				return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
+				return defaultValue, fmt.Errorf("%w: %w", ErrorSignedToUnsigned, fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 			}
 		}
 		result := TTo(secs)
 		if int64(result) != secs {
-			return defaultValue, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0))
+			return defaultValue, fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0))
 		}
 		return result, nil
 	case fmt.Stringer:
@@ -135,8 +134,18 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 	case string:
 		result, err := strToInt[TTo](val, unsigned, ops)
 		if err != nil {
-			if decoded, ok, _ := tryDecodeJSON(val, ops); ok {
-				return toInt[TTo](decoded, ops.Delete(DECODE))
+			if ops.hasDecode && ops.decodeVal == "json" {
+				// Fast path: unmarshal into typed targets instead of any to avoid
+				// the boxing overhead of tryDecodeJSON. JSON strings ("42") decode
+				// into a Go string; JSON numbers (42) decode into json.Number.
+				var s string
+				if json.Unmarshal([]byte(val), &s) == nil {
+					return toInt[TTo](s, ops.Delete(DECODE))
+				}
+				var n json.Number
+				if json.Unmarshal([]byte(val), &n) == nil {
+					return toInt[TTo](string(n), ops.Delete(DECODE))
+				}
 			}
 		}
 		return result, err
@@ -146,9 +155,9 @@ func toInt[TTo integer](from any, ops ops) (TTo, error) {
 		return toInt[TTo](float64(real(val)), ops)
 	default:
 		if s, err := toString(from, ops.Delete(DEFAULT)); err == nil {
-			return strToInt[TTo](s.(string), unsigned, ops)
+			return strToInt[TTo](s, unsigned, ops)
 		}
-		return defaultValue, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0))
+		return defaultValue, fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0))
 	}
 }
 
@@ -167,7 +176,7 @@ func strToInt[TTo integer](from string, unsigned bool, ops ops) (TTo, error) {
 
 	if ops.hasDefault {
 		if defaultValue, ok = ops.defaultVal.(TTo); !ok {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return defaultValue, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
 	abs := ops.abs
@@ -184,8 +193,8 @@ func strToInt[TTo integer](from string, unsigned bool, ops ops) (TTo, error) {
 			",", "",
 		)
 		if val, e = strconv.ParseFloat(stripped, 64); e != nil {
-			err = errors.WrapE(err, e)
-			return defaultValue, errors.WrapE(err, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
+			err = fmt.Errorf("%w: %w", err, e)
+			return defaultValue, fmt.Errorf("%w: %w", err, fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 		}
 		err = nil
 	}
@@ -197,7 +206,7 @@ func strToInt[TTo integer](from string, unsigned bool, ops ops) (TTo, error) {
 	}
 
 	if unsigned {
-		return defaultValue, errors.WrapE(ErrorSignedToUnsigned, errors.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
+		return defaultValue, fmt.Errorf("%w: %w", ErrorSignedToUnsigned, fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0)))
 	}
 
 	return TTo(math.Ceil(val)), nil
