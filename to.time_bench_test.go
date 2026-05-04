@@ -40,7 +40,7 @@ func BenchmarkTo_time_fromRFC1123(b *testing.B) {
 }
 
 func BenchmarkTo_time_fromInt64Unix(b *testing.B) {
-	// int64 → time.Unix(0, ns) path
+	// int64 → time.Unix(0, ns) path; input is nanoseconds.
 	ns := time.Now().UnixNano()
 	for i := 0; i < b.N; i++ {
 		_ = cast.To[time.Time](ns)
@@ -62,7 +62,7 @@ func BenchmarkToE_time_fromInvalid(b *testing.B) {
 }
 
 func BenchmarkTo_time_fromBigInt(b *testing.B) {
-	src := new(big.Int).SetInt64(1718448000)
+	src := new(big.Int).SetInt64(time.Now().UnixNano())
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = cast.To[time.Time](src)

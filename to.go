@@ -72,11 +72,14 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 	options := parseOps(ops)
 
 	// Dereference pointer sources before dispatch so every converter sees the
-	// concrete scalar value. Follows pointer chains (**T, ***T, …) but stops
-	// at pointer-to-struct and pointer-to-interface: those types have dedicated
-	// converters that expect the pointer (e.g. *regexp.Regexp, *time.Time,
-	// error values whose concrete type is *errorString).
+	// concrete value. Follows pointer chains (**T, ***T, …) and always updates
+	// val when unwrapping occurred, including when the result is still a pointer
+	// (e.g. **regexp.Regexp → *regexp.Regexp). Stops before the final
+	// pointer-to-struct / pointer-to-interface dereference: those types have
+	// dedicated converters that expect the pointer (e.g. *regexp.Regexp,
+	// *time.Time, error values whose concrete type is *errorString).
 	if srcVal := reflect.ValueOf(val); srcVal.IsValid() && srcVal.Kind() == reflect.Pointer {
+		changed := false
 		for srcVal.Kind() == reflect.Pointer {
 			if srcVal.IsNil() {
 				val = nil
@@ -86,16 +89,18 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 			if elem.Kind() == reflect.Pointer {
 				// Unwrap another level of indirection (**T → *T → …).
 				srcVal = elem
+				changed = true
 				continue
 			}
 			if isScalarKind(elem.Kind()) {
 				// Final element is a scalar: dereference completely.
 				srcVal = elem
+				changed = true
 			}
-			// pointer-to-struct / pointer-to-interface: leave val unchanged.
+			// pointer-to-struct / pointer-to-interface: stop here.
 			break
 		}
-		if srcVal.IsValid() && srcVal.Kind() != reflect.Pointer {
+		if changed && srcVal.IsValid() {
 			val = srcVal.Interface()
 		}
 	}

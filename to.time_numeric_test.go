@@ -11,7 +11,7 @@ import (
 )
 
 // TestBigTypesToTime validates that *big.Int, big.Int, *big.Float, and big.Float
-// are all treated as Unix seconds when converting to time.Time.
+// are all treated as Unix nanoseconds when converting to time.Time.
 func TestBigTypesToTime(t *testing.T) {
 	epoch := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
 
@@ -23,8 +23,8 @@ func TestBigTypesToTime(t *testing.T) {
 	}{
 		// *big.Int sources
 		{name: "*big.Int zero → epoch", in: big.NewInt(0), expect: epoch},
-		{name: "*big.Int 1s → epoch+1s", in: big.NewInt(1), expect: epoch.Add(time.Second)},
-		{name: "*big.Int negative → pre-epoch", in: big.NewInt(-86400), expect: epoch.Add(-24 * time.Hour)},
+		{name: "*big.Int 1s → epoch+1s", in: big.NewInt(int64(time.Second)), expect: epoch.Add(time.Second)},
+		{name: "*big.Int negative → pre-epoch", in: big.NewInt(-86400 * int64(time.Second)), expect: epoch.Add(-24 * time.Hour)},
 		{name: "*big.Int nil → error", in: (*big.Int)(nil), expectErr: true},
 		{name: "*big.Int too large for int64 → error", in: new(big.Int).Add(
 			new(big.Int).SetInt64(math.MaxInt64), big.NewInt(1),
@@ -32,7 +32,7 @@ func TestBigTypesToTime(t *testing.T) {
 
 		// big.Int value (non-pointer)
 		{name: "big.Int value zero → epoch", in: *big.NewInt(0), expect: epoch},
-		{name: "big.Int value 1s", in: *big.NewInt(1), expect: epoch.Add(time.Second)},
+		{name: "big.Int value 1s", in: *big.NewInt(int64(time.Second)), expect: epoch.Add(time.Second)},
 		{name: "big.Int value too large → error", in: func() big.Int {
 			v := new(big.Int).Add(new(big.Int).SetInt64(math.MaxInt64), big.NewInt(1))
 			return *v
@@ -241,7 +241,7 @@ func TestTimeToBigConversions(t *testing.T) {
 // error.
 func TestUint64ToTimeOverflow(t *testing.T) {
 	// math.MaxInt64 + 1 as uint64 wraps to a negative int64, producing
-	// time.Unix(-9223372036854775808, 0) — a timestamp far in the past.
+	// time.Unix(0, -9223372036854775808) — a timestamp far in the past.
 	overflowVal := uint64(math.MaxInt64) + 1
 	result, err := cast.ToE[time.Time](overflowVal)
 	// Currently no error is returned — the overflow is silent.
@@ -256,7 +256,7 @@ func TestUint64ToTimeOverflow(t *testing.T) {
 }
 
 // TestUintptrToTimePositive verifies that small uintptr values (which fit
-// in int64) convert to time.Time correctly as Unix seconds.
+// in int64) convert to time.Time correctly as Unix nanoseconds.
 func TestUintptrToTimePositive(t *testing.T) {
 	epoch := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
 	result, err := cast.ToE[time.Time](uintptr(0))
@@ -267,7 +267,7 @@ func TestUintptrToTimePositive(t *testing.T) {
 		t.Errorf("expected epoch, got %v", result)
 	}
 
-	result, err = cast.ToE[time.Time](uintptr(1))
+	result, err = cast.ToE[time.Time](uintptr(time.Second))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

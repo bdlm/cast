@@ -30,10 +30,16 @@ func toBigInt(v any, ops ops) (any, error) {
 	case nil:
 		return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*big.Int)(nil))
 	case *big.Int:
+		if val == nil {
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*big.Int)(nil))
+		}
 		return new(big.Int).Set(val), nil
 	case big.Int:
 		return new(big.Int).Set(&val), nil
 	case *big.Float:
+		if val == nil {
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*big.Int)(nil))
+		}
 		i, _ := val.Int(nil)
 		return i, nil
 	case big.Float:
@@ -111,10 +117,16 @@ func toBigFloat(v any, ops ops) (any, error) {
 	case nil:
 		return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*big.Float)(nil))
 	case *big.Float:
+		if val == nil {
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*big.Float)(nil))
+		}
 		return new(big.Float).Copy(val), nil
 	case big.Float:
 		return new(big.Float).Copy(&val), nil
 	case *big.Int:
+		if val == nil {
+			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, (*big.Float)(nil))
+		}
 		return new(big.Float).SetInt(val), nil
 	case big.Int:
 		return new(big.Float).SetInt(&val), nil

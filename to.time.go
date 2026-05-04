@@ -54,42 +54,44 @@ func toTime(v any, ops ops) (any, error) {
 		}
 		return t, nil
 	case int:
-		return time.Unix(int64(val), 0).UTC(), nil
+		return time.Unix(0, int64(val)).UTC(), nil
 	case int8:
-		return time.Unix(int64(val), 0).UTC(), nil
+		return time.Unix(0, int64(val)).UTC(), nil
 	case int16:
-		return time.Unix(int64(val), 0).UTC(), nil
+		return time.Unix(0, int64(val)).UTC(), nil
 	case int32:
-		return time.Unix(int64(val), 0).UTC(), nil
+		return time.Unix(0, int64(val)).UTC(), nil
 	case int64:
-		return time.Unix(val, 0).UTC(), nil
+		return time.Unix(0, val).UTC(), nil
 	case uint:
-		return time.Unix(int64(val), 0).UTC(), nil
+		return time.Unix(0, int64(val)).UTC(), nil
 	case uint8:
-		return time.Unix(int64(val), 0).UTC(), nil
+		return time.Unix(0, int64(val)).UTC(), nil
 	case uint16:
-		return time.Unix(int64(val), 0).UTC(), nil
+		return time.Unix(0, int64(val)).UTC(), nil
 	case uint32:
-		return time.Unix(int64(val), 0).UTC(), nil
+		return time.Unix(0, int64(val)).UTC(), nil
 	case uint64:
-		return time.Unix(int64(val), 0).UTC(), nil
+		return time.Unix(0, int64(val)).UTC(), nil
 	case uintptr:
-		return time.Unix(int64(val), 0).UTC(), nil
+		return time.Unix(0, int64(val)).UTC(), nil
 	case float32:
 		secs := float64(val)
-		return time.Unix(int64(secs), int64((secs-math.Floor(secs))*1e9)).UTC(), nil
+		floor := math.Floor(secs)
+		return time.Unix(int64(floor), int64((secs-floor)*1e9)).UTC(), nil
 	case float64:
-		return time.Unix(int64(val), int64((val-math.Floor(val))*1e9)).UTC(), nil
+		floor := math.Floor(val)
+		return time.Unix(int64(floor), int64((val-floor)*1e9)).UTC(), nil
 	case *big.Int:
 		if val == nil || !val.IsInt64() {
 			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
-		return time.Unix(val.Int64(), 0).UTC(), nil
+		return time.Unix(0, val.Int64()).UTC(), nil
 	case big.Int:
 		if !val.IsInt64() {
 			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
-		return time.Unix(val.Int64(), 0).UTC(), nil
+		return time.Unix(0, val.Int64()).UTC(), nil
 	case *big.Float:
 		if val == nil || val.IsInf() {
 			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
@@ -98,7 +100,8 @@ func toTime(v any, ops ops) (any, error) {
 		if math.IsInf(f64, 0) || math.IsNaN(f64) {
 			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
-		return time.Unix(int64(f64), int64((f64-math.Floor(f64))*1e9)).UTC(), nil
+		floor := math.Floor(f64)
+		return time.Unix(int64(floor), int64((f64-floor)*1e9)).UTC(), nil
 	case big.Float:
 		if val.IsInf() {
 			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
@@ -107,7 +110,8 @@ func toTime(v any, ops ops) (any, error) {
 		if math.IsInf(f64, 0) || math.IsNaN(f64) {
 			return ret, fmt.Errorf(ErrorStrUnableToCast, v, v, time.Time{})
 		}
-		return time.Unix(int64(f64), int64((f64-math.Floor(f64))*1e9)).UTC(), nil
+		floor := math.Floor(f64)
+		return time.Unix(int64(floor), int64((f64-floor)*1e9)).UTC(), nil
 	default:
 		if s, err := toString(v, ops.Delete(DEFAULT)); err == nil {
 			return toTime(s, ops)
