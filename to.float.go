@@ -1,12 +1,12 @@
 package cast
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
-
-	"github.com/bdlm/errors/v2"
+	"time"
 )
 
 // toFloat casts an interface to a float type.
@@ -19,7 +19,7 @@ func toFloat[TTo float](from any, ops ops) (TTo, error) {
 
 	if ops.hasDefault {
 		if defaultValue, ok = ops.defaultVal.(TTo); !ok {
-			return defaultValue, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return defaultValue, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
 
@@ -57,27 +57,43 @@ func toFloat[TTo float](from any, ops ops) (TTo, error) {
 		return TTo(typ), nil
 	case uintptr:
 		return TTo(typ), nil
+	case complex64:
+		return TTo(real(typ)), nil
+	case complex128:
+		return TTo(real(typ)), nil
+	case time.Time:
+		secs := float64(typ.Unix()) + float64(typ.Nanosecond())/1e9
+		return TTo(secs), nil
 	case fmt.Stringer:
-		result, err := strToFloat[TTo](typ.String())
-		if err != nil {
-			return defaultValue, err
-		}
-		return result, nil
+		return toFloat[TTo](typ.String(), ops)
 	case string:
 		result, err := strToFloat[TTo](typ)
 		if err != nil {
+			if ops.hasDecode && ops.decodeVal == "json" {
+				// Fast path: unmarshal into typed targets instead of any to avoid
+				// the boxing overhead of tryDecodeJSON. JSON strings ("42") decode
+				// into a Go string; JSON numbers (42) decode into json.Number.
+				var s string
+				if json.Unmarshal([]byte(typ), &s) == nil {
+					return toFloat[TTo](s, ops.Delete(DECODE))
+				}
+				var n json.Number
+				if json.Unmarshal([]byte(typ), &n) == nil {
+					return toFloat[TTo](string(n), ops.Delete(DECODE))
+				}
+			}
 			return defaultValue, err
 		}
 		return result, nil
 	}
 
-	// Fall back to string conversion for any other type (e.g. named numerics,
-	// structs with a String method that were not matched above).
-	result, err := toFloat[TTo](fmt.Sprintf("%v", from), ops)
-	if nil != err {
-		return defaultValue, errors.Wrap(err, ErrorStrUnableToCast, from, from, TTo(0))
+	if s, err := toString(from, ops.Delete(DEFAULT)); err == nil {
+		result, e := toFloat[TTo](s, ops)
+		if e == nil {
+			return result, nil
+		}
 	}
-	return result, nil
+	return defaultValue, fmt.Errorf(ErrorStrUnableToCast, from, from, TTo(0))
 }
 
 // strToFloat converts a string to a float type. On initial parse failure it
@@ -101,7 +117,7 @@ func strToFloat[TTo float](from string) (TTo, error) {
 		)
 		val2, e := strconv.ParseFloat(stripped, bitSize)
 		if e != nil {
-			err = errors.WrapE(err, e)
+			err = fmt.Errorf("%w: %v", err, e)
 			return TTo(0), err
 		}
 		val = val2

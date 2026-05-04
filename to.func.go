@@ -1,9 +1,8 @@
 package cast
 
 import (
+	"fmt"
 	"reflect"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // toFunc returns a function that casts an interface to the specified type and
@@ -19,13 +18,13 @@ func toFunc[TTo any](to reflect.Value, from any, ops ops) (TTo, error) {
 
 	if ops.hasDefault {
 		if ret, ok = ops.defaultVal.(TTo); !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return ret, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 		ops = ops.Delete(DEFAULT) // Prevent DEFAULT from being passed to element casts.
 	}
 
 	if to.Type().NumOut() < 1 {
-		return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+		return ret, fmt.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 	}
 	switch to.Type().Out(0).Kind() {
 	//case reflect.Struct:
@@ -33,7 +32,7 @@ func toFunc[TTo any](to reflect.Value, from any, ops ops) (TTo, error) {
 	//case reflect.Map:
 	//case reflect.Pointer:
 	default:
-		return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+		return ret, fmt.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 
 	case reflect.Interface:
 		reti, err = makeFunc[any](from, ret, ops)
@@ -76,7 +75,7 @@ func toFunc[TTo any](to reflect.Value, from any, ops ops) (TTo, error) {
 	case reflect.Slice:
 		switch to.Type().Out(0).Elem().Kind() {
 		default:
-			return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+			return ret, fmt.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 		case reflect.Interface:
 			reti, err = makeFunc[[]any](from, ret, ops)
 		case reflect.Bool:
@@ -123,7 +122,7 @@ func toFunc[TTo any](to reflect.Value, from any, ops ops) (TTo, error) {
 		//case reflect.Map:
 		//case reflect.Pointer:
 		default:
-			return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+			return ret, fmt.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 
 		case reflect.Interface:
 			reti, err = makeFunc[chan any](from, ret, ops)
@@ -166,7 +165,7 @@ func toFunc[TTo any](to reflect.Value, from any, ops ops) (TTo, error) {
 		case reflect.Slice:
 			switch to.Type().Out(0).Elem().Elem().Kind() {
 			default:
-				return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+				return ret, fmt.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 			case reflect.Interface:
 				reti, err = makeFunc[chan []any](from, ret, ops)
 			case reflect.Bool:
@@ -208,11 +207,11 @@ func toFunc[TTo any](to reflect.Value, from any, ops ops) (TTo, error) {
 		// Func[chan Func[T]]
 		case reflect.Func:
 			if to.Type().Out(0).Elem().NumOut() < 1 {
-				return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+				return ret, fmt.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 			}
 			switch to.Type().Out(0).Elem().Out(0).Kind() {
 			default:
-				return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+				return ret, fmt.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 			case reflect.Interface:
 				reti, err = makeFunc[chan Func[any]](from, ret, ops)
 			case reflect.Bool:
@@ -255,7 +254,7 @@ func toFunc[TTo any](to reflect.Value, from any, ops ops) (TTo, error) {
 		case reflect.Chan:
 			switch to.Type().Out(0).Elem().Elem().Kind() {
 			default:
-				return ret, errors.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
+				return ret, fmt.Errorf(ErrorStrUnableToCast, from, from, to.Interface())
 			case reflect.Interface:
 				reti, err = makeFunc[chan chan any](from, ret, ops)
 			case reflect.Bool:
@@ -302,14 +301,14 @@ func toFunc[TTo any](to reflect.Value, from any, ops ops) (TTo, error) {
 	if ret, ok := reti.(TTo); ok {
 		return ret, nil
 	}
-	return ret, errors.Errorf(ErrorStrErrorCastingFunc, reti, ret)
+	return ret, fmt.Errorf(ErrorStrErrorCastingFunc, reti, ret)
 }
 
 // makeFunc casts from to T and returns a Func[T] closure capturing the result.
 func makeFunc[T Types](from any, orig any, ops ops) (any, error) {
 	val, err := ToE[T](from, ops.List()...)
 	if err != nil {
-		return nil, errors.Wrap(err, ErrorStrErrorCastingFunc, from, orig)
+		return nil, fmt.Errorf("%w: "+ErrorStrErrorCastingFunc, err, from, orig)
 	}
 	return Func[T](func() T { return val }), nil
 }

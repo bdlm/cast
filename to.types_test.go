@@ -1,6 +1,7 @@
 package cast_test
 
 import (
+	"encoding"
 	"errors"
 	"fmt"
 	"reflect"
@@ -20,6 +21,19 @@ type myString string
 type tags []string
 type myInts []int
 type myChan chan int
+
+// textUnmarshalStruct implements encoding.TextUnmarshaler for testing the
+// castToStructType TextUnmarshaler path.
+type textUnmarshalStruct struct{ Val string }
+
+func (t *textUnmarshalStruct) UnmarshalText(b []byte) error {
+	t.Val = string(b)
+	return nil
+}
+
+var _ encoding.TextUnmarshaler = (*textUnmarshalStruct)(nil)
+
+type textUnmarshalStructSlice []textUnmarshalStruct
 
 func TestNamedIntType(t *testing.T) {
 	t.Run("positive: int literal → myInt", func(t *testing.T) {
@@ -126,10 +140,14 @@ func TestNamedSliceType(t *testing.T) {
 			t.Errorf("expected %v, got %v", expect, result)
 		}
 	})
-	t.Run("negative: scalar source → error", func(t *testing.T) {
-		_, err := cast.ToE[tags]("not a slice")
-		if err == nil {
-			t.Error("expected error for scalar source, got nil")
+	t.Run("scalar string wraps as single-element slice", func(t *testing.T) {
+		result, err := cast.ToE[tags]("not a slice")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		expect := tags{"not a slice"}
+		if !reflect.DeepEqual(result, expect) {
+			t.Errorf("expected %v, got %v", expect, result)
 		}
 	})
 }
@@ -574,6 +592,53 @@ func TestNamedChanType(t *testing.T) {
 		_, err := cast.ToE[myChan]("bad")
 		if err == nil {
 			t.Error("expected error for invalid input, got nil")
+		}
+	})
+}
+
+// TestCastToStructTypeTextUnmarshaler exercises castToStructType's
+// encoding.TextUnmarshaler path (util.reflect.go:222-228). The path is
+// reachable only through castToType's reflect.Struct branch, not through the
+// top-level toStruct dispatcher. A Container struct with a textUnmarshalStruct
+// field forces castToType to be called for that field, which calls
+// castToStructType, which tries the TextUnmarshaler before falling back to toStruct.
+func TestCastToStructTypeTextUnmarshaler(t *testing.T) {
+	type Container struct {
+		Field textUnmarshalStruct
+		Name  string
+	}
+	result, err := cast.ToStructE[Container](map[string]any{
+		"Field": "parsed-value",
+		"Name":  "test",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Field.Val != "parsed-value" {
+		t.Errorf("expected Val=parsed-value, got %q", result.Field.Val)
+	}
+	if result.Name != "test" {
+		t.Errorf("expected Name=test, got %q", result.Name)
+	}
+}
+
+// TestSliceNonScalarElementPath exercises toSlice's default: case with a
+// struct element type (isScalarKind=false), routing each element through
+// castToType → castToStructType → TextUnmarshaler instead of castToKind.
+func TestSliceNonScalarElementPath(t *testing.T) {
+	t.Run("positive: []string → textUnmarshalStructSlice", func(t *testing.T) {
+		src := []string{"foo", "bar", "baz"}
+		result, err := cast.ToE[textUnmarshalStructSlice](src)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(result) != 3 {
+			t.Fatalf("expected len 3, got %d", len(result))
+		}
+		for i, want := range []string{"foo", "bar", "baz"} {
+			if result[i].Val != want {
+				t.Errorf("result[%d].Val: expected %q, got %q", i, want, result[i].Val)
+			}
 		}
 	})
 }

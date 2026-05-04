@@ -186,3 +186,43 @@ func TestStringerToBool(t *testing.T) {
 		}
 	})
 }
+
+// TestCharSeqToBool validates that []byte and []rune reach toBool via the
+// default: branch → toString → toBool.
+func TestCharSeqToBool(t *testing.T) {
+	testSimpleCases[bool](t, []testCase{
+		{[]byte("1"), true, nil, false},
+		{[]byte("0"), false, nil, false},
+		{[]byte("true"), true, nil, false},
+		{[]byte("false"), false, nil, false},
+		{[]rune("1"), true, nil, false},
+		{[]rune("0"), false, nil, false},
+		{[]byte("bad"), false, nil, true},
+	})
+}
+
+// TestInt32RuneZeroConsistency documents that int32(48) (== rune '0') maps to
+// false due to the rune-semantics special case, while int64(48) maps to true.
+// byte(48) shares the same special case as rune because byte == uint8 and
+// rune == int32 both have explicit '0'-aware branches.
+func TestInt32RuneZeroConsistency(t *testing.T) {
+	// int32 == rune: '0' (48) is treated as the digit zero → false.
+	testSimpleCases[bool](t, []testCase{
+		{int32(48), false, nil, false}, // rune '0' → false
+		{int32(49), true, nil, false},  // rune '1' → true
+		{int32(0), false, nil, false},  // zero → false
+		{int32(1), true, nil, false},   // non-zero → true
+	})
+
+	// int64 does NOT have the rune special case: 48 is treated as non-zero → true.
+	testSimpleCases[bool](t, []testCase{
+		{int64(48), true, nil, false},  // 48 → true (no char special case)
+		{int64(0), false, nil, false},  // zero → false
+	})
+
+	// byte == uint8: '0' (48) → false, same as rune.
+	testSimpleCases[bool](t, []testCase{
+		{byte(48), false, nil, false}, // byte '0' → false
+		{byte(49), true, nil, false},  // byte '1' → true
+	})
+}

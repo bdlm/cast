@@ -21,6 +21,8 @@ type testCases map[string][]testCase
 func TestSimpleTypes(t *testing.T) {
 	for name, cases := range simpleCases {
 		switch name {
+		case "string":
+			testSimpleCases[string](t, cases)
 		case "bool":
 			testSimpleCases[bool](t, cases)
 		case "byte":
@@ -155,6 +157,15 @@ func TestTo(t *testing.T) {
 }
 
 var simpleCases = testCases{
+	"string": {
+		{in: true, expect: "true", err: nil, expectErr: false},
+		{in: false, expect: "false", err: nil, expectErr: false},
+		{in: 1, expect: "1", err: nil, expectErr: false},
+		{in: 0, expect: "0", err: nil, expectErr: false},
+		{in: "hi", expect: "hi", err: nil, expectErr: false},
+		{in: float64(1.1), expect: "1.1", err: nil, expectErr: false},
+		{in: float64(-1.1), expect: "-1.1", err: nil, expectErr: false},
+	},
 	"bool": {
 		{in: true, expect: true, err: nil, expectErr: false},
 		{in: 1, expect: true, err: nil, expectErr: false},

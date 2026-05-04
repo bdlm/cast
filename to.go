@@ -71,76 +71,120 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 	}()
 	options := parseOps(ops)
 
+	// Dereference pointer sources before dispatch so every converter sees the
+	// concrete value. Follows pointer chains (**T, ***T, …) and always updates
+	// val when unwrapping occurred, including when the result is still a pointer
+	// (e.g. **regexp.Regexp → *regexp.Regexp). Stops before the final
+	// pointer-to-struct / pointer-to-interface dereference: those types have
+	// dedicated converters that expect the pointer (e.g. *regexp.Regexp,
+	// *time.Time, error values whose concrete type is *errorString).
+	if srcVal := reflect.ValueOf(val); srcVal.IsValid() && srcVal.Kind() == reflect.Pointer {
+		changed := false
+		for srcVal.Kind() == reflect.Pointer {
+			if srcVal.IsNil() {
+				val = nil
+				break
+			}
+			elem := srcVal.Elem()
+			if elem.Kind() == reflect.Pointer {
+				// Unwrap another level of indirection (**T → *T → …).
+				srcVal = elem
+				changed = true
+				continue
+			}
+			if isScalarKind(elem.Kind()) {
+				// Final element is a scalar: dereference completely.
+				srcVal = elem
+				changed = true
+			}
+			// pointer-to-struct / pointer-to-interface: stop here.
+			break
+		}
+		if changed && srcVal.IsValid() {
+			val = srcVal.Interface()
+		}
+	}
+
 	toRef := reflect.ValueOf(new(TTo))
 	to := reflect.Indirect(toRef)
 
-	switch to.Type().Kind() {
-	// reflect.Array:  array targets are not in Types; use []T slice targets instead.
-	// reflect.Invalid:
-	// reflect.Pointer:
-	// reflect.Struct:
-	// reflect.UnsafePointer:
-	default:
-		retIface = ret0Val
-		if _, ok := retIface.(error); ok {
-			retIface = errors.Errorf("%s", To[string](val, ops...))
-		} else if _, ok := retIface.(std_error.Error); ok {
-			retIface = errors.Errorf("%s", To[string](val, ops...))
-		} else if _, ok := retIface.(fmt.Stringer); ok {
-			retIface = errors.Errorf("%s", To[string](val, ops...))
-		} else {
-			return ret0Val, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface()))
-		}
+	// Named types have dedicated converters registered in namedConverters
+	// (util.reflect.go). Check the table first so that adding a new named
+	// type requires only one edit there.
+	if fn, ok := namedConverters[to.Type()]; ok {
+		retIface, err = fn(val, options)
+	} else {
+		switch to.Type().Kind() {
+		// reflect.Array:        array targets are not in Types; use []T slice targets instead.
+		// reflect.Invalid:
+		// reflect.UnsafePointer:
+		default:
+			retIface = ret0Val
+			if _, ok := retIface.(error); ok {
+				retIface = errors.Errorf("%s", To[string](val, ops...))
+			} else if _, ok := retIface.(std_error.Error); ok {
+				retIface = errors.Errorf("%s", To[string](val, ops...))
+			} else if _, ok := retIface.(fmt.Stringer); ok {
+				retIface = errors.Errorf("%s", To[string](val, ops...))
+			} else {
+				return ret0Val, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface()))
+			}
 
-	case reflect.Interface:
-		retIface = val
+		case reflect.Interface:
+			retIface = val
 
-	case reflect.Bool:
-		retIface, err = toBool(val, options)
-	case reflect.Chan:
-		retIface, err = toChan(to, val, options)
-	case reflect.Map:
-		retIface, err = toMap(to, val, options)
-	case reflect.Slice:
-		fromType := reflect.TypeOf(val)
-		if fromType == nil || (fromType.Kind() != reflect.Slice && fromType.Kind() != reflect.Array) {
-			return ret0Val, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface()))
+		case reflect.Struct:
+			retIface, err = toStruct(to, val, options)
+
+		case reflect.Bool:
+			retIface, err = toBool(val, options)
+		case reflect.Chan:
+			retIface, err = toChan(to, val, options)
+		case reflect.Map:
+			retIface, err = toMap(to, val, options)
+		case reflect.Pointer:
+			result, castErr := castToType(val, to.Type(), options)
+			if castErr != nil {
+				return ret0Val, errors.WrapE(Error, castErr)
+			}
+			retIface = result.Interface()
+		case reflect.Slice:
+			retIface, err = toSlice(to, val, options)
+		case reflect.Func:
+			retIface, err = toFunc[TTo](to, val, options)
+		case reflect.Complex64:
+			retIface, err = toComplex[complex64](val, options)
+		case reflect.Complex128:
+			retIface, err = toComplex[complex128](val, options)
+		case reflect.Float32:
+			retIface, err = toFloat[float32](val, options)
+		case reflect.Float64:
+			retIface, err = toFloat[float64](val, options)
+		case reflect.Int:
+			retIface, err = toInt[int](val, options)
+		case reflect.Int8:
+			retIface, err = toInt[int8](val, options)
+		case reflect.Int16:
+			retIface, err = toInt[int16](val, options)
+		case reflect.Int32:
+			retIface, err = toInt[int32](val, options)
+		case reflect.Int64:
+			retIface, err = toInt[int64](val, options)
+		case reflect.Uint:
+			retIface, err = toInt[uint](val, options)
+		case reflect.Uint8:
+			retIface, err = toInt[uint8](val, options)
+		case reflect.Uint16:
+			retIface, err = toInt[uint16](val, options)
+		case reflect.Uint32:
+			retIface, err = toInt[uint32](val, options)
+		case reflect.Uint64:
+			retIface, err = toInt[uint64](val, options)
+		case reflect.Uintptr:
+			retIface, err = toInt[uintptr](val, options)
+		case reflect.String:
+			retIface, err = toString(val, options)
 		}
-		retIface, err = toSlice(to, val, options)
-	case reflect.Func:
-		retIface, err = toFunc[TTo](to, val, options)
-	case reflect.Complex64:
-		retIface, err = toComplex[complex64](val, options)
-	case reflect.Complex128:
-		retIface, err = toComplex[complex128](val, options)
-	case reflect.Float32:
-		retIface, err = toFloat[float32](val, options)
-	case reflect.Float64:
-		retIface, err = toFloat[float64](val, options)
-	case reflect.Int:
-		retIface, err = toInt[int](val, options)
-	case reflect.Int8:
-		retIface, err = toInt[int8](val, options)
-	case reflect.Int16:
-		retIface, err = toInt[int16](val, options)
-	case reflect.Int32:
-		retIface, err = toInt[int32](val, options)
-	case reflect.Int64:
-		retIface, err = toInt[int64](val, options)
-	case reflect.Uint:
-		retIface, err = toInt[uint](val, options)
-	case reflect.Uint8:
-		retIface, err = toInt[uint8](val, options)
-	case reflect.Uint16:
-		retIface, err = toInt[uint16](val, options)
-	case reflect.Uint32:
-		retIface, err = toInt[uint32](val, options)
-	case reflect.Uint64:
-		retIface, err = toInt[uint64](val, options)
-	case reflect.Uintptr:
-		retIface, err = toInt[uintptr](val, options)
-	case reflect.String:
-		retIface, err = toString(val, options)
 	}
 
 	if retVal, ok = retIface.(TTo); !ok && retIface != nil {

@@ -3,8 +3,6 @@ package cast
 import (
 	"fmt"
 	"strconv"
-
-	"github.com/bdlm/errors/v2"
 )
 
 // toBool casts an interface to a bool type. For numeric values, anything but
@@ -19,7 +17,7 @@ func toBool[TTo bool](from any, ops ops) (TTo, error) {
 
 	if ops.hasDefault {
 		if ret, ok = ops.defaultVal.(TTo); !ok {
-			return ret, errors.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
+			return ret, fmt.Errorf(ErrorInvalidOption, "DEFAULT", ops.defaultVal)
 		}
 	}
 
@@ -61,17 +59,25 @@ func toBool[TTo bool](from any, ops ops) (TTo, error) {
 		return false, nil
 	case fmt.Stringer:
 		return toBool[TTo](from.String(), ops)
+	case error:
+		return toBool[TTo](from.Error(), ops)
 	case string:
 		r, e := strconv.ParseBool(from)
 		if nil != e {
 			i, e2 := ToE[int](from)
 			if nil != e2 {
-				return ret, errors.Wrap(errors.WrapE(e2, e), ErrorStrUnableToCast, from, from, false)
+				if decoded, ok, _ := tryDecodeJSON(from, ops); ok {
+					return toBool[TTo](decoded, ops.Delete(DECODE))
+				}
+				return ret, fmt.Errorf("%w: %w: "+ErrorStrUnableToCast, e, e2, from, from, false)
 			}
 			return i != 0, nil
 		}
 		return TTo(r), nil
+	default:
+		if s, err := toString(from, ops.Delete(DEFAULT)); err == nil {
+			return toBool[TTo](s, ops)
+		}
+		return ret, fmt.Errorf(ErrorStrUnableToCast, from, from, false)
 	}
-
-	return ret, errors.Errorf(ErrorStrUnableToCast, from, from, false)
 }

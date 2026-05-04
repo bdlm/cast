@@ -454,6 +454,52 @@ func TestMapFromStructEmbeddedUnexported(t *testing.T) {
 	}
 }
 
+// TestMapFromStructEmbeddedUnexportedWithExportedFields verifies that exported
+// fields within an unexported embedded struct appear in the map when private=false,
+// matching Go's promotion semantics (the fields are publicly accessible via
+// promotion even though the embedding type is unexported).
+func TestMapFromStructEmbeddedUnexportedWithExportedFields(t *testing.T) {
+	type role struct {
+		Kind  string // exported — promoted, must appear
+		level int    // unexported — must NOT appear when private=false
+	}
+	type user struct {
+		role        // anonymous unexported type with mixed fields
+		Name string // regular exported field
+	}
+
+	src := user{role: role{Kind: "admin", level: 3}, Name: "Alice"}
+
+	t.Run("private=false: promoted exported fields appear, unexported do not", func(t *testing.T) {
+		result, err := cast.ToE[map[string]any](src)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result["Name"] != "Alice" {
+			t.Errorf("expected Name=Alice, got %v", result["Name"])
+		}
+		if result["Kind"] != "admin" {
+			t.Errorf("expected Kind=admin (promoted from unexported embedded type), got %v", result["Kind"])
+		}
+		if _, ok := result["level"]; ok {
+			t.Error("unexported field 'level' should not appear when private=false")
+		}
+	})
+
+	t.Run("private=true: unexported fields within unexported embedded type also appear", func(t *testing.T) {
+		result, err := cast.ToE[map[string]any](src, cast.Op{cast.PRIVATE, true})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result["Kind"] != "admin" {
+			t.Errorf("expected Kind=admin, got %v", result["Kind"])
+		}
+		if result["level"] == nil {
+			t.Error("unexported field 'level' should appear when private=true")
+		}
+	})
+}
+
 // TestMapFromStructKeyIncompatible covers the key-cast-fail branch in collectStructFields
 // when the field name cannot be cast to the target map key type.
 func TestMapFromStructKeyIncompatible(t *testing.T) {
@@ -567,8 +613,8 @@ func TestMapFromSliceNilElement(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !reflect.DeepEqual(result["a"], []int{}) {
-		t.Errorf("expected empty []int, got %v", result["a"])
+	if !reflect.DeepEqual(result["a"], []int{0}) {
+		t.Errorf("expected []int{0} (nil wraps as zero element), got %v", result["a"])
 	}
 }
 
@@ -703,4 +749,174 @@ func TestMapFromSliceKeyCastError(t *testing.T) {
 	if !errors.Is(err, cast.Error) {
 		t.Errorf("expected cast.Error, got %v", err)
 	}
+}
+
+// TestToMapDefaultWithStrict verifies that when STRICT mode triggers an error
+// and a compatible DEFAULT is also set, the default map is returned alongside
+// the error — not the zero value.
+func TestToMapDefaultWithStrict(t *testing.T) {
+	type Unconvertible struct {
+		Score int
+		Tags  []string // []string → int fails in strict mode
+	}
+	src := Unconvertible{Score: 5, Tags: []string{"a", "b"}}
+	def := map[string]int{"fallback": -1}
+
+	result, err := cast.ToE[map[string]int](src,
+		cast.Op{cast.STRICT, true},
+		cast.Op{cast.DEFAULT, def},
+	)
+	if err == nil {
+		t.Error("expected error in strict mode for unconvertible field, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %T: %v", err, err)
+	}
+	if !reflect.DeepEqual(result, def) {
+		t.Errorf("expected default %v, got %v", def, result)
+	}
+}
+
+// TestMapFromStructTags verifies that cast: and json: struct tags are used as
+// map keys when casting struct → map, matching the key resolution used on the
+// struct-hydration side (map → struct).
+func TestMapFromStructTags(t *testing.T) {
+	t.Run("cast tag used as map key", func(t *testing.T) {
+		type Tagged struct {
+			Host string `cast:"host"`
+			Port int    `cast:"port"`
+		}
+		result, err := cast.ToE[map[string]any](Tagged{Host: "localhost", Port: 8080})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result["host"] != "localhost" {
+			t.Errorf("expected host=localhost via cast tag, got %v", result["host"])
+		}
+		if result["port"] != 8080 {
+			t.Errorf("expected port=8080 via cast tag, got %v", result["port"])
+		}
+		if _, ok := result["Host"]; ok {
+			t.Error("raw field name 'Host' should not be present when cast tag is set")
+		}
+	})
+
+	t.Run("json tag name used as map key", func(t *testing.T) {
+		type Tagged struct {
+			Name  string `json:"name,omitempty"`
+			Score int    `json:"score"`
+		}
+		result, err := cast.ToE[map[string]any](Tagged{Name: "Alice", Score: 99})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result["name"] != "Alice" {
+			t.Errorf("expected name=Alice via json tag, got %v", result["name"])
+		}
+		if result["score"] != 99 {
+			t.Errorf("expected score=99 via json tag, got %v", result["score"])
+		}
+	})
+
+	t.Run("cast tag takes priority over json tag", func(t *testing.T) {
+		type Tagged struct {
+			Value int `cast:"val" json:"value"`
+		}
+		result, err := cast.ToE[map[string]any](Tagged{Value: 42})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result["val"] != 42 {
+			t.Errorf("expected val=42 via cast tag, got %v (full map: %v)", result["val"], result)
+		}
+		if _, ok := result["value"]; ok {
+			t.Error("json tag key 'value' should not be present when cast tag overrides it")
+		}
+	})
+
+	t.Run("cast:\"-\" skips field", func(t *testing.T) {
+		type Tagged struct {
+			Keep   string `cast:"keep"`
+			Hidden string `cast:"-"`
+		}
+		result, err := cast.ToE[map[string]any](Tagged{Keep: "yes", Hidden: "no"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result["keep"] != "yes" {
+			t.Errorf("expected keep=yes, got %v", result["keep"])
+		}
+		if _, ok := result["Hidden"]; ok {
+			t.Error("field with cast:\"-\" should be excluded")
+		}
+		if _, ok := result["hidden"]; ok {
+			t.Error("field with cast:\"-\" should be excluded (lower case too)")
+		}
+	})
+
+	t.Run("struct→map→struct round-trip with tags", func(t *testing.T) {
+		type Point struct {
+			X int `cast:"x"`
+			Y int `cast:"y"`
+		}
+		src := Point{X: 3, Y: 7}
+		m, err := cast.ToE[map[string]any](src)
+		if err != nil {
+			t.Fatalf("struct→map error: %v", err)
+		}
+		if m["x"] != 3 || m["y"] != 7 {
+			t.Fatalf("expected x=3 y=7 in map, got %v", m)
+		}
+		dst, err := cast.ToStructE[Point](m)
+		if err != nil {
+			t.Fatalf("map→struct error: %v", err)
+		}
+		if dst != src {
+			t.Errorf("round-trip mismatch: got %+v, want %+v", dst, src)
+		}
+	})
+}
+
+// TestMapFromJSONString verifies that a JSON object string is decoded into a map
+// via the reflect.String case added in v2.1.1 (looksLikeCollection + unmarshalCollection).
+func TestMapFromJSONString(t *testing.T) {
+	t.Run(`JSON object → map[string]any`, func(t *testing.T) {
+		result, err := cast.ToE[map[string]any](`{"a":1,"b":2}`)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(result) != 2 {
+			t.Fatalf("expected 2 keys, got %d: %v", len(result), result)
+		}
+		// JSON numbers unmarshal as float64 into map[string]any.
+		if result["a"] != float64(1) || result["b"] != float64(2) {
+			t.Errorf("unexpected values: %v", result)
+		}
+	})
+	t.Run(`JSON object → map[string]int`, func(t *testing.T) {
+		result, err := cast.ToE[map[string]int](`{"x":3,"y":7}`)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result["x"] != 3 || result["y"] != 7 {
+			t.Errorf("expected x=3 y=7, got %v", result)
+		}
+	})
+	t.Run("non-JSON string → error", func(t *testing.T) {
+		_, err := cast.ToE[map[string]any]("hello world")
+		if err == nil {
+			t.Error("expected error for non-JSON string, got nil")
+		}
+	})
+	t.Run("JSON array → map via slice→map path", func(t *testing.T) {
+		// unmarshalCollection returns []any{1,2,3}; toMap then converts that slice
+		// using indices as keys, so we get "0"→1, "1"→2, "2"→3.
+		result, err := cast.ToE[map[string]any](`[1,2,3]`)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(result) != 3 {
+			t.Fatalf("expected 3 keys, got %d: %v", len(result), result)
+		}
+	})
 }

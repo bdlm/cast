@@ -1,49 +1,54 @@
 package cast_test
 
 import (
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/bdlm/cast/v2"
 )
 
 func TestComplexToFloat(t *testing.T) {
+	// Imaginary part is discarded; only the real component is returned.
+	// complex64 stores float32 components, so complex64→float64 loses precision
+	// the same way float32→float64 does: float64(float32(1.1)) ≈ 1.1000000238...
 	testSimpleCases[float32](t, []testCase{
-		{complex(1, 0), 0, nil, true},
-		{complex(1, 1), 0, nil, true},
-		{complex(0, 0), 0, nil, true},
-		{complex(-1, 0), 0, nil, true},
-		{complex(-1, -1), 0, nil, true},
-		{complex64(float32(1.1)), 0, nil, true},
-		{complex64(float32(-1.1)), 0, nil, true},
-		{complex64(float32(0.0)), 0, nil, true},
-		{complex128(float32(1.1)), 0, nil, true},
-		{complex128(float32(-1.1)), 0, nil, true},
-		{complex128(float32(0.0)), 0, nil, true},
-		{complex64(float64(1.1)), 0, nil, true},
-		{complex64(float64(-1.1)), 0, nil, true},
-		{complex64(float64(0.0)), 0, nil, true},
-		{complex128(float64(1.1)), 0, nil, true},
-		{complex128(float64(-1.1)), 0, nil, true},
-		{complex128(float64(0.0)), 0, nil, true},
+		{complex(1, 0), float32(1), nil, false},
+		{complex(1, 1), float32(1), nil, false},
+		{complex(0, 0), float32(0), nil, false},
+		{complex(-1, 0), float32(-1), nil, false},
+		{complex(-1, -1), float32(-1), nil, false},
+		{complex64(float32(1.1)), float32(1.1), nil, false},
+		{complex64(float32(-1.1)), float32(-1.1), nil, false},
+		{complex64(float32(0.0)), float32(0.0), nil, false},
+		{complex128(float32(1.1)), float32(1.1), nil, false},
+		{complex128(float32(-1.1)), float32(-1.1), nil, false},
+		{complex128(float32(0.0)), float32(0.0), nil, false},
+		{complex64(float64(1.1)), float32(1.1), nil, false},
+		{complex64(float64(-1.1)), float32(-1.1), nil, false},
+		{complex64(float64(0.0)), float32(0.0), nil, false},
+		{complex128(float64(1.1)), float32(1.1), nil, false},
+		{complex128(float64(-1.1)), float32(-1.1), nil, false},
+		{complex128(float64(0.0)), float32(0.0), nil, false},
 	})
 	testSimpleCases[float64](t, []testCase{
-		{complex(1, 0), 0, nil, true},
-		{complex(1, 1), 0, nil, true},
-		{complex(0, 0), 0, nil, true},
-		{complex(-1, 0), 0, nil, true},
-		{complex(-1, -1), 0, nil, true},
-		{complex64(float32(1.1)), 0, nil, true},
-		{complex64(float32(-1.1)), 0, nil, true},
-		{complex64(float32(0.0)), 0, nil, true},
-		{complex128(float32(1.1)), 0, nil, true},
-		{complex128(float32(-1.1)), 0, nil, true},
-		{complex128(float32(0.0)), 0, nil, true},
-		{complex64(float64(1.1)), 0, nil, true},
-		{complex64(float64(-1.1)), 0, nil, true},
-		{complex64(float64(0.0)), 0, nil, true},
-		{complex128(float64(1.1)), 0, nil, true},
-		{complex128(float64(-1.1)), 0, nil, true},
-		{complex128(float64(0.0)), 0, nil, true},
+		{complex(1, 0), float64(1), nil, false},
+		{complex(1, 1), float64(1), nil, false},
+		{complex(0, 0), float64(0), nil, false},
+		{complex(-1, 0), float64(-1), nil, false},
+		{complex(-1, -1), float64(-1), nil, false},
+		{complex64(float32(1.1)), float64(float32(1.1)), nil, false},
+		{complex64(float32(-1.1)), float64(float32(-1.1)), nil, false},
+		{complex64(float32(0.0)), float64(0.0), nil, false},
+		{complex128(float32(1.1)), float64(float32(1.1)), nil, false},
+		{complex128(float32(-1.1)), float64(float32(-1.1)), nil, false},
+		{complex128(float32(0.0)), float64(0.0), nil, false},
+		{complex64(float64(1.1)), float64(float32(1.1)), nil, false},
+		{complex64(float64(-1.1)), float64(float32(-1.1)), nil, false},
+		{complex64(float64(0.0)), float64(0.0), nil, false},
+		{complex128(float64(1.1)), float64(1.1), nil, false},
+		{complex128(float64(-1.1)), float64(-1.1), nil, false},
+		{complex128(float64(0.0)), float64(0.0), nil, false},
 	})
 }
 
@@ -230,4 +235,60 @@ func TestFloatDefaultOption(t *testing.T) {
 			t.Errorf("expected 1.5, got %v", result)
 		}
 	})
+}
+
+func TestFloatDefaultBranch(t *testing.T) {
+	// A named float type without fmt.Stringer falls through to the
+	// fmt.Sprintf("%v", from) default branch in toFloat. The Sprintf output
+	// is a valid decimal string, so the parse succeeds.
+	type myFloat float64
+	result, err := cast.ToE[float64](myFloat(3.14))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result != 3.14 {
+		t.Errorf("expected 3.14, got %v", result)
+	}
+}
+
+// TestTimeToFloat validates time.Time → float* conversions using Unix seconds
+// with sub-second precision encoded as fractional seconds.
+func TestTimeToFloat(t *testing.T) {
+	epoch := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+	testSimpleCases[float64](t, []testCase{
+		{epoch, float64(0), nil, false},
+		{epoch.Add(time.Second), float64(1.0), nil, false},
+		{epoch.Add(500 * time.Millisecond), float64(0.5), nil, false},
+	})
+	testSimpleCases[float32](t, []testCase{
+		{epoch, float32(0), nil, false},
+		{epoch.Add(time.Second), float32(1.0), nil, false},
+	})
+}
+
+// TestCharSeqToFloat validates that []byte and []rune reach strToFloat via the
+// default: branch → toString → strToFloat.
+func TestCharSeqToFloat(t *testing.T) {
+	testSimpleCases[float64](t, []testCase{
+		{[]byte("3.14"), float64(3.14), nil, false},
+		{[]byte("-2.5"), float64(-2.5), nil, false},
+		{[]byte("bad"), float64(0), nil, true},
+		{[]rune("1.5"), float64(1.5), nil, false},
+	})
+	testSimpleCases[float32](t, []testCase{
+		{[]byte("1.0"), float32(1.0), nil, false},
+		{[]rune("2.5"), float32(2.5), nil, false},
+	})
+}
+
+func TestFloatDefaultBranchError(t *testing.T) {
+	// A type whose Sprintf representation is not a parseable float must error.
+	type myStruct struct{ V int }
+	_, err := cast.ToE[float64](myStruct{V: 1})
+	if err == nil {
+		t.Error("expected error for struct→float64, got nil")
+	}
+	if !errors.Is(err, cast.Error) {
+		t.Errorf("expected cast.Error, got %T: %v", err, err)
+	}
 }

@@ -2,9 +2,12 @@ package cast_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/bdlm/cast/v2"
 )
+
+var benchIntTime = time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
 
 func BenchmarkTo_int_fromInt(b *testing.B) {
 	for i := 0; i < b.N; i++ {
@@ -51,5 +54,23 @@ func BenchmarkToE_int_fromString(b *testing.B) {
 func BenchmarkToE_int_fromInvalid(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = cast.ToE[int]("not-a-number")
+	}
+}
+
+func BenchmarkTo_int64_fromTime(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[int64](benchIntTime)
+	}
+}
+
+func BenchmarkTo_int_fromComplex128(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = cast.To[int](complex128(42 + 0i))
+	}
+}
+
+func BenchmarkTo_int_decodeJSON(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = cast.ToE[int](`"42"`, cast.Op{Flag: cast.DECODE, Val: "json"})
 	}
 }

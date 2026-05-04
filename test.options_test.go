@@ -345,3 +345,91 @@ func TestChanLengthInvalidType(t *testing.T) {
 		t.Errorf("expected cast.Error, got %v", err)
 	}
 }
+
+// DECODE=JSON for scalar targets: when normal parsing fails, the string is
+// treated as a JSON value, decoded, and then re-cast to the target type.
+// This is a fallback — it only fires after the fast parse path fails.
+
+func TestDecodeOptionInt(t *testing.T) {
+	t.Run(`JSON-encoded string "1" → int`, func(t *testing.T) {
+		// `"1"` is the JSON encoding of the string "1", which parses to int 1.
+		result, err := cast.ToE[int](`"1"`, cast.Op{cast.DECODE, "JSON"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result != 1 {
+			t.Errorf("expected 1, got %v", result)
+		}
+	})
+	t.Run("plain numeric string skips DECODE (fast path)", func(t *testing.T) {
+		// "42" parses directly without ever firing json.Unmarshal.
+		result, err := cast.ToE[int]("42", cast.Op{cast.DECODE, "JSON"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result != 42 {
+			t.Errorf("expected 42, got %v", result)
+		}
+	})
+	t.Run("invalid JSON with DECODE → error", func(t *testing.T) {
+		_, err := cast.ToE[int]("not-json", cast.Op{cast.DECODE, "JSON"})
+		if err == nil {
+			t.Error("expected error for non-JSON string with DECODE=json, got nil")
+		}
+	})
+	t.Run("JSON number decoded directly → int", func(t *testing.T) {
+		// The JSON value 42 (no quotes) — fast path already handles this.
+		result, err := cast.ToE[int]("42", cast.Op{cast.DECODE, "JSON"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result != 42 {
+			t.Errorf("expected 42, got %v", result)
+		}
+	})
+}
+
+func TestDecodeOptionFloat(t *testing.T) {
+	t.Run(`JSON-encoded string "1.5" → float64`, func(t *testing.T) {
+		result, err := cast.ToE[float64](`"1.5"`, cast.Op{cast.DECODE, "JSON"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result != 1.5 {
+			t.Errorf("expected 1.5, got %v", result)
+		}
+	})
+	t.Run("invalid JSON with DECODE → error", func(t *testing.T) {
+		_, err := cast.ToE[float64]("not-json", cast.Op{cast.DECODE, "JSON"})
+		if err == nil {
+			t.Error("expected error for non-JSON string with DECODE=json, got nil")
+		}
+	})
+}
+
+func TestDecodeOptionBool(t *testing.T) {
+	t.Run(`JSON-encoded string "true" → bool`, func(t *testing.T) {
+		result, err := cast.ToE[bool](`"true"`, cast.Op{cast.DECODE, "JSON"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result != true {
+			t.Errorf("expected true, got %v", result)
+		}
+	})
+	t.Run(`JSON boolean true → bool (fast path)`, func(t *testing.T) {
+		result, err := cast.ToE[bool]("true", cast.Op{cast.DECODE, "JSON"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result != true {
+			t.Errorf("expected true, got %v", result)
+		}
+	})
+	t.Run("invalid JSON with DECODE → error", func(t *testing.T) {
+		_, err := cast.ToE[bool]("notbool", cast.Op{cast.DECODE, "JSON"})
+		if err == nil {
+			t.Error("expected error for unparseable string with DECODE=json, got nil")
+		}
+	})
+}

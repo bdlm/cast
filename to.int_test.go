@@ -2,7 +2,9 @@ package cast_test
 
 import (
 	"errors"
+	"math"
 	"testing"
+	"time"
 
 	"github.com/bdlm/cast/v2"
 )
@@ -346,8 +348,9 @@ func TestStrToUint(t *testing.T) {
 	})
 }
 
-// TestABSWithSignedIntTypes covers the TTo(-val) branch in toInt for each
-// signed integer type (int8, int16, int32, int64) when casting to an unsigned target.
+// TestABSWithSignedIntTypes covers the TTo(-uint(val)) branch in toInt for each
+// signed integer type when casting to an unsigned target, including the minimum
+// value of each type (which would overflow with signed negation).
 func TestABSWithSignedIntTypes(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -376,6 +379,36 @@ func TestABSWithSignedIntTypes(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestABSMinValues verifies that ABS with the minimum value of each signed type
+// does not overflow. Signed negation of MinInt wraps; unsigned negation (-uint(v))
+// produces the correct absolute value for all minimum values.
+func TestABSMinValues(t *testing.T) {
+	t.Run("int8 MinInt8 → uint8", func(t *testing.T) {
+		result, err := cast.ToE[uint8](int8(math.MinInt8), cast.Op{cast.ABS, true})
+		if err != nil || result != 128 {
+			t.Errorf("expected 128, got %v (err %v)", result, err)
+		}
+	})
+	t.Run("int16 MinInt16 → uint16", func(t *testing.T) {
+		result, err := cast.ToE[uint16](int16(math.MinInt16), cast.Op{cast.ABS, true})
+		if err != nil || result != 32768 {
+			t.Errorf("expected 32768, got %v (err %v)", result, err)
+		}
+	})
+	t.Run("int32 MinInt32 → uint32", func(t *testing.T) {
+		result, err := cast.ToE[uint32](int32(math.MinInt32), cast.Op{cast.ABS, true})
+		if err != nil || result != 2147483648 {
+			t.Errorf("expected 2147483648, got %v (err %v)", result, err)
+		}
+	})
+	t.Run("int64 MinInt64 → uint64", func(t *testing.T) {
+		result, err := cast.ToE[uint64](int64(math.MinInt64), cast.Op{cast.ABS, true})
+		if err != nil || result != 9223372036854775808 {
+			t.Errorf("expected 9223372036854775808, got %v (err %v)", result, err)
+		}
+	})
 }
 
 // TestABSWithFloat32 covers the TTo(math.Floor(float64(-val))) branch in toInt
@@ -585,6 +618,51 @@ func TestToIntFromUintTypes(t *testing.T) {
 	if v, err := cast.ToE[int](uint16(7)); err != nil || v != 7 {
 		t.Errorf("ToE[int](uint16(7)): expected 7/nil, got %v/%v", v, err)
 	}
+}
+
+// TestTimeToInt validates time.Time → int*/uint* conversions using Unix seconds.
+// The full overflow and sign tests live in to.time_numeric_test.go; these cases
+// confirm the basic happy path via testSimpleCases.
+func TestTimeToInt(t *testing.T) {
+	epoch := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+	oneSecond := epoch.Add(time.Second)
+	preEpoch := epoch.Add(-time.Second)
+
+	testSimpleCases[int](t, []testCase{
+		{epoch, int(0), nil, false},
+		{oneSecond, int(1), nil, false},
+		{preEpoch, int(-1), nil, false},
+	})
+	testSimpleCases[int64](t, []testCase{
+		{epoch, int64(0), nil, false},
+		{oneSecond, int64(1), nil, false},
+		{preEpoch, int64(-1), nil, false},
+	})
+	testSimpleCases[uint64](t, []testCase{
+		{epoch, uint64(0), nil, false},
+		{oneSecond, uint64(1), nil, false},
+		{preEpoch, uint64(0), nil, true}, // negative Unix seconds error for unsigned
+	})
+}
+
+// TestCharSeqToInt validates that []byte and []rune reach strToInt via the
+// default: branch → toString → strToInt, rather than producing an error.
+func TestCharSeqToInt(t *testing.T) {
+	testSimpleCases[int](t, []testCase{
+		{[]byte("42"), int(42), nil, false},
+		{[]byte("-7"), int(-7), nil, false},
+		{[]byte("1.9"), int(1), nil, false}, // truncated toward zero
+		{[]byte("bad"), int(0), nil, true},
+	})
+	testSimpleCases[int64](t, []testCase{
+		{[]byte("1000"), int64(1000), nil, false},
+		{[]rune("99"), int64(99), nil, false},
+		{[]rune("-5"), int64(-5), nil, false},
+	})
+	testSimpleCases[uint](t, []testCase{
+		{[]byte("10"), uint(10), nil, false},
+		{[]byte("-1"), uint(0), nil, true}, // negative string → unsigned errors
+	})
 }
 
 // TestStrToIntDefaultWrongType2 covers the DEFAULT type-assertion failure in
