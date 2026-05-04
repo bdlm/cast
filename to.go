@@ -71,6 +71,35 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 	}()
 	options := parseOps(ops)
 
+	// Dereference pointer sources before dispatch so every converter sees the
+	// concrete scalar value. Follows pointer chains (**T, ***T, …) but stops
+	// at pointer-to-struct and pointer-to-interface: those types have dedicated
+	// converters that expect the pointer (e.g. *regexp.Regexp, *time.Time,
+	// error values whose concrete type is *errorString).
+	if srcVal := reflect.ValueOf(val); srcVal.IsValid() && srcVal.Kind() == reflect.Pointer {
+		for srcVal.Kind() == reflect.Pointer {
+			if srcVal.IsNil() {
+				val = nil
+				break
+			}
+			elem := srcVal.Elem()
+			if elem.Kind() == reflect.Pointer {
+				// Unwrap another level of indirection (**T → *T → …).
+				srcVal = elem
+				continue
+			}
+			if isScalarKind(elem.Kind()) {
+				// Final element is a scalar: dereference completely.
+				srcVal = elem
+			}
+			// pointer-to-struct / pointer-to-interface: leave val unchanged.
+			break
+		}
+		if srcVal.IsValid() && srcVal.Kind() != reflect.Pointer {
+			val = srcVal.Interface()
+		}
+	}
+
 	toRef := reflect.ValueOf(new(TTo))
 	to := reflect.Indirect(toRef)
 
