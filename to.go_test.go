@@ -318,6 +318,13 @@ type ptrDerefStruct struct {
 	Y string
 }
 
+// ptrReceiverError has Error() on *T only, so it satisfies error only as a
+// pointer. The deref guard must leave *ptrReceiverError alone when the target
+// is error, otherwise the interface satisfaction is lost.
+type ptrReceiverError struct{ msg string }
+
+func (e *ptrReceiverError) Error() string { return e.msg }
+
 // TestPointerDerefLoop covers the pointer-unwrapping logic at the top of ToE.
 // Each sub-test targets a distinct branch of the loop.
 func TestPointerDerefLoop(t *testing.T) {
@@ -422,17 +429,19 @@ func TestPointerDerefLoop(t *testing.T) {
 	})
 
 	// ── pointer-to-interface: must NOT dereference ────────────────────────────
-	// errors.New returns *errors.errorString, which satisfies error only through
-	// a pointer receiver. Dereferencing would lose the interface satisfaction.
+	// A *T where T implements an interface only via pointer receiver must reach
+	// the interface case as-is; dereferencing would lose the interface satisfaction.
 
 	t.Run("pointer-to-error source not dereferenced for error target", func(t *testing.T) {
-		src := errors.New("sentinel")
+		// ptrReceiverError satisfies error only via *T. If the deref loop
+		// unwrapped the pointer, the value type would no longer implement error.
+		src := &ptrReceiverError{msg: "sentinel"}
 		got, err := cast.ToE[error](src)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if got != src {
-			t.Errorf("expected same error value, got %v", got)
+			t.Errorf("expected same *ptrReceiverError value back, got %v", got)
 		}
 	})
 
