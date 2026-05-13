@@ -398,6 +398,17 @@ func TestPointerDerefLoop(t *testing.T) {
 		}
 	})
 
+	t.Run("*anonymous struct → struct", func(t *testing.T) {
+		src := &struct{ X int; Y string }{X: 3, Y: "anon"}
+		got, err := cast.ToE[ptrDerefStruct](src)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got.X != src.X || got.Y != src.Y {
+			t.Errorf("expected {X:%d Y:%s}, got %+v", src.X, src.Y, got)
+		}
+	})
+
 	t.Run("**struct inner nil → error", func(t *testing.T) {
 		// nil source cannot be hydrated into a struct; expect an error.
 		var inner *ptrDerefStruct
