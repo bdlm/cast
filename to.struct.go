@@ -3,31 +3,8 @@ package cast
 import (
 	"fmt"
 	"reflect"
-	"strings"
 	"unsafe"
 )
-
-// fieldKey returns the source-map key to use when matching this struct field.
-// Priority: cast tag > json tag (name portion only) > field name.
-// Returns ("", false) when the tag value is "-", meaning skip this field.
-func fieldKey(field reflect.StructField) (string, bool) {
-	if tag, ok := field.Tag.Lookup("cast"); ok {
-		if tag == "-" {
-			return "", false
-		}
-		return tag, true
-	}
-	if tag, ok := field.Tag.Lookup("json"); ok {
-		name := strings.SplitN(tag, ",", 2)[0]
-		if name == "-" {
-			return "", false
-		}
-		if name != "" {
-			return name, true
-		}
-	}
-	return field.Name, true
-}
 
 // ToStruct casts from into a struct of type T, ignoring errors. See ToStructE
 // for full documentation.

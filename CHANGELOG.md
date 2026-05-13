@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Minor**: feature additions
 - **Patch**: bug fixes, backward compatible model and function changes, etc.
 
+## v2.1.2 - 2026-05-13
+Code quality, bug fixes, and internal refactoring.
+
+### Added
+
+#### Tag-aware field key resolution (`util.reflect.go`)
+`fieldKey` now resolves a struct field's source-map key with the following priority: `cast` tag → `json` tag (name portion only) → field name. A tag value of `"-"` causes the field to be skipped during both struct hydration and struct→map conversion. This applies uniformly to `hydrateStruct`, `collectSourceFieldValues`, `collectStructFields`, and `collectExportedFields`.
+
+#### `PRIVATE` flag for struct hydration (`to.struct.go`)
+`ToStructE` / `toStruct` now support the `PRIVATE` flag. When set, unexported fields are included in both source collection and target hydration. Unexported fields are read via `extractFieldValue`; unexported target fields are set via `unsafe.Pointer` (the only mechanism available without CGo).
+
+### Changed
+
+#### Reflection utilities consolidated into `util.reflect.go`
+Four internal helpers that had grown beyond their origin files are now defined exclusively in `util.reflect.go`:
+- `fieldKey` — moved from `to.struct.go`
+- `extractFieldValue` — moved from `to.map.go`
+- `isNamedScalarStructType` — moved from `to.slice.go`
+- `isScalarKind` — moved from `to.slice.go`
+
+#### Pointer source dereferencing in `ToE` (`to.go`)
+The pointer-unwrapping loop now also dereferences pointer-to-struct sources when the target type is a struct. This makes `*myStruct` → `myStruct` consistent with the existing `*int` → `int` behavior. Pointer-to-interface sources and struct pointers whose target is not a struct (e.g. `*regexp.Regexp` when casting to `*regexp.Regexp`, or `*errorT` when casting to `error`) are left as-is so that pointer-receiver interface implementations continue to work correctly.
+
+### Fixed
+- **Multi-level nil pointer overwrites `nil`** (`to.go`): when unwrapping a pointer chain such as `**T` where the outer pointer is non-nil but the inner `*T` is nil, `changed` was left `true`, causing the post-loop `val = srcVal.Interface()` assignment to overwrite the `val = nil` set during the nil check with a typed nil `(*T)(nil)`. Fixed by resetting `changed = false` in the nil branch.
+- **Dead `err` variable in `strToFloat`** (`to.float.go`): the final `return TTo(val), err` always returned a nil `err` — the variable is cleared before reaching that line. Changed to `return TTo(val), nil`.
+
 
 ## v2.1.1 - 2026-05-04
 Struct hydration, seven new named-type cast targets, pointer dereferencing, and reflection infrastructure improvements.
