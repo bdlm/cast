@@ -127,5 +127,5 @@ func strToFloat[TTo float](from string) (TTo, error) {
 	if isFloat32 {
 		return TTo(float32(val)), nil
 	}
-	return TTo(val), err
+	return TTo(val), nil
 }

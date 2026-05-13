@@ -248,27 +248,3 @@ func mapFromSlice(to reflect.Value, src reflect.Value, ops ops) (any, error) {
 	return targetMap.Interface(), nil
 }
 
-// extractFieldValue returns a struct field's value as any, handling unexported
-// fields via kind-specific reflect methods. Returns (nil, false) for unexported
-// non-scalar fields that cannot be read without unsafe.
-func extractFieldValue(v reflect.Value) (any, bool) {
-	if v.CanInterface() {
-		return v.Interface(), true
-	}
-	switch v.Kind() {
-	case reflect.Bool:
-		return v.Bool(), true
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return v.Int(), true
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return v.Uint(), true
-	case reflect.Float32, reflect.Float64:
-		return v.Float(), true
-	case reflect.Complex64, reflect.Complex128:
-		return v.Complex(), true
-	case reflect.String:
-		return v.String(), true
-	default:
-		return nil, false
-	}
-}

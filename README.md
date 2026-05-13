@@ -25,6 +25,7 @@
 ## Table of Contents
 
 - [What is Cast?](#what-is-cast)
+  - [Go version support](#go-version-support)
 - [Usage](#usage)
   - [Supported Conversions](#supported-conversions)
     - [Named-type targets](#named-type-targets)
@@ -48,6 +49,23 @@
 A concrete example: casting `"6.789"` to `int` yields `6`, not `7`. Cast converts to `float64` first, then calls `math.Floor()` — because there is no integer that is _almost_ `7`, but there _is_ a `6` that can be contained within the original value.
 
 The primary use-case is consuming untyped or loosely typed data from external sources (YAML, TOML, JSON, API responses) without repetitive type-assertion boilerplate.
+
+### Go version support
+
+| Release | Date | Min Go |
+|---|---|---|
+| v2.1.2 | 2026-05-13 | 1.21 |
+| v2.1.1 | 2026-05-04 | 1.21 |
+| v2.1.0 | 2026-04-20 | 1.21 |
+| v2.0.5 | 2025-11-12 | 1.24 |
+| v2.0.4 | 2025-11-03 | 1.24 |
+| v2.0.3 | 2024-02-22 | 1.21 |
+| v2.0.2 | 2023-12-30 | 1.18 |
+| v2.0.1 | 2023-12-28 | 1.18 |
+| v2.0.0 | 2023-12-23 | 1.18 |
+| v1.0.2 | 2020-06-25 | 1.14 |
+| v1.0.1 | 2020-06-25 | 1.14 |
+| v1.0.0 | 2020-05-02 | 1.14 |
 
 ## Usage
 

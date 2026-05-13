@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -241,4 +242,78 @@ func castToStructType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 
 	raw, err := toStruct(reflect.Zero(t), v, ops)
 	return rawToValue(raw, t, ops, err)
+}
+
+// fieldKey returns the source-map key for a struct field.
+// Priority: cast tag > json tag (name portion only) > field name.
+// Returns ("", false) when the tag value is "-", meaning skip this field.
+func fieldKey(field reflect.StructField) (string, bool) {
+	if tag, ok := field.Tag.Lookup("cast"); ok {
+		if tag == "-" {
+			return "", false
+		}
+		return tag, true
+	}
+	if tag, ok := field.Tag.Lookup("json"); ok {
+		name := strings.SplitN(tag, ",", 2)[0]
+		if name == "-" {
+			return "", false
+		}
+		if name != "" {
+			return name, true
+		}
+	}
+	return field.Name, true
+}
+
+// extractFieldValue returns a struct field's value as any, handling unexported
+// fields via kind-specific reflect methods. Returns (nil, false) for unexported
+// non-scalar fields that cannot be read without unsafe.
+func extractFieldValue(v reflect.Value) (any, bool) {
+	if v.CanInterface() {
+		return v.Interface(), true
+	}
+	switch v.Kind() {
+	case reflect.Bool:
+		return v.Bool(), true
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return v.Int(), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return v.Uint(), true
+	case reflect.Float32, reflect.Float64:
+		return v.Float(), true
+	case reflect.Complex64, reflect.Complex128:
+		return v.Complex(), true
+	case reflect.String:
+		return v.String(), true
+	default:
+		return nil, false
+	}
+}
+
+// isNamedScalarStructType reports whether t is a struct type that has a
+// meaningful scalar representation — i.e., types in namedStructTypes (which
+// mirrors the struct entries of namedConverters without creating an init cycle).
+func isNamedScalarStructType(t reflect.Type) bool {
+	if t.Kind() != reflect.Struct {
+		return false
+	}
+	_, ok := namedStructTypes[t]
+	return ok
+}
+
+// isScalarKind reports whether k is a scalar kind handled by castToKind.
+// reflect.Interface is excluded: castToType enforces assignability checks that
+// castToKind skips, so interface element types must go through castToType.
+func isScalarKind(k reflect.Kind) bool {
+	switch k {
+	case reflect.Bool,
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr,
+		reflect.Float32, reflect.Float64,
+		reflect.Complex64, reflect.Complex128,
+		reflect.String:
+		return true
+	}
+	return false
 }

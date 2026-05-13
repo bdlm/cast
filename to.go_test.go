@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"testing"
 
 	"github.com/bdlm/cast/v2"
@@ -309,4 +310,153 @@ var simpleCases = testCases{
 		{in: -1.9, expect: uintptr(0), err: nil, expectErr: true},
 		{in: "-1.9", expect: uintptr(0), err: nil, expectErr: true},
 	},
+}
+
+// ptrDerefStruct is a plain struct used to test pointer-to-struct dereferencing.
+type ptrDerefStruct struct {
+	X int
+	Y string
+}
+
+// ptrReceiverError has Error() on *T only, so it satisfies error only as a
+// pointer. The deref guard must leave *ptrReceiverError alone when the target
+// is error, otherwise the interface satisfaction is lost.
+type ptrReceiverError struct{ msg string }
+
+func (e *ptrReceiverError) Error() string { return e.msg }
+
+// TestPointerDerefLoop covers the pointer-unwrapping logic at the top of ToE.
+// Each sub-test targets a distinct branch of the loop.
+func TestPointerDerefLoop(t *testing.T) {
+	// ── scalars (baseline) ────────────────────────────────────────────────────
+
+	t.Run("*int → int", func(t *testing.T) {
+		v := 42
+		got, err := cast.ToE[int](&v)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got != 42 {
+			t.Errorf("expected 42, got %v", got)
+		}
+	})
+
+	t.Run("**int → int", func(t *testing.T) {
+		v := 42
+		p := &v
+		got, err := cast.ToE[int](&p)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got != 42 {
+			t.Errorf("expected 42, got %v", got)
+		}
+	})
+
+	t.Run("*int nil → 0, no error", func(t *testing.T) {
+		var p *int
+		got, err := cast.ToE[int](p)
+		if err != nil {
+			t.Fatalf("unexpected error for nil *int: %v", err)
+		}
+		if got != 0 {
+			t.Errorf("expected 0, got %v", got)
+		}
+	})
+
+	// ── multi-level nil fix ───────────────────────────────────────────────────
+	// Before the changed=false fix, **int where inner *int is nil produced a
+	// typed nil (*int)(nil), which fell through to the default converter path
+	// and returned an error instead of 0.
+
+	t.Run("**int inner nil → 0, no error", func(t *testing.T) {
+		var inner *int
+		got, err := cast.ToE[int](&inner)
+		if err != nil {
+			t.Fatalf("unexpected error for **int with nil inner: %v", err)
+		}
+		if got != 0 {
+			t.Errorf("expected 0, got %v", got)
+		}
+	})
+
+	// ── struct dereferencing (target is struct) ───────────────────────────────
+
+	t.Run("*struct → struct", func(t *testing.T) {
+		src := ptrDerefStruct{X: 7, Y: "hello"}
+		got, err := cast.ToE[ptrDerefStruct](&src)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got != src {
+			t.Errorf("expected %+v, got %+v", src, got)
+		}
+	})
+
+	t.Run("**struct → struct", func(t *testing.T) {
+		src := ptrDerefStruct{X: 7, Y: "hello"}
+		p := &src
+		got, err := cast.ToE[ptrDerefStruct](&p)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got != src {
+			t.Errorf("expected %+v, got %+v", src, got)
+		}
+	})
+
+	t.Run("*anonymous struct → struct", func(t *testing.T) {
+		src := &struct{ X int; Y string }{X: 3, Y: "anon"}
+		got, err := cast.ToE[ptrDerefStruct](src)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got.X != src.X || got.Y != src.Y {
+			t.Errorf("expected {X:%d Y:%s}, got %+v", src.X, src.Y, got)
+		}
+	})
+
+	t.Run("**struct inner nil → error", func(t *testing.T) {
+		// nil source cannot be hydrated into a struct; expect an error.
+		var inner *ptrDerefStruct
+		_, err := cast.ToE[ptrDerefStruct](&inner)
+		if err == nil {
+			t.Fatal("expected error for nil struct source, got nil")
+		}
+		if !errors.Is(err, cast.Error) {
+			t.Errorf("expected cast.Error, got %v", err)
+		}
+	})
+
+	// ── pointer-to-interface: must NOT dereference ────────────────────────────
+	// A *T where T implements an interface only via pointer receiver must reach
+	// the interface case as-is; dereferencing would lose the interface satisfaction.
+
+	t.Run("pointer-to-error source not dereferenced for error target", func(t *testing.T) {
+		// ptrReceiverError satisfies error only via *T. If the deref loop
+		// unwrapped the pointer, the value type would no longer implement error.
+		src := &ptrReceiverError{msg: "sentinel"}
+		got, err := cast.ToE[error](src)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got != src {
+			t.Errorf("expected same *ptrReceiverError value back, got %v", got)
+		}
+	})
+
+	// ── pointer target: struct source pointer not dereferenced ─────────────────
+	// When TTo is itself a pointer (e.g. *regexp.Regexp), targetIsStruct is
+	// false, so a *struct source is left as-is for the named converter.
+
+	t.Run("*regexp.Regexp source not dereferenced for *regexp.Regexp target", func(t *testing.T) {
+		re := regexp.MustCompile(`[a-z]+`)
+		got, err := cast.ToE[*regexp.Regexp](re)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got.String() != re.String() {
+			t.Errorf("expected pattern %q, got %q", re.String(), got.String())
+		}
+	})
 }

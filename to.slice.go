@@ -501,31 +501,3 @@ func dedupeSliceVal(rv reflect.Value) reflect.Value {
 	return deduped
 }
 
-// isNamedScalarStructType reports whether t is a struct type that has a
-// meaningful scalar representation — i.e., types in namedStructTypes (which
-// mirrors the struct entries of namedConverters without creating an init cycle).
-// These types produce a single-element scalar-wrapped slice rather than
-// iterating exported fields, which are typically absent or non-public.
-func isNamedScalarStructType(t reflect.Type) bool {
-	if t.Kind() != reflect.Struct {
-		return false
-	}
-	_, ok := namedStructTypes[t]
-	return ok
-}
-
-// isScalarKind reports whether k is a scalar kind handled by castToKind.
-// reflect.Interface is excluded: castToType enforces assignability checks that
-// castToKind skips, so interface element types must go through castToType.
-func isScalarKind(k reflect.Kind) bool {
-	switch k {
-	case reflect.Bool,
-		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr,
-		reflect.Float32, reflect.Float64,
-		reflect.Complex64, reflect.Complex128,
-		reflect.String:
-		return true
-	}
-	return false
-}

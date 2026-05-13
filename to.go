@@ -71,18 +71,23 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 	}()
 	options := parseOps(ops)
 
+	toRef := reflect.ValueOf(new(TTo))
+	to := reflect.Indirect(toRef)
+
 	// Dereference pointer sources before dispatch so every converter sees the
-	// concrete value. Follows pointer chains (**T, ***T, …) and always updates
-	// val when unwrapping occurred, including when the result is still a pointer
-	// (e.g. **regexp.Regexp → *regexp.Regexp). Stops before the final
-	// pointer-to-struct / pointer-to-interface dereference: those types have
-	// dedicated converters that expect the pointer (e.g. *regexp.Regexp,
-	// *time.Time, error values whose concrete type is *errorString).
+	// concrete value. Follows pointer chains (**T, ***T, …) and updates val.
+	//
+	// Struct pointers are dereferenced only when the target is also a struct:
+	// pointer-receiver interface implementations (error, Stringer) and named
+	// converter types (e.g. *regexp.Regexp) expect the pointer, not the value,
+	// so those are left alone. Pointer-to-interface is never dereferenced.
 	if srcVal := reflect.ValueOf(val); srcVal.IsValid() && srcVal.Kind() == reflect.Pointer {
 		changed := false
+		targetIsStruct := to.Kind() == reflect.Struct
 		for srcVal.Kind() == reflect.Pointer {
 			if srcVal.IsNil() {
 				val = nil
+				changed = false // prevent the post-loop assignment from overwriting nil
 				break
 			}
 			elem := srcVal.Elem()
@@ -92,21 +97,17 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 				changed = true
 				continue
 			}
-			if isScalarKind(elem.Kind()) {
-				// Final element is a scalar: dereference completely.
+			if isScalarKind(elem.Kind()) || (elem.Kind() == reflect.Struct && targetIsStruct) {
+				// Dereference scalars always; structs only when the target is a struct.
 				srcVal = elem
 				changed = true
 			}
-			// pointer-to-struct / pointer-to-interface: stop here.
 			break
 		}
 		if changed && srcVal.IsValid() {
 			val = srcVal.Interface()
 		}
 	}
-
-	toRef := reflect.ValueOf(new(TTo))
-	to := reflect.Indirect(toRef)
 
 	// Named types have dedicated converters registered in namedConverters
 	// (util.reflect.go). Check the table first so that adding a new named
