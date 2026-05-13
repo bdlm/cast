@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Minor**: feature additions
 - **Patch**: bug fixes, backward compatible model and function changes, etc.
 
+## Versions
+
+- [v2.1.2 - 2026-05-13](#v212---2026-05-13)
+- [v2.1.1 - 2026-05-04](#v211---2026-05-04)
+- [v2.1.0 - 2026-04-20](#v210---2026-04-20)
+- [v2.0.5 - 2025-11-12](#v205---2025-11-12)
+- [v2.0.4 - 2025-11-03](#v204---2025-11-03)
+- [v2.0.3 - 2024-02-22](#v203---2024-02-22)
+- [v2.0.2 - 2023-12-30](#v202---2023-12-30)
+- [v2.0.1 - 2023-12-28](#v201---2023-12-28)
+- [v2.0.0 - 2023-12-23](#v200---2023-12-23)
+- [v1.1.0 - 2020-06-27](#v110---2020-06-27)
+- [v1.0.2 - 2020-06-25](#v102---2020-06-25)
+- [v1.0.1 - 2020-06-25](#v101---2020-06-25)
+- [v1.0.0 - 2020-05-02](#v100---2020-05-02)
+
+#
 ## v2.1.2 - 2026-05-13
 Code quality, bug fixes, and internal refactoring.
 
@@ -34,6 +51,7 @@ The pointer-unwrapping loop now also dereferences pointer-to-struct sources when
 - **Dead `err` variable in `strToFloat`** (`to.float.go`): the final `return TTo(val), err` always returned a nil `err` — the variable is cleared before reaching that line. Changed to `return TTo(val), nil`.
 
 
+#
 ## v2.1.1 - 2026-05-04
 Struct hydration, seven new named-type cast targets, pointer dereferencing, and reflection infrastructure improvements.
 
@@ -79,6 +97,7 @@ A single `namedConverters map[reflect.Type]func(any, ops)(any, error)` table is 
 Full test coverage added for all new functionality: `to.struct_test.go`, `to.time_test.go`, `to.duration_test.go`, `to.net_test.go`, `to.url_test.go`, `to.regexp_test.go`, `to.big_test.go`.
 
 
+#
 ## v2.1.0 - 2026-04-20
 Map target implementations, extended channel targets, extended function targets, expanded type definitions, performance improvements, expanded test coverage.
 
@@ -185,26 +204,31 @@ New internal package-level functions shared by `toMap`, `toChan`, and `toFunc`:
   measurable).
 
 
+#
 ## v2.0.5 - 2025-11-12
 * []byte to string conversion bugfix
 
 
+#
 ## v2.0.4 - 2025-11-03
 * Remove debug code
 * Upgrade to go v1.24
 * Cleanup non-constant format strings
 
 
+#
 ## v2.0.3 - 2024-02-22
 * GitHub action definition for builds and tests
 * Related bug fixes and cleanup
 
 
+#
 ## v2.0.2 - 2023-12-30
 * Added test coverage
 * Related bug fixes and cleanup
 
 
+#
 ## v2.0.1 - 2023-12-28
 * Additional examples
 * Improved slice support
@@ -212,6 +236,7 @@ New internal package-level functions shared by `toMap`, `toChan`, and `toFunc`:
 * Added tests
 
 
+#
 ## v2.0.0 - 2023-12-23
 This is a full library rewrite for go v1.18+ to take advantage of [generic functions and types](https://go.dev/doc/tutorial/generics).
 
@@ -233,19 +258,23 @@ intVal, err := cast.ToE[int]("Hi!") // 0, unable to cast "Hi!" of type string to
   ```
 
 
+#
 ## v1.1.0 - 2020-06-27
 #### Changed
 - Refactoring `ToSlice*` and `ToMap` language
 
+#
 ## v1.0.2 - 2020-06-25
 #### Added
 - `ToUint64Slice`
 - `ToUint64SliceE`
 
+#
 ## v1.0.1 - 2020-06-25
 #### Added
 - `ToInt64Slice`
 - `ToInt64SliceE`
 
+#
 ### v1.0.0 - 2020-05-02
 `v1.0.0` is the production release of the previous development work.
