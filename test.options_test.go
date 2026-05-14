@@ -342,7 +342,7 @@ func TestChanLengthInvalidType(t *testing.T) {
 		t.Error("expected error for non-int LENGTH value on chan, got nil")
 	}
 	if !errors.Is(err, cast.ErrorUnableToCast) {
-		t.Errorf("expected cast.Error, got %v", err)
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
