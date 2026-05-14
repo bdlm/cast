@@ -38,7 +38,6 @@ Code quality, documentation, and test improvements.
 
 - Renamed the sentinel error variable `Error` to `ErrorUnableToCast`. `Error` is retained as a deprecated alias with a `// Deprecated:` godoc annotation for backward compatibility.
 - Example function suffixes converted from `snake_case` to `camelCase` (e.g. `ExampleToE_mapFromMap`) so all examples appear in godoc. Suffixes containing underscores are silently dropped by godoc.
-- `CLAUDE.md` trimmed to remove content derivable from the codebase; added environment notes (go binary path, shell alias caveat) and intentional limitation notes (array targets, `chan map[K]V`).
 
 ### Fixed
 
