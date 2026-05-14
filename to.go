@@ -62,9 +62,9 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 			panicTo = ret0Val
 			switch e := r.(type) {
 			case error:
-				panicErr = errors.WrapE(Error, errors.Wrap(e, "failure casting %T to %T (panic)", val, ret0Val))
+				panicErr = errors.WrapE(ErrorUnableToCast, errors.Wrap(e, "failure casting %T to %T (panic)", val, ret0Val))
 			default:
-				panicErr = errors.WrapE(Error, errors.Errorf("failure casting %T to %T (panic): %v", val, ret0Val, e))
+				panicErr = errors.WrapE(ErrorUnableToCast, errors.Errorf("failure casting %T to %T (panic): %v", val, ret0Val, e))
 			}
 		}
 	}()
@@ -127,7 +127,7 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 			} else if _, ok := retIface.(fmt.Stringer); ok {
 				retIface = errors.Errorf("%s", To[string](val, ops...))
 			} else {
-				return ret0Val, errors.WrapE(Error, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface()))
+				return ret0Val, errors.WrapE(ErrorUnableToCast, errors.Errorf(ErrorStrUnableToCast, val, val, to.Interface()))
 			}
 
 		case reflect.Interface:
@@ -145,7 +145,7 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 		case reflect.Pointer:
 			result, castErr := castToType(val, to.Type(), options)
 			if castErr != nil {
-				return ret0Val, errors.WrapE(Error, castErr)
+				return ret0Val, errors.WrapE(ErrorUnableToCast, castErr)
 			}
 			retIface = result.Interface()
 		case reflect.Slice:
@@ -195,12 +195,12 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 			retVal, ok = rv.Convert(to.Type()).Interface().(TTo)
 		}
 		if !ok {
-			return ret0Val, errors.WrapE(Error, errors.Errorf("unable to cast %#.10v of type %T to %T (%#.10v %T)", val, val, *new(TTo), retVal, retVal))
+			return ret0Val, errors.WrapE(ErrorUnableToCast, errors.Errorf("unable to cast %#.10v of type %T to %T (%#.10v %T)", val, val, *new(TTo), retVal, retVal))
 		}
 	}
 
 	if err != nil {
-		return retVal, errors.WrapE(Error, err)
+		return retVal, errors.WrapE(ErrorUnableToCast, err)
 	}
 
 	if retIface == nil {
