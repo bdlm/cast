@@ -16,7 +16,7 @@ func ToStruct[T any](from any, ops ...Op) T {
 // ToStructE casts from into a struct of type T, returning any errors.
 //
 // T must be a struct type. The source may be a map with keys convertible to
-// string, or another struct whose field names overlap with T.
+// string, or a struct or *struct whose field names overlap with T.
 //
 // Field matching is case-sensitive and tag-aware. The lookup key for each
 // target field is resolved by checking a cast tag first, then a json tag,
@@ -34,16 +34,16 @@ func ToStructE[T any](from any, ops ...Op) (T, error) {
 	var zero T
 	to := reflect.ValueOf(&zero).Elem()
 	if to.Kind() != reflect.Struct {
-		return zero, fmt.Errorf("%w, %w", Error, fmt.Errorf("ToStructE requires a struct target type, got %T", zero))
+		return zero, fmt.Errorf("%w, %w", ErrorUnableToCast, fmt.Errorf("ToStructE requires a struct target type, got %T", zero))
 	}
 	options := parseOps(ops)
 	raw, err := toStruct(to, from, options)
 	if err != nil {
-		return zero, fmt.Errorf("%w, %w", Error, err)
+		return zero, fmt.Errorf("%w, %w", ErrorUnableToCast, err)
 	}
 	result, ok := raw.(T)
 	if !ok {
-		return zero, fmt.Errorf("%w, %w", Error, fmt.Errorf("cast failed: returned %T, want %T", raw, zero))
+		return zero, fmt.Errorf("%w, %w", ErrorUnableToCast, fmt.Errorf("cast failed: returned %T, want %T", raw, zero))
 	}
 	return result, nil
 }

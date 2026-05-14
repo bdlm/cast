@@ -35,8 +35,8 @@ test: %#v
 			t.Error("1. expected nil, got error", testInfo)
 		} else if err == nil && test.expectErr {
 			t.Error("2. expected error, got nil", testInfo)
-		} else if err != nil && !errors.Is(err, cast.Error) {
-			t.Error("3. expected cast.Error, got different error type", testInfo)
+		} else if err != nil && !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Error("3. expected cast.ErrorUnableToCast, got different error type", testInfo)
 		} else if err == nil && !reflect.DeepEqual(actual, test.expect) {
 			t.Errorf("4. expected %v to equal %v %s", test.expect, actual, testInfo)
 		}
@@ -92,14 +92,14 @@ type embeddedPtrStruct struct {
 
 func TestStructFlat(t *testing.T) {
 	testStructCase[flatStruct](t, testCase{
-		in: map[string]any{"Name": "Alice", "Age": "30", "Score": "9.5", "Valid": "true"},
+		in:     map[string]any{"Name": "Alice", "Age": "30", "Score": "9.5", "Valid": "true"},
 		expect: flatStruct{Name: "Alice", Age: 30, Score: 9.5, Valid: true},
 	})
 }
 
 func TestStructFlatStringMap(t *testing.T) {
 	testStructCase[flatStruct](t, testCase{
-		in: map[string]string{"Name": "Bob", "Age": "25", "Score": "7.1", "Valid": "false"},
+		in:     map[string]string{"Name": "Bob", "Age": "25", "Score": "7.1", "Valid": "false"},
 		expect: flatStruct{Name: "Bob", Age: 25, Score: 7.1, Valid: false},
 	})
 }
@@ -130,8 +130,8 @@ func TestStructUnknownKeysStrict(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for unknown key in STRICT mode, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -146,8 +146,8 @@ func TestStructMissingKeyStrict(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for missing key in STRICT mode, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -169,8 +169,8 @@ func TestStructUnconvertibleFieldStrict(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for unconvertible field in STRICT mode, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -180,8 +180,8 @@ func TestStructUnconvertibleFieldStrict(t *testing.T) {
 func TestStructNested(t *testing.T) {
 	testStructCase[nestedStruct](t, testCase{
 		in: map[string]any{
-			"Title": "test",
-			"Inner": map[string]any{"Name": "x", "Age": "1", "Score": "2.0", "Valid": "true"},
+			"Title":  "test",
+			"Inner":  map[string]any{"Name": "x", "Age": "1", "Score": "2.0", "Valid": "true"},
 			"Counts": []any{1, 2, 3},
 		},
 		expect: nestedStruct{
@@ -316,8 +316,8 @@ func TestStructInvalidTargetType(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for non-struct target type, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -328,8 +328,8 @@ func TestStructNilSource(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for nil source, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }

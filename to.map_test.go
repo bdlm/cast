@@ -33,8 +33,8 @@ test: %#v
 			t.Error("1. expected nil, got error", testInfo)
 		} else if err == nil && test.expectErr {
 			t.Error("2. expected error, got nil", testInfo)
-		} else if err != nil && !errors.Is(err, cast.Error) {
-			t.Error("3. expected cast.Error, got different error type", testInfo)
+		} else if err != nil && !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Error("3. expected cast.ErrorUnableToCast, got different error type", testInfo)
 		} else if err == nil && !reflect.DeepEqual(actual, test.expect) {
 			t.Errorf("4. expected %v to equal %v %s", test.expect, actual, testInfo)
 		}
@@ -285,8 +285,8 @@ func TestMapInvalidDefault(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("int DEFAULT for map[string]string", func(t *testing.T) {
@@ -294,8 +294,8 @@ func TestMapInvalidDefault(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("map[string]string DEFAULT for map[string]int", func(t *testing.T) {
@@ -303,8 +303,8 @@ func TestMapInvalidDefault(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("compatible DEFAULT for map[string]int does not error", func(t *testing.T) {
@@ -324,8 +324,8 @@ func TestMapFromMapErrors(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for uncastable map key, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("value cast failure errors", func(t *testing.T) {
@@ -335,8 +335,8 @@ func TestMapFromMapErrors(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for uncastable map value, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -347,8 +347,8 @@ func TestMapFromSliceValueError(t *testing.T) {
 	if err == nil {
 		t.Error("expected error for uncastable slice element, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -359,8 +359,8 @@ func TestMapFromScalarSourceError(t *testing.T) {
 	if err == nil {
 		t.Error("expected error for scalar source → map, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -368,7 +368,7 @@ func TestMapFromScalarSourceError(t *testing.T) {
 // (Bool, Uint, Float, Complex, String) for unexported fields when PRIVATE=true.
 func TestMapFromStructUnexportedScalars(t *testing.T) {
 	type allPrivate struct {
-		PubName    string
+		PubName     string
 		privBool    bool       //nolint:unused
 		privUint    uint       //nolint:unused
 		privFloat   float64    //nolint:unused
@@ -426,8 +426,8 @@ func TestMapFromStructUnextractableField(t *testing.T) {
 		if err == nil {
 			t.Error("expected error in strict mode for non-scalar unexported field, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -521,8 +521,8 @@ func TestMapFromStructKeyIncompatible(t *testing.T) {
 		if err == nil {
 			t.Error("expected error in strict mode for incompatible key type, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -564,8 +564,8 @@ func TestCollectStructFieldsEmbeddedError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error from embedded struct recursion, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -581,8 +581,8 @@ func TestCollectStructFieldsMapValTypeError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error from map-valtype nested struct failure, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -600,8 +600,8 @@ func TestCollectStructFieldsAnyValTypeNestedError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error from nested mapFromStruct failure (any valType), got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -625,8 +625,8 @@ func TestMapFromStructNonEmptyInterfaceValType(t *testing.T) {
 	// testStringer is defined in to.string_test.go (same package cast_test).
 	type notStringer struct{ n int }
 	type mixedStringers struct {
-		Name    testStringer
-		NoStr   notStringer // struct, does NOT implement fmt.Stringer
+		Name  testStringer
+		NoStr notStringer // struct, does NOT implement fmt.Stringer
 	}
 	src := mixedStringers{Name: testStringer{"hello"}, NoStr: notStringer{42}}
 
@@ -649,8 +649,8 @@ func TestMapFromStructNonEmptyInterfaceValType(t *testing.T) {
 		if err == nil {
 			t.Error("expected error in strict mode for non-Stringer struct field, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -688,8 +688,8 @@ func TestMapFromStructNestedStructToScalar(t *testing.T) {
 		if err == nil {
 			t.Error("expected error: struct→int cast fails in strict mode")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("nested struct cast to int fails non-strict: field skipped", func(t *testing.T) {
@@ -746,8 +746,8 @@ func TestMapFromSliceKeyCastError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error casting slice index to struct{} key, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -769,8 +769,8 @@ func TestToMapDefaultWithStrict(t *testing.T) {
 	if err == nil {
 		t.Error("expected error in strict mode for unconvertible field, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %T: %v", err, err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 	}
 	if !reflect.DeepEqual(result, def) {
 		t.Errorf("expected default %v, got %v", def, result)

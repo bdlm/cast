@@ -33,8 +33,8 @@ func TestToERegexp(t *testing.T) {
 				t.Errorf("unexpected error: %v", err)
 			} else if err == nil && tc.expectErr {
 				t.Error("expected error, got nil")
-			} else if err != nil && !errors.Is(err, cast.Error) {
-				t.Errorf("expected cast.Error, got %T: %v", err, err)
+			} else if err != nil && !errors.Is(err, cast.ErrorUnableToCast) {
+				t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 			} else if err == nil && result.String() != tc.pattern {
 				t.Errorf("expected pattern %q, got %q", tc.pattern, result.String())
 			}
@@ -74,8 +74,8 @@ func TestToERegexpInvalidDefault(t *testing.T) {
 	if err == nil {
 		t.Error("expected error for non-*regexp.Regexp DEFAULT, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %T: %v", err, err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 	}
 }
 
@@ -106,8 +106,8 @@ func TestToERegexpDefaultCase(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for invalid regexp pattern via default branch, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 		}
 	})
 }

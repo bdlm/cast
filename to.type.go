@@ -7,11 +7,31 @@ import (
 
 // Sentinel errors and reusable format strings used throughout the package.
 var (
-	Error                    = fmt.Errorf("unable to cast value")
-	ErrorSignedToUnsigned    = fmt.Errorf("cannot cast signed value to unsigned integer")
-	ErrorInvalidOption       = "invalid %s value '%v'"
+	// ErrorUnableToCast is a sentinel error returned when a value cannot be
+	// cast to the requested type. It is used as a fallback error message in
+	// conversion operations that do not provide more specific error details.
+	ErrorUnableToCast = fmt.Errorf("unable to cast value")
+
+	// ErrorSignedToUnsigned is returned when a negative value is cast to an
+	// unsigned integer type and the ABS flag is not set.
+	ErrorSignedToUnsigned = fmt.Errorf("cannot cast signed value to unsigned integer")
+
+	// ErrorInvalidOption is a format string (not an error value) used to build
+	// error messages when an Op flag carries an unexpected value type.
+	ErrorInvalidOption = "invalid %s value '%v'"
+
+	// ErrorStrErrorCastingFunc is a format string (not an error value) used
+	// when an element cast fails inside a Func[T] closure generator.
 	ErrorStrErrorCastingFunc = "error casting %T to %T during function generation"
-	ErrorStrUnableToCast     = "unable to cast %#.10v of type %T to %T"
+
+	// ErrorStrUnableToCast is a format string (not an error value) used when
+	// a value cannot be converted to the requested target type.
+	ErrorStrUnableToCast = "unable to cast %#.10v of type %T to %T"
+
+	// Error is a deprecated alias for [ErrorUnableToCast].
+	//
+	// Deprecated: use [ErrorUnableToCast].
+	Error = ErrorUnableToCast
 )
 
 // Flag is the key type for conversion options passed to [To] and [ToE].
@@ -28,13 +48,13 @@ type Op struct {
 //
 // Global flags propagate through the full conversion tree and are preserved by
 // [ops.Global]. They apply the same way at every level of a nested conversion:
-//   - ABS, JSON, LENGTH, PRIVATE, STRICT, UNIQUE_VALUES
+//   - ABS, FORMAT, JSON, LENGTH, PRIVATE, STRICT, UNIQUE_VALUES
 //
 // Local flags apply only to the conversion they are passed to and are stripped
 // by [ops.Global]. Container converters read their own local flags, then pass
 // [ops.Global] to element-level casts so the local flags do not leak into
 // nested conversions where they carry no meaning or the wrong type:
-//   - DEFAULT, DUPLICATE_KEY_ERROR
+//   - DECODE, DEFAULT, DUPLICATE_KEY_ERROR
 const (
 	DEFAULT Flag = iota // TTo,  LOCAL  — value to return on error; type-specific, not passed to nested casts
 
@@ -53,9 +73,9 @@ const (
 // struct is used instead of a map so that the common zero-options path
 // allocates nothing and bool-flag checks are plain field reads.
 //
-// defaultVal and lengthVal preserve the original Op.Val for type-checking
-// and error messages at each call site; all other flags are pre-parsed to
-// their concrete bool type by parseOps.
+// defaultVal and lengthVal preserve the original Op.Val for type-checking and
+// error messages. formatVal and decodeVal are stored as pre-parsed strings.
+// All bool flags are parsed eagerly by parseOps.
 type ops struct {
 	hasDefault bool
 	defaultVal any // DEFAULT value; meaningful only when hasDefault is true
@@ -78,9 +98,9 @@ type ops struct {
 }
 
 // Global returns a copy of ops containing only the flags that apply
-// universally across all target types. Local flags (DEFAULT,
-// DUPLICATE_KEY_ERROR) are dropped; global flags (ABS, JSON, LENGTH, PRIVATE,
-// STRICT, UNIQUE_VALUES) are retained.
+// universally across all target types. Local flags (DECODE, DEFAULT,
+// DUPLICATE_KEY_ERROR) are dropped; global flags (ABS, FORMAT, JSON, LENGTH,
+// PRIVATE, STRICT, UNIQUE_VALUES) are retained.
 //
 // Container converters call this when passing ops to element-level casts so
 // that a container's own local flags do not leak into nested conversions where
@@ -168,8 +188,9 @@ func (o ops) List() []Op {
 }
 
 // parseOps collapses the public variadic []Op into the internal ops struct
-// used by all conversion functions. Bool flags are parsed eagerly; DEFAULT
-// and LENGTH preserve their raw Val for type-checking at each call site.
+// used by all conversion functions. Bool flags are parsed eagerly; DEFAULT and
+// LENGTH preserve their raw Val for type-checking at each call site; FORMAT and
+// DECODE are stored as normalized strings.
 func parseOps(o []Op) ops {
 	if len(o) == 0 {
 		return ops{}
@@ -247,7 +268,7 @@ type Types interface {
 // effectively unconstrained — all types satisfy it. This is intentional:
 // interface targets like error and fmt.Stringer need to be expressible as TTo,
 // and there is no way to enumerate all interface types. Unsupported kinds
-// (struct, pointer, etc.) are rejected at runtime by ToE's dispatch switch.
+// are rejected at runtime by ToE's dispatch switch.
 type Tbase interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |
 		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
@@ -282,6 +303,9 @@ type Tchan interface {
 		~chan chan Tbase
 }
 
+// Tmap covers map types whose keys are any [Tbase] type and whose values are
+// either a scalar [Tbase] or a slice of scalars. Named types with a matching
+// underlying map type (e.g. type Attrs map[string]any) also satisfy Tmap.
 type Tmap interface {
 	~map[Tbase]Tbase |
 		~map[Tbase][]int |

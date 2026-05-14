@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 # Versions
 
+- [v2.1.3 - 2026-05-13](#v213---2026-05-13) _(Go 1.21+)_
 - [v2.1.2 - 2026-05-13](#v212---2026-05-13) _(Go 1.21+)_
 - [v2.1.1 - 2026-05-04](#v211---2026-05-04) _(Go 1.21+)_
 - [v2.1.0 - 2026-04-20](#v210---2026-04-20) _(Go 1.21+)_
@@ -21,6 +22,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [v1.0.1 - 2020-06-25](#v101---2020-06-25) _(Go 1.14+)_
 - [v1.0.0 - 2020-05-02](#v100---2020-05-02) _(Go 1.14+)_
 
+
+# v2.1.3 - 2026-05-13
+Code quality, documentation, and test improvements.
+
+### Added
+
+- Doc comments added to previously undocumented exported and internal symbols:
+  - `Tmap` type
+  - `ErrorSignedToUnsigned`, `ErrorInvalidOption`, `ErrorStrErrorCastingFunc`, `ErrorStrUnableToCast` (clarifying the string vars are format strings, not error values)
+  - `castToType` — all 8 dispatch cases documented
+- New godoc examples: `ExampleTo_map`, `ExampleTo_struct`, `ExampleToE_mapDuplicateKeyError`, `ExampleToE_structNested`, `ExampleToE_structStrict`, `ExampleToE_mapToPrivateStruct`.
+
+### Changed
+
+- Renamed the sentinel error variable `Error` to `ErrorUnableToCast`. `Error` is retained as a deprecated alias with a `// Deprecated:` godoc annotation for backward compatibility.
+- Example function suffixes converted from `snake_case` to `camelCase` (e.g. `ExampleToE_mapFromMap`) so all examples appear in godoc. Suffixes containing underscores are silently dropped by godoc.
+- `CLAUDE.md` trimmed to remove content derivable from the codebase; added environment notes (go binary path, shell alias caveat) and intentional limitation notes (array targets, `chan map[K]V`).
+
+### Fixed
+
+- `ToE` doc referenced non-existent type `Ops` (correct type is `Op`) and contained double word "the the" — corrected.
+- `ToStructE` doc omitted `*struct` as a valid source type — corrected.
+- `toSlice` doc was circular and meaningless — rewritten.
+- `ops.Global` doc omitted `FORMAT` from the global flag list and `DECODE` from the local flag list — corrected.
+- `parseOps` doc omitted `FORMAT` and `DECODE` from its description of preserved values — corrected.
+- `ops` struct doc incorrectly stated all non-default flags are pre-parsed to `bool`; `FORMAT` and `DECODE` are stored as strings — corrected.
+- `TestPointerDerefLoop` "pointer-to-interface" sub-test used `errors.New` whose concrete pointer type is opaque; replaced with a local `ptrReceiverError` type that has `Error()` on `*T` only, making the pointer-receiver guard explicit and self-documenting.
 
 # v2.1.2 - 2026-05-13
 Code quality, bug fixes, and internal refactoring.

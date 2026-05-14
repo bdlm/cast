@@ -53,8 +53,8 @@ func TestToEBigInt(t *testing.T) {
 				t.Errorf("unexpected error: %v", err)
 			} else if err == nil && tc.expectErr {
 				t.Error("expected error, got nil")
-			} else if err != nil && !errors.Is(err, cast.Error) {
-				t.Errorf("expected cast.Error, got %T: %v", err, err)
+			} else if err != nil && !errors.Is(err, cast.ErrorUnableToCast) {
+				t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 			} else if err == nil && result.String() != tc.expectStr {
 				t.Errorf("expected %s, got %s", tc.expectStr, result.String())
 			}
@@ -152,8 +152,8 @@ func TestToEBigFloat(t *testing.T) {
 				t.Errorf("unexpected error: %v", err)
 			} else if err == nil && tc.expectErr {
 				t.Error("expected error, got nil")
-			} else if err != nil && !errors.Is(err, cast.Error) {
-				t.Errorf("expected cast.Error, got %T: %v", err, err)
+			} else if err != nil && !errors.Is(err, cast.ErrorUnableToCast) {
+				t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 			} else if err == nil && !eqStr(result, tc.expectStr) {
 				t.Errorf("expected %s, got %s", tc.expectStr, result.Text('f', -1))
 			}
@@ -243,8 +243,8 @@ func TestToEBigIntMissingCases(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for invalid big.Int string, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 		}
 	})
 }
@@ -285,8 +285,8 @@ func TestToEBigFloatMissingCases(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for invalid big.Float string, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 		}
 	})
 }
@@ -300,8 +300,8 @@ func TestDefaultBranchBigIntErrors(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for bool→*big.Int, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 		}
 	})
 	t.Run("complex128 → error (\"(1+2i)\" is not a valid big.Int)", func(t *testing.T) {
@@ -309,8 +309,8 @@ func TestDefaultBranchBigIntErrors(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for complex→*big.Int, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 		}
 	})
 }
@@ -324,8 +324,8 @@ func TestDefaultBranchBigFloatErrors(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for bool→*big.Float, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 		}
 	})
 	t.Run("complex128 → error (\"(1+2i)\" is not a valid big.Float)", func(t *testing.T) {
@@ -333,8 +333,8 @@ func TestDefaultBranchBigFloatErrors(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for complex→*big.Float, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 		}
 	})
 }

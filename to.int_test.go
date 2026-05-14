@@ -439,8 +439,8 @@ func TestToIntStructSource(t *testing.T) {
 	if err == nil {
 		t.Error("expected error for struct{} source → int, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -451,8 +451,8 @@ func TestStrToIntDefaultWrongType(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for string DEFAULT on int target, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -673,7 +673,7 @@ func TestStrToIntDefaultWrongType2(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for wrong DEFAULT type, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }

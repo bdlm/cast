@@ -170,8 +170,8 @@ func TestNamedIntSliceType(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for bad element, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -198,8 +198,8 @@ func TestMapWithSliceValues(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for bad element, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -213,8 +213,8 @@ func TestMapInterfaceValueNonAssignable(t *testing.T) {
 	if err == nil {
 		t.Error("expected error: int does not implement fmt.Stringer")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -373,8 +373,8 @@ func TestCastToKindAllScalars(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for unsupported kind, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -417,8 +417,8 @@ func TestCastToTypeChanBranch(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error for bad LENGTH, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("LENGTH zero errors (size < 1)", func(t *testing.T) {
@@ -426,8 +426,8 @@ func TestCastToTypeChanBranch(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error for LENGTH=0, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -449,8 +449,8 @@ func TestCastToSliceTypeDefaultBranch(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error for bad scalar source, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -475,8 +475,8 @@ func TestCastToTypeFuncUnsupportedType(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for unsupported func type, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -487,8 +487,8 @@ func TestCastToTypeFuncElementError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for uncastable Func element, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -499,8 +499,8 @@ func TestCastToTypeChanElementError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for uncastable Chan element, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -527,8 +527,8 @@ func TestToEDefaultElseBranch(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for unsupported struct TTo, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -554,8 +554,8 @@ func TestToBoolDefaultError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for unparseable bool source, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -568,8 +568,8 @@ func TestToComplexDefaultError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for unparseable complex source, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
