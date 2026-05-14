@@ -11,7 +11,8 @@ func ExampleToE_string() {
 	fmt.Printf("%#v (%T), %v", v, v, e)
 	// Output: "1" (string), <nil>
 }
-func ExampleToE_error_with_default() {
+
+func ExampleToE_errorWithDefault() {
 	v, e := cast.ToE[int]("Hi!", cast.Op{cast.DEFAULT, 10})
 	fmt.Printf("%#v (%T), %v", v, v, e)
 	// Output: 10 (int), strconv.ParseFloat: parsing "Hi!": invalid syntax: strconv.ParseFloat: parsing "Hi!": invalid syntax: unable to cast "Hi!" of type string to int
@@ -35,13 +36,13 @@ func ExampleToE_int() {
 	// Output: 1 (int), <nil>
 }
 
-func ExampleToE_uint_err() {
+func ExampleToE_uintErr() {
 	v, e := cast.ToE[uint]("-1")
 	fmt.Printf("%v (%T), %v", v, v, e)
 	// Output: 0 (uint), cannot cast signed value to unsigned integer: unable to cast "-1" of type string to uint
 }
 
-func ExampleToE_uint_abs() {
+func ExampleToE_uintAbs() {
 	v, e := cast.ToE[uint]("-1", cast.Op{cast.ABS, true})
 	fmt.Printf("%v (%T), %v", v, v, e)
 	// Output: 1 (uint), <nil>
@@ -65,7 +66,7 @@ func ExampleTo_slice() {
 	// Output: [1 2 3] ([]int)
 }
 
-func ExampleToE_slice_unique_values() {
+func ExampleToE_sliceUniqueValues() {
 	v, e := cast.ToE[[]int]([]int{1, 2, 1, 3}, cast.Op{cast.UNIQUE_VALUES, true})
 	fmt.Printf("%v (%T), %v", v, v, e)
 	// Output: [1 2 3] ([]int), <nil>
@@ -78,7 +79,7 @@ func ExampleTo_chan() {
 	// Output: 10 (int)
 }
 
-func ExampleToE_chan_length() {
+func ExampleToE_chanLength() {
 	ch, e := cast.ToE[chan int](10, cast.Op{cast.LENGTH, 5})
 	v := <-ch
 	fmt.Printf("%v (cap %d), %v", v, cap(ch), e)
@@ -91,39 +92,102 @@ func ExampleTo_func() {
 	// Output: 10 (int)
 }
 
-func ExampleToE_map_from_map() {
+func ExampleTo_map() {
+	m := cast.To[map[string]int](map[string]string{"a": "1", "b": "2"})
+	fmt.Printf("a=%v b=%v (%T)", m["a"], m["b"], m)
+	// Output: a=1 b=2 (map[string]int)
+}
+
+func ExampleToE_mapFromMap() {
 	m, e := cast.ToE[map[string]int](map[string]string{"a": "1"})
 	fmt.Printf("%v (%T), %v", m["a"], m["a"], e)
 	// Output: 1 (int), <nil>
 }
 
-func ExampleToE_map_from_struct() {
+func ExampleToE_mapDuplicateKeyError() {
+	// After casting, "1" and "01" both become the integer key 1 — a duplicate.
+	m, e := cast.ToE[map[int]string](
+		map[string]string{"1": "one", "01": "also-one"},
+		cast.Op{cast.DUPLICATE_KEY_ERROR, true},
+	)
+	fmt.Printf("m=%v, err=%v", m, e != nil)
+	// Output: m=map[], err=true
+}
+
+func ExampleToE_mapFromStruct() {
 	type Point struct{ X, Y int }
 	m, e := cast.ToE[map[string]any](Point{X: 3, Y: 4})
 	fmt.Printf("X=%v Y=%v, %v", m["X"], m["Y"], e)
 	// Output: X=3 Y=4, <nil>
 }
 
-func ExampleToE_map_from_private_struct() {
+func ExampleToE_mapFromPrivateStruct() {
+	// PRIVATE includes unexported fields as map keys.
 	type Point struct{ x, y int }
 	m, e := cast.ToE[map[string]any](Point{x: 3, y: 4}, cast.Op{cast.PRIVATE, true})
 	fmt.Printf("x=%v y=%v, %v", m["x"], m["y"], e)
 	// Output: x=3 y=4, <nil>
 }
 
-func ExampleToE_map_from_slice() {
+func ExampleToE_mapToPrivateStruct() {
+	// PRIVATE allows map values to be written into unexported struct fields.
+	type Point struct{ x, y int }
+	p, e := cast.ToE[Point](map[string]any{"x": 3, "y": 4}, cast.Op{cast.PRIVATE, true})
+	fmt.Printf("x=%v y=%v (%T), %v", p.x, p.y, p, e)
+	// Output: x=3 y=4 (cast_test.Point), <nil>
+}
+
+func ExampleToE_mapFromSlice() {
 	m, e := cast.ToE[map[int]string]([]string{"a", "b", "c"})
 	fmt.Printf("%v (%T), %v", m[0], m[0], e)
 	// Output: a (string), <nil>
 }
 
-func ExampleToE_string_json() {
+func ExampleToE_stringJson() {
 	v, e := cast.ToE[string](`hello "world"`, cast.Op{cast.JSON, true})
 	fmt.Printf("%v, %v", v, e)
 	// Output: "hello \"world\"", <nil>
 }
 
-func ExampleToE_map_to_struct() {
+func ExampleTo_struct() {
+	type Point struct{ X, Y int }
+	p := cast.To[Point](map[string]any{"X": "3", "Y": "4"})
+	fmt.Printf("X=%v Y=%v (%T)", p.X, p.Y, p)
+	// Output: X=3 Y=4 (cast_test.Point)
+}
+
+func ExampleToE_structNested() {
+	type Address struct{ City, Country string }
+	type Person struct {
+		Name    string
+		Age     int
+		Address Address
+	}
+	m := map[string]any{
+		"Name": "Alice",
+		"Age":  "30",
+		"Address": map[string]any{
+			"City":    "Portland",
+			"Country": "US",
+		},
+	}
+	p, e := cast.ToE[Person](m)
+	fmt.Printf("Name=%v Age=%v City=%v Country=%v, %v", p.Name, p.Age, p.Address.City, p.Address.Country, e)
+	// Output: Name=Alice Age=30 City=Portland Country=US, <nil>
+}
+
+func ExampleToE_structStrict() {
+	type Point struct{ X, Y int }
+	// "Z" has no matching field in Point — STRICT turns that into an error.
+	_, e := cast.ToE[Point](
+		map[string]any{"X": 1, "Y": 2, "Z": 3},
+		cast.Op{cast.STRICT, true},
+	)
+	fmt.Printf("err=%v", e != nil)
+	// Output: err=true
+}
+
+func ExampleToE_mapToStruct() {
 	type MyStruct struct {
 		X int
 		Y int
@@ -144,7 +208,7 @@ func ExampleToE_map_to_struct() {
 	// Output: p=(cast_test.MyStruct), X=3 (int), Y=4 (int), A=hello (string), B=world (string), <nil>
 }
 
-func ExampleToE_struct_to_struct() {
+func ExampleToE_structToStruct() {
 	type MyStruct struct {
 		X int
 		Y int
@@ -168,7 +232,7 @@ func ExampleToE_struct_to_struct() {
 	// Output: p=(cast_test.MyStruct), X=3 (int), Y=4 (int), A=hello (string), B=world (string), <nil>
 }
 
-func ExampleToE_map_to_struct_tags() {
+func ExampleToE_mapToStructTags() {
 	type MyStruct struct {
 		X int    `cast:"field_x"`
 		Y int    `cast:"field_y"`
@@ -186,7 +250,7 @@ func ExampleToE_map_to_struct_tags() {
 	// Output: p=(cast_test.MyStruct), X=3 (int), Y=4 (int), A=hello (string), B=world (string), <nil>
 }
 
-func ExampleToE_struct_to_struct_private() {
+func ExampleToE_structToStructPrivate() {
 	type MyStruct struct {
 		X int
 		Y int
@@ -210,7 +274,7 @@ func ExampleToE_struct_to_struct_private() {
 	// Output: p=(cast_test.MyStruct), X=3 (int), Y=4 (int), a=hello (string), b=world (string), <nil>
 }
 
-func ExampleToE_struct_to_struct_json_tags() {
+func ExampleToE_structToStructJsonTags() {
 	type MyStruct struct {
 		X int    `json:"fieldX"`
 		Y int    `json:"fieldY"`
@@ -234,7 +298,7 @@ func ExampleToE_struct_to_struct_json_tags() {
 	// Output: p=(cast_test.MyStruct), X=3 (int), Y=4 (int), a=hello (string), b=world (string), <nil>
 }
 
-func ExampleToE_struct_to_map() {
+func ExampleToE_structToMap() {
 	type YourStruct struct {
 		X int
 		Y int
@@ -255,7 +319,7 @@ func ExampleToE_struct_to_map() {
 	// Output: p=(map[string]string), X=3 (string), Y=4 (string), A=hello (string), B=world (string), <nil>
 }
 
-func ExampleToE_struct_to_map_error() {
+func ExampleToE_structToMapError() {
 	type YourStruct struct {
 		X int
 		Y int
@@ -286,25 +350,3 @@ type Output struct {
 func (o Output) Get(field string) any {
 	return ""
 }
-
-// func ExampleToE_generic() {
-// 	type Input struct {
-// 		X int
-// 		Y int
-// 		a string
-// 		b string
-// 	}
-
-// 	input := Input{
-// 		X: 3,
-// 		Y: 4,
-// 		a: "hello",
-// 		b: "world",
-// 	}
-// 	data := []Output{}
-// 	output, e := cast.ToE[Output](input, cast.Op{cast.PRIVATE, true})
-// 	data = append(data, output)
-
-// 	fmt.Printf("data=(%T), fieldX=%v (%T), fieldY=%v (%T), fieldA=%v (%T), fieldB=%v (%T), %v", data[0], data[0].fieldX, data[0].fieldX, data[0].fieldY, data[0].fieldY, data[0].fieldA, data[0].fieldA, data[0].fieldB, data[0].fieldB, e)
-// 	// Output: data=(cast_test.Output), fieldX=3 (string), fieldY=4 (int), fieldA=hello (string), fieldB=world (string), <nil>
-// }

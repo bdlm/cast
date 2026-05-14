@@ -128,6 +128,15 @@ func castToKind(v any, kind reflect.Kind, ops ops) (reflect.Value, error) {
 }
 
 // castToType casts v to the type t and returns the result as a reflect.Value.
+// Dispatch order:
+//  1. Named types — checked in namedConverters before the kind switch.
+//  2. Interface — assignability-checked and returned as-is.
+//  3. Map, Slice — delegated to toMap / toSlice.
+//  4. Func — requires zero-arg, one-return signature; return type is cast recursively.
+//  5. Chan — element is cast recursively; a buffered channel of the target type is returned.
+//  6. Pointer — element type is cast recursively; a new pointer is allocated.
+//  7. Struct — delegated to castToStructType.
+//  8. Scalars — delegated to castToKind with a ConvertibleTo fallback for named types.
 func castToType(v any, t reflect.Type, ops ops) (reflect.Value, error) {
 	// Named types have dedicated converters; consult the table before the
 	// generic kind dispatch below so that adding a new named type only

@@ -11,7 +11,6 @@ import (
 	"github.com/bdlm/cast/v2"
 )
 
-
 func TestToEDuration(t *testing.T) {
 	cases := []struct {
 		name      string
@@ -60,8 +59,8 @@ func TestToEDuration(t *testing.T) {
 				t.Errorf("unexpected error: %v", err)
 			} else if err == nil && tc.expectErr {
 				t.Error("expected error, got nil")
-			} else if err != nil && !errors.Is(err, cast.Error) {
-				t.Errorf("expected cast.Error, got %T: %v", err, err)
+			} else if err != nil && !errors.Is(err, cast.ErrorUnableToCast) {
+				t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 			} else if err == nil && result != tc.expect {
 				t.Errorf("expected %v, got %v", tc.expect, result)
 			}
@@ -100,8 +99,8 @@ func TestToEDurationInvalidDefault(t *testing.T) {
 	if err == nil {
 		t.Error("expected error for non-time.Duration DEFAULT, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %T: %v", err, err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 	}
 }
 
@@ -155,8 +154,8 @@ func TestToEDurationStringerDefaultFails(t *testing.T) {
 	if err == nil {
 		t.Error("expected error for unparseable Stringer duration, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %T: %v", err, err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 	}
 }
 
@@ -210,8 +209,8 @@ func TestBigIntToDuration(t *testing.T) {
 				t.Errorf("unexpected error: %v", err)
 			} else if err == nil && tc.expectErr {
 				t.Error("expected error, got nil")
-			} else if err != nil && !errors.Is(err, cast.Error) {
-				t.Errorf("expected cast.Error, got %T: %v", err, err)
+			} else if err != nil && !errors.Is(err, cast.ErrorUnableToCast) {
+				t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 			} else if err == nil && result != tc.expect {
 				t.Errorf("expected %v, got %v", tc.expect, result)
 			}
@@ -230,8 +229,8 @@ func TestDefaultBranchToDuration(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for time.Time→time.Duration, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 		}
 	})
 	t.Run("bool → error (not a duration string)", func(t *testing.T) {
@@ -239,8 +238,8 @@ func TestDefaultBranchToDuration(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for bool→time.Duration, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 		}
 	})
 	t.Run("complex128 → error (not a duration string)", func(t *testing.T) {
@@ -248,8 +247,8 @@ func TestDefaultBranchToDuration(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for complex→time.Duration, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 		}
 	})
 }

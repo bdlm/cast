@@ -273,8 +273,8 @@ func TestToChanSlice(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -307,8 +307,8 @@ func TestToChanNested(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -319,8 +319,8 @@ func TestChanInvalidDefault(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("int DEFAULT for chan string", func(t *testing.T) {
@@ -328,8 +328,8 @@ func TestChanInvalidDefault(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("chan string DEFAULT for chan int", func(t *testing.T) {
@@ -337,8 +337,8 @@ func TestChanInvalidDefault(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("compatible DEFAULT for chan int does not error", func(t *testing.T) {
@@ -355,8 +355,8 @@ func TestToChanDefaultArm(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for chan struct{} (unsupported kind), got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -1012,8 +1012,8 @@ func TestToChanFuncSliceVariants(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -1056,8 +1056,8 @@ func TestToChanFuncElement(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -1070,8 +1070,8 @@ func TestToChanSliceDefaultArm(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for chan []struct{} (unsupported slice element kind), got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -1083,8 +1083,8 @@ func TestToChanFuncDefaultArm(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for chan Func[struct{}] (unsupported Func return kind), got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -1096,8 +1096,8 @@ func TestToChanFuncSliceDefaultArm(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for chan Func[[]struct{}] (unsupported element kind), got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -1109,8 +1109,8 @@ func TestToChanNestedDefaultArm(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for chan chan struct{} (unsupported nested element kind), got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -1152,8 +1152,8 @@ test: %#v
 				t.Error("1. expected nil, got error", testInfo)
 			} else if err == nil && test.expectErr {
 				t.Error("2. expected error, got nil", testInfo)
-			} else if err != nil && !errors.Is(err, cast.Error) {
-				t.Error("3. expected cast.Error, got different error type", testInfo)
+			} else if err != nil && !errors.Is(err, cast.ErrorUnableToCast) {
+				t.Error("3. expected cast.ErrorUnableToCast, got different error type", testInfo)
 			} else if nil == err && !reflect.DeepEqual(result, test.expect.(TTo)) {
 				t.Errorf("4. expected %v to equal %v %s", test.expect, actual, testInfo)
 			}

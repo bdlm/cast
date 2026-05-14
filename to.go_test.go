@@ -94,8 +94,8 @@ test: %#v
 				t.Error("1. expected nil, got error", testInfo)
 			} else if err == nil && test.expectErr {
 				t.Error("2. expected error, got nil", testInfo)
-			} else if err != nil && !errors.Is(err, cast.Error) {
-				t.Error("3. expected cast.Error, got different error type", testInfo)
+			} else if err != nil && !errors.Is(err, cast.ErrorUnableToCast) {
+				t.Error("3. expected cast.ErrorUnableToCast, got different error type", testInfo)
 			} else if nil == err && !reflect.DeepEqual(actual, test.expect) {
 				t.Errorf("4. expected %v to equal %v %s", test.expect, actual, testInfo)
 			}
@@ -124,8 +124,8 @@ func TestToEDefaultCaseConcreteError(t *testing.T) {
 	if err == nil {
 		t.Error("expected error for concrete error type → ToE default branch, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -137,8 +137,8 @@ func TestToEDefaultCaseConcreteStringer(t *testing.T) {
 	if err == nil {
 		t.Error("expected error for concrete Stringer type → ToE default branch, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -406,7 +406,10 @@ func TestPointerDerefLoop(t *testing.T) {
 	})
 
 	t.Run("*anonymous struct → struct", func(t *testing.T) {
-		src := &struct{ X int; Y string }{X: 3, Y: "anon"}
+		src := &struct {
+			X int
+			Y string
+		}{X: 3, Y: "anon"}
 		got, err := cast.ToE[ptrDerefStruct](src)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -423,8 +426,8 @@ func TestPointerDerefLoop(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error for nil struct source, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 

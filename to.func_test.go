@@ -275,8 +275,8 @@ func TestToFuncSlice(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -309,8 +309,8 @@ func TestToFuncChan(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -655,8 +655,8 @@ func TestToFuncDefaultWrongType(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for wrong DEFAULT type, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 }
 
@@ -697,7 +697,7 @@ test: %#v
 				t.Error(1, testInfo)
 			} else if test.expectErr && err == nil {
 				t.Error(2, testInfo)
-			} else if err != nil && !errors.Is(err, cast.Error) {
+			} else if err != nil && !errors.Is(err, cast.ErrorUnableToCast) {
 				t.Error(3, testInfo)
 			} else if nil == err && !reflect.DeepEqual(result, test.expect.(TTo)) {
 				t.Error(4, testInfo)

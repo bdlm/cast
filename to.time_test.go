@@ -60,8 +60,8 @@ func TestToETime(t *testing.T) {
 				t.Errorf("unexpected error: %v", err)
 			} else if err == nil && tc.expectErr {
 				t.Error("expected error, got nil")
-			} else if err != nil && !errors.Is(err, cast.Error) {
-				t.Errorf("expected cast.Error, got %T: %v", err, err)
+			} else if err != nil && !errors.Is(err, cast.ErrorUnableToCast) {
+				t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 			} else if err == nil && !result.Equal(tc.expect) {
 				t.Errorf("expected %v, got %v", tc.expect, result)
 			}
@@ -100,8 +100,8 @@ func TestToETimeInvalidDefault(t *testing.T) {
 	if err == nil {
 		t.Error("expected error for non-time.Time DEFAULT, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %T: %v", err, err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 	}
 }
 
@@ -160,8 +160,8 @@ func TestToETimeCustomFormat(t *testing.T) {
 		if err == nil {
 			t.Error("expected error: with custom FORMAT, standard formats must not be tried as a fallback")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %T: %v", err, err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 		}
 	})
 }

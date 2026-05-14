@@ -18,7 +18,7 @@ import (
 )
 
 // To casts the value v to the given type, ignoring any errors. See the ToE
-// documentation more information.
+// documentation for more information.
 func To[TTo Types](v any, o ...Op) TTo {
 	ret, _ := ToE[TTo](v, o...)
 	return ret
@@ -26,16 +26,15 @@ func To[TTo Types](v any, o ...Op) TTo {
 
 // ToE casts the value v to the given type, returning any errors.
 //
-// ops (Ops) is an optional parameter providing flags that can be used to modify
-// the default type conversion behavior. If ops is not provided, the default
-// conversion behavior for a given type is used. Available options depend on the
-// target type, see the documentation for the specific type conversion function
-// for more information.
+// ops is an optional variadic list of [Op] values that control conversion
+// behavior. If omitted, the default conversion behavior for the target type is
+// used. Available options depend on the target type; see the documentation for
+// the specific type conversion function for more information.
 //
 // Complex types have specific default behaviors, for example:
 //
-//   - If the target type is a channel, a channel with a buffer of 1 is created
-//     and the cast value `v` is added to the the channel before it is returned.
+//   - If the target type is a channel, a buffered channel of size 1 is created
+//     and the cast value `v` is sent to the channel before it is returned.
 //
 //   - If the target type is a slice, a slice is created. To pre-allocate
 //     backing capacity set the LENGTH flag: `cast.ToE[[]int](v, cast.Op{cast.LENGTH, 10})`.

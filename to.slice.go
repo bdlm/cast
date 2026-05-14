@@ -6,8 +6,7 @@ import (
 	"slices"
 )
 
-// toSlice returns a slice containing the specified reflect.Value type
-// containing the from value.
+// toSlice converts val to a slice whose element type is described by to.
 //
 // Options:
 //   - DEFAULT: slice, default return value on error.

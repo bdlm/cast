@@ -115,7 +115,7 @@ func TestSliceToUintSlice(t *testing.T) {
 		{in: []uint32{1, 30, 10, 0, 1}, expect: []uint{1, 30, 10, 0, 1}, err: nil, expectErr: false},
 		{in: 1, expect: []uint{1}, err: nil, expectErr: false},
 		{in: "1", expect: []uint{1}, err: nil, expectErr: false},
-		{in: -1, expect: []uint{}, err: nil, expectErr: true},  // negative signed → unsigned errors
+		{in: -1, expect: []uint{}, err: nil, expectErr: true},   // negative signed → unsigned errors
 		{in: "-1", expect: []uint{}, err: nil, expectErr: true}, // negative string → unsigned errors
 		{in: []float32{1.1}, expect: []uint{1}, err: nil, expectErr: false},
 		{in: []string{"1.1"}, expect: []uint{1}, err: nil, expectErr: false},
@@ -392,8 +392,8 @@ func TestSliceLengthErrors(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error for invalid LENGTH value, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("negative LENGTH errors", func(t *testing.T) {
@@ -401,8 +401,8 @@ func TestSliceLengthErrors(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error for negative LENGTH, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -413,8 +413,8 @@ func TestSliceInvalidDefault(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("int DEFAULT for []string", func(t *testing.T) {
@@ -422,8 +422,8 @@ func TestSliceInvalidDefault(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("[]string DEFAULT for []int", func(t *testing.T) {
@@ -431,8 +431,8 @@ func TestSliceInvalidDefault(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("compatible DEFAULT for []int does not error", func(t *testing.T) {
@@ -451,62 +451,62 @@ func TestToSliceElementErrors(t *testing.T) {
 
 	t.Run("[]bool element error", func(t *testing.T) {
 		_, err := cast.ToE[[]bool](bad)
-		if err == nil || !errors.Is(err, cast.Error) {
-			t.Fatalf("expected cast.Error, got %v", err)
+		if err == nil || !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Fatalf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("[]complex64 element error", func(t *testing.T) {
 		_, err := cast.ToE[[]complex64](bad)
-		if err == nil || !errors.Is(err, cast.Error) {
-			t.Fatalf("expected cast.Error, got %v", err)
+		if err == nil || !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Fatalf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("[]complex128 element error", func(t *testing.T) {
 		_, err := cast.ToE[[]complex128](bad)
-		if err == nil || !errors.Is(err, cast.Error) {
-			t.Fatalf("expected cast.Error, got %v", err)
+		if err == nil || !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Fatalf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("[]float32 element error", func(t *testing.T) {
 		_, err := cast.ToE[[]float32](bad)
-		if err == nil || !errors.Is(err, cast.Error) {
-			t.Fatalf("expected cast.Error, got %v", err)
+		if err == nil || !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Fatalf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("[]float64 element error", func(t *testing.T) {
 		_, err := cast.ToE[[]float64](bad)
-		if err == nil || !errors.Is(err, cast.Error) {
-			t.Fatalf("expected cast.Error, got %v", err)
+		if err == nil || !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Fatalf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("[]int element error", func(t *testing.T) {
 		_, err := cast.ToE[[]int](bad)
-		if err == nil || !errors.Is(err, cast.Error) {
-			t.Fatalf("expected cast.Error, got %v", err)
+		if err == nil || !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Fatalf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("[]int8 element error", func(t *testing.T) {
 		_, err := cast.ToE[[]int8](bad)
-		if err == nil || !errors.Is(err, cast.Error) {
-			t.Fatalf("expected cast.Error, got %v", err)
+		if err == nil || !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Fatalf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("[]int16 element error", func(t *testing.T) {
 		_, err := cast.ToE[[]int16](bad)
-		if err == nil || !errors.Is(err, cast.Error) {
-			t.Fatalf("expected cast.Error, got %v", err)
+		if err == nil || !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Fatalf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("[]int32 element error", func(t *testing.T) {
 		_, err := cast.ToE[[]int32](bad)
-		if err == nil || !errors.Is(err, cast.Error) {
-			t.Fatalf("expected cast.Error, got %v", err)
+		if err == nil || !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Fatalf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 	t.Run("[]int64 element error", func(t *testing.T) {
 		_, err := cast.ToE[[]int64](bad)
-		if err == nil || !errors.Is(err, cast.Error) {
-			t.Fatalf("expected cast.Error, got %v", err)
+		if err == nil || !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Fatalf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -573,8 +573,8 @@ func TestMapToSlice(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for unconvertible map value, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -786,8 +786,8 @@ func TestJSONStringToSlice(t *testing.T) {
 		if err == nil {
 			t.Error("expected error for unconvertible JSON element, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 	})
 }
@@ -822,8 +822,8 @@ test: %#v
 				t.Error("1. expected nil, got error", testInfo)
 			} else if nil == err && test.expectErr {
 				t.Error("2. expected error, got nil", testInfo)
-			} else if nil != err && !errors.Is(err, cast.Error) {
-				t.Error("3. expected cast.Error, got different error type", testInfo)
+			} else if nil != err && !errors.Is(err, cast.ErrorUnableToCast) {
+				t.Error("3. expected cast.ErrorUnableToCast, got different error type", testInfo)
 			} else if nil == err && !reflect.DeepEqual(actual, test.expect) {
 				t.Errorf("4. expected %v (%T) to equal %v (%T)\n%s", test.expect, test.expect, actual, actual, testInfo)
 			}

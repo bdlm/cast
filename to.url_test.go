@@ -42,8 +42,8 @@ func TestToEURL(t *testing.T) {
 				t.Errorf("unexpected error: %v", err)
 			} else if err == nil && tc.expectErr {
 				t.Error("expected error, got nil")
-			} else if err != nil && !errors.Is(err, cast.Error) {
-				t.Errorf("expected cast.Error, got %T: %v", err, err)
+			} else if err != nil && !errors.Is(err, cast.ErrorUnableToCast) {
+				t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 			} else if err == nil && result.String() != tc.expectStr {
 				t.Errorf("expected %q, got %q", tc.expectStr, result.String())
 			}
@@ -83,8 +83,8 @@ func TestToEURLInvalidDefault(t *testing.T) {
 	if err == nil {
 		t.Error("expected error for non-*url.URL DEFAULT, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %T: %v", err, err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %T: %v", err, err)
 	}
 }
 

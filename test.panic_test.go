@@ -30,8 +30,8 @@ func TestToERecoversPanicWithErrorValue(t *testing.T) {
 	if err == nil {
 		t.Error("expected error from recovered error-panic, got nil")
 	}
-	if !errors.Is(err, cast.Error) {
-		t.Errorf("expected cast.Error, got %v", err)
+	if !errors.Is(err, cast.ErrorUnableToCast) {
+		t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 	}
 	if result != "" {
 		t.Errorf("expected zero value on panic, got %q", result)
@@ -45,8 +45,8 @@ func TestToERecoversPanic(t *testing.T) {
 		if err == nil {
 			t.Error("expected error from recovered panic, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 		if result != "" {
 			t.Errorf("expected zero value on panic, got %q", result)
@@ -58,8 +58,8 @@ func TestToERecoversPanic(t *testing.T) {
 		if err == nil {
 			t.Error("expected error from recovered panic, got nil")
 		}
-		if !errors.Is(err, cast.Error) {
-			t.Errorf("expected cast.Error, got %v", err)
+		if !errors.Is(err, cast.ErrorUnableToCast) {
+			t.Errorf("expected cast.ErrorUnableToCast, got %v", err)
 		}
 		if result != false {
 			t.Errorf("expected zero value on panic, got %v", result)
