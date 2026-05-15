@@ -15,6 +15,8 @@ import (
 
 	"github.com/bdlm/errors/v2"
 	std_error "github.com/bdlm/std/v2/errors"
+
+	internal "github.com/bdlm/cast/v2/internal/cast"
 )
 
 // To casts the value v to the given type, ignoring any errors. See the ToE
@@ -68,7 +70,7 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 			}
 		}
 	}()
-	options := parseOps(ops)
+	options := internal.ParseOps(ops)
 
 	toRef := reflect.ValueOf(new(TTo))
 	to := reflect.Indirect(toRef)
@@ -96,7 +98,7 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 				changed = true
 				continue
 			}
-			if isScalarKind(elem.Kind()) || (elem.Kind() == reflect.Struct && targetIsStruct) {
+			if internal.IsScalarKind(elem.Kind()) || (elem.Kind() == reflect.Struct && targetIsStruct) {
 				// Dereference scalars always; structs only when the target is a struct.
 				srcVal = elem
 				changed = true
@@ -108,10 +110,10 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 		}
 	}
 
-	// Named types have dedicated converters registered in namedConverters
-	// (util.reflect.go). Check the table first so that adding a new named
-	// type requires only one edit there.
-	if fn, ok := namedConverters[to.Type()]; ok {
+	// Named types have dedicated converters registered in NamedConverters
+	// (internal/cast/util.reflect.go). Check the table first so that adding a
+	// new named type requires only one edit there.
+	if fn, ok := internal.NamedConverters[to.Type()]; ok {
 		retIface, err = fn(val, options)
 	} else {
 		switch to.Type().Kind() {
@@ -134,56 +136,56 @@ func ToE[TTo Types](val any, ops ...Op) (panicTo TTo, panicErr error) {
 			retIface = val
 
 		case reflect.Struct:
-			retIface, err = toStruct(to, val, options)
+			retIface, err = internal.ToStruct(to, val, options)
 
 		case reflect.Bool:
-			retIface, err = toBool(val, options)
+			retIface, err = internal.ToBool[bool](val, options)
 		case reflect.Chan:
-			retIface, err = toChan(to, val, options)
+			retIface, err = internal.ToChan(to, val, options)
 		case reflect.Map:
-			retIface, err = toMap(to, val, options)
+			retIface, err = internal.ToMap(to, val, options)
 		case reflect.Pointer:
-			result, castErr := castToType(val, to.Type(), options)
+			result, castErr := internal.CastToType(val, to.Type(), options)
 			if castErr != nil {
 				return ret0Val, errors.WrapE(ErrorUnableToCast, castErr)
 			}
 			retIface = result.Interface()
 		case reflect.Slice:
-			retIface, err = toSlice(to, val, options)
+			retIface, err = internal.ToSlice(to, val, options)
 		case reflect.Func:
-			retIface, err = toFunc[TTo](to, val, options)
+			retIface, err = internal.ToFunc(to, val, options)
 		case reflect.Complex64:
-			retIface, err = toComplex[complex64](val, options)
+			retIface, err = internal.ToComplex[complex64](val, options)
 		case reflect.Complex128:
-			retIface, err = toComplex[complex128](val, options)
+			retIface, err = internal.ToComplex[complex128](val, options)
 		case reflect.Float32:
-			retIface, err = toFloat[float32](val, options)
+			retIface, err = internal.ToFloat[float32](val, options)
 		case reflect.Float64:
-			retIface, err = toFloat[float64](val, options)
+			retIface, err = internal.ToFloat[float64](val, options)
 		case reflect.Int:
-			retIface, err = toInt[int](val, options)
+			retIface, err = internal.ToInt[int](val, options)
 		case reflect.Int8:
-			retIface, err = toInt[int8](val, options)
+			retIface, err = internal.ToInt[int8](val, options)
 		case reflect.Int16:
-			retIface, err = toInt[int16](val, options)
+			retIface, err = internal.ToInt[int16](val, options)
 		case reflect.Int32:
-			retIface, err = toInt[int32](val, options)
+			retIface, err = internal.ToInt[int32](val, options)
 		case reflect.Int64:
-			retIface, err = toInt[int64](val, options)
+			retIface, err = internal.ToInt[int64](val, options)
 		case reflect.Uint:
-			retIface, err = toInt[uint](val, options)
+			retIface, err = internal.ToInt[uint](val, options)
 		case reflect.Uint8:
-			retIface, err = toInt[uint8](val, options)
+			retIface, err = internal.ToInt[uint8](val, options)
 		case reflect.Uint16:
-			retIface, err = toInt[uint16](val, options)
+			retIface, err = internal.ToInt[uint16](val, options)
 		case reflect.Uint32:
-			retIface, err = toInt[uint32](val, options)
+			retIface, err = internal.ToInt[uint32](val, options)
 		case reflect.Uint64:
-			retIface, err = toInt[uint64](val, options)
+			retIface, err = internal.ToInt[uint64](val, options)
 		case reflect.Uintptr:
-			retIface, err = toInt[uintptr](val, options)
+			retIface, err = internal.ToInt[uintptr](val, options)
 		case reflect.String:
-			retIface, err = toString(val, options)
+			retIface, err = internal.ToString(val, options)
 		}
 	}
 
