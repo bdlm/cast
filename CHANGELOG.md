@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 # Versions
 
+- [v2.1.4 - 2026-05-14](#v214---2026-05-14) _(Go 1.21+)_
 - [v2.1.3 - 2026-05-13](#v213---2026-05-13) _(Go 1.21+)_
 - [v2.1.2 - 2026-05-13](#v212---2026-05-13) _(Go 1.21+)_
 - [v2.1.1 - 2026-05-04](#v211---2026-05-04) _(Go 1.21+)_
@@ -22,6 +23,71 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [v1.0.1 - 2020-06-25](#v101---2020-06-25) _(Go 1.14+)_
 - [v1.0.0 - 2020-05-02](#v100---2020-05-02) _(Go 1.14+)_
 
+
+# v2.1.4 - 2026-05-14
+Internal package refactoring, `ToStruct`/`ToStructE` removal, documentation corrections, flag-behavior fixes, and substantially expanded test and example coverage.
+
+### Removed
+
+- **`ToStruct[T]`** — public API removed. Use `cast.To[T]` instead; struct hydration is dispatched automatically when `T` is a struct type.
+- **`ToStructE[T]`** — public API removed. Use `cast.ToE[T]` instead. The implementation moved to `internal/cast` as `ToStructE`.
+- README references to `cast.ToStruct[T]` / `cast.ToStructE[T]` replaced with `cast.To[T]` / `cast.ToE[T]`.
+
+### Changed
+
+#### `internal/cast/` package
+Implementation moved out of the public package surface:
+- `to.go` and `to.type.go` remain in `package cast` and expose `To`, `ToE`, and the public type API.
+- All converter sources (`to.bool.go`, `to.int.go`, `to.float.go`, `to.complex.go`, `to.string.go`, `to.slice.go`, `to.map.go`, `to.chan.go`, `to.func.go`, `to.struct.go`, `to.time.go`, `to.duration.go`, `to.big.go`, `to.net.go`, `to.url.go`, `to.regexp.go`, `util.decode.go`, `util.reflect.go`) moved to `internal/cast/`.
+- All `*_test.go` files moved to `internal/cast/` except `test.examples_test.go`, which stays in main to validate the public API surface via godoc examples.
+- Non-generic public types (`Flag`, `Op`, flag constants, error vars) are defined in the internal package; main package re-exports them via Go type aliases. Generic types (`Func`, `Types`, `Tbase`, `Tslice`, `Tchan`, `Tmap`) stay in main because Go 1.21 does not support generic type aliases.
+- Internal `ops` struct renamed to `Ops` with exported fields so the main package can construct it via `internal.ParseOps`.
+- `makeChan`/`makeFunc` rewritten to use reflection-based casting (`CastToType`) instead of recursively calling the public `ToE`, breaking the otherwise-circular import path between main and internal.
+- `ToChan` and `ToFunc` are non-generic in the internal package; main's `ToE` performs the final type assertion (with `reflect.Convert` fallback) to produce the user's named `chan T` or `Func[T]`.
+
+#### Options documentation
+- Added `FORMAT` row to the README Options table (previously absent).
+- Added Type and Scope columns to the Options table; reordered rows to match the constant declaration order.
+- Added a "Global flag propagation" subsection below the table with runnable examples showing `ABS`, `JSON`, `LENGTH`, `UNIQUE_VALUES`, and `FORMAT` propagating into nested casts.
+- All flag constants in `internal/cast/to.type.go` now carry full multi-line doc comments stating their value type, scope, applicability, and propagation behavior.
+
+#### Example function naming convention
+Happy-path `ExampleToE_*` functions that never showed an error have been renamed to `ExampleTo_*` and switched to `cast.To`; the freed-up `ExampleToE_*` names now hold corresponding error examples. Every `ExampleTo_*` has a matching `ExampleToE_*` error example. Total example functions: 73.
+
+### Added
+
+#### Test coverage for the conversion table
+33 new sub-tests cover previously-untested `✗` cells of the conversion table: scalar → map errors, scalar → struct errors, slice/map/struct → bool|complex errors, map → int/uint/float errors, struct → uint error, and the documented `[]byte`/`[]rune` → `map[K]V` success path. New ABS coverage added for negative `float64` sources and negative-float strings to `uint` targets.
+
+#### Godoc example functions
+24 new example functions covering previously-undocumented type categories: `time.Time` (string, int, float, `FORMAT`), `time.Duration` (string, int), `net.IP` (string, packed `uint32`), `*url.URL`, `*regexp.Regexp`, `*big.Int` (decimal, hex), `*big.Float`, `bool`, `complex64`/`complex128`, `error` and `fmt.Stringer` interface targets, `DECODE` (scalar and slice), `[]byte` → `string`, JSON-string → map, nested `chan []int` and `Func[chan int]`.
+
+### Fixed
+
+#### `time.Time` ↔ `*big.Int` round-trip
+`time.Time → *big.Int` now uses `val.UnixNano()` (was `val.Unix()`). `*big.Int → time.Time` already used nanoseconds, so the round-trip is now lossless for times within `int64` range. Three test cases in `TestTimeToBigConversions` were updated accordingly.
+
+#### Documentation conflicts
+- Named-type table footnote ᵗ said `*big.Int → time.Time` was Unix seconds; corrected to nanoseconds. `*big.Float → time.Time` remains documented as Unix seconds with fractional precision.
+- Supported Conversions table cell for `string → map[K]V` was `✗`, but JSON-object/array strings auto-decode; corrected to `~ⁿ` with a new footnote.
+- Note ⁴ for `string → bool` said only `strconv.ParseBool` variants are accepted; the integer-parse fallback path was undocumented and is now described (`"-1"` → true, `"0.1"` → false because `floor(0.1) = 0`, etc.).
+- Note ᵈ and the named-type example for `int*` → `time.Time` claimed Unix seconds; corrected to nanoseconds. The `toTime` docstring previously said "Unix seconds" for integer sources; fixed to "Unix nanoseconds".
+
+#### Flag documentation
+- `FORMAT` constant comment said "time/duration parsing"; only `time.Time` reads `ops.FormatVal`. Corrected.
+- `PRIVATE` constant comment said "include unexported struct fields in map output" — too narrow. Corrected to describe both directions (struct→map source-field reading and map/struct→struct target hydration).
+- README `ABS` row said "negative signed inputs"; `ABS` also applies to negative `float32`/`float64` sources and numeric strings that parse to negative floats. Description, example block, and IMPORTANT callout updated.
+
+#### `parseTimeString` undocumented edge case
+When `FORMAT` is not set, `parseTimeString` falls through to `time.Parse("", str)` after the 19-format loop. The empty string `""` is a valid source that returns `time.Time{}` because `time.Parse("", "")` succeeds. Now documented in both the function godoc and the README footnote ᶠ.
+
+#### Wrong-typed `DEFAULT` errors immediately
+Every converter type-asserts the `DEFAULT` value at the top, before inspecting the input. Passing a wrong type returns an error immediately even for inputs that would otherwise convert successfully. Now documented on the `Op` struct, the `DEFAULT` constant, and the README Options table.
+
+### Documentation (README.md)
+- `IMPORTANT` callout updated to describe the actual `string → bool` two-step parse behavior and to mention float-source applicability for `ABS`.
+- Named-type code example updated to use a meaningful Unix-nanosecond value (`int64(1_713_787_200_000_000_000)` for 2024-04-22) instead of a value that only made sense as Unix seconds.
+- The struct-hydration example block under `#### Structs` rewritten to use `cast.To` / `cast.ToE` after the removal of `ToStruct` / `ToStructE`.
 
 # v2.1.3 - 2026-05-13
 Code quality, documentation, and test improvements.

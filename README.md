@@ -54,6 +54,8 @@ The primary use-case is consuming untyped or loosely typed data from external so
 
 | Release | Date | Min Go |
 |---|---|---|
+| v2.1.4 | 2026-05-14 | 1.21 |
+| v2.1.3 | 2026-05-13 | 1.21 |
 | v2.1.2 | 2026-05-13 | 1.21 |
 | v2.1.1 | 2026-05-04 | 1.21 |
 | v2.1.0 | 2026-04-20 | 1.21 |
@@ -75,14 +77,9 @@ func To[T Types](v any, o ...Op) T
 
 // ToE returns the cast value and any error.
 func ToE[T Types](v any, o ...Op) (T, error)
-
-// ToStruct and ToStructE hydrate any struct type T from a map or struct source.
-// T is constrained to any (not Types), so arbitrary struct types are accepted.
-func ToStruct[T any](v any, o ...Op) T
-func ToStructE[T any](v any, o ...Op) (T, error)
 ```
 
-`T` in `To`/`ToE` is constrained to `cast.Types`, which covers all scalar types (`bool`, `int*`, `uint*`, `float*`, `complex*`, `string`), `[]T` slices, `map[K]V` maps, `chan T` channels, `cast.Func[T]` closures, and stdlib named types (`time.Time`, `time.Duration`, `net.IP`, `*url.URL`, `*regexp.Regexp`, `*big.Int`, `*big.Float`). Named types with a matching underlying kind also satisfy `Types` (e.g. `type Celsius float32`).
+`T` in `To`/`ToE` is constrained to `cast.Types`, which covers all scalar types (`bool`, `int*`, `uint*`, `float*`, `complex*`, `string`), `[]T` slices, `map[K]V` maps, `chan T` channels, `cast.Func[T]` closures, struct types, and stdlib named types (`time.Time`, `time.Duration`, `net.IP`, `*url.URL`, `*regexp.Regexp`, `*big.Int`, `*big.Float`). Named types with a matching underlying kind also satisfy `Types` (e.g. `type Celsius float32`).
 
 **On error**, `To` returns the zero value for `T`; `ToE` returns the zero value plus the error. Use `ToE` when you need to distinguish a successful zero-value cast from a failed one.
 
@@ -93,13 +90,13 @@ cast.To[T](v, opts...)   // T; drops errors (zero value on failure)
 cast.ToE[T](v, opts...)  // (T, error)
 ```
 
-`T` covers all scalars, named underlying types (`type Celsius float32`), `[]T` slices, `map[K]V` maps, `chan T` channels, and `cast.Func[T]` closures. Struct hydration uses `cast.ToStruct[T]` / `cast.ToStructE[T]`.
+`T` covers all scalars, named underlying types (`type Celsius float32`), `[]T` slices, `map[K]V` maps, `chan T` channels, `cast.Func[T]` closures, and struct types. Struct hydration also goes through `cast.To[T]` / `cast.ToE[T]`.
 
 > [!IMPORTANT]
 > **Things that may surprise you**
 > - **Float → int truncates, it doesn't round** — `1.9 → 1`, `-1.9 → -1`
-> - **`string` → `bool` is strict** — only `"1"`, `"t"`, `"true"` and [their case variants](https://pkg.go.dev/strconv#ParseBool); `"yes"`, `"on"`, etc. are not accepted
-> - **Negative → `uint*` errors** — use `Op{ABS, true}` to use the absolute value instead
+> - **`string` → `bool`: `strconv.ParseBool` first, then integer fallback** — `"yes"`, `"on"`, and similar are not accepted, but any string that parses as a non-zero integer is true (`"-1"` → `true`, `"1.5"` → `true`, `"0.1"` → `false` because `floor(0.1) = 0`)
+> - **Negative → `uint*` errors** — use `Op{ABS, true}` to use the absolute value instead; works for signed int, float, and numeric string sources
 
 **Legend:** `✓` always succeeds · `~` succeeds for valid input · `✗` always errors
 
@@ -111,7 +108,7 @@ cast.ToE[T](v, opts...)  // (T, error)
 | `int*` (signed)       | ✓   | ✓   | ~¹  | ✓    | ✓    | ~ˢ  | ✗    | ✗    |
 | `uint*` (unsigned)    | ✓   | ✓   | ✓   | ✓    | ✓    | ~ˢ  | ✗    | ✗    |
 | `float*` · `complex*` | ✓   | ~²³ | ~¹² | ✓³   | ✓    | ~ˢ  | ✗    | ✗    |
-| `string`              | ~⁴  | ~⁵  | ~⁵  | ~⁵   | ✓    | ~ˡ  | ✗    | ✗    |
+| `string`              | ~⁴  | ~⁵  | ~⁵  | ~⁵   | ✓    | ~ˡ  | ~ⁿ  | ✗    |
 | `[]byte` · `[]rune`   | ~   | ~   | ~   | ~    | ✓⁶   | ~ᵐ  | ~ᵐ   | ✗    |
 | `[]T` · `[N]T`        | ✗   | ✗   | ✗   | ✗    | ~⁷   | ✓   | ✓⁸   | ✗    |
 | `map[K]V`             | ✗   | ✗   | ✗   | ✗    | ~⁷   | ~ˢ  | ✓    | ~ᵇ  |
@@ -135,7 +132,7 @@ cast.ToE[T](v, opts...)  // (T, error)
 
 **String conversions**
 
-⁴ `string` → `bool`: only `"1"/"0"/"t"/"f"/"true"/"false"` and their case variants are accepted.\
+⁴ `string` → `bool`: first tries `strconv.ParseBool` (`"1"/"0"/"t"/"f"/"true"/"false"` and their case variants); on failure falls back to integer parsing — any string that converts to a non-zero `int` is `true`, zero is `false`. `"yes"`, `"on"`, and similar are not accepted. Note that `"0.1"` → `false` because `floor(0.1) = 0`.\
 ⁵ `string` → numeric: parsed as `float64` via `strconv.ParseFloat`; non-numeric strings error. Float strings truncate when targeting `int*`.\
 ⁶ `[]byte` and `[]rune` → `string`: uses `string(b)` / `string(r)` directly — not element-wise and not JSON-encoded. Scalar targets work the same way, via this string representation.\
 ⁷ Complex types, maps, and structs → `string`: stringified via `fmt.Sprintf("%v", v)`.
@@ -144,8 +141,9 @@ cast.ToE[T](v, opts...)  // (T, error)
 
 ⁸ `[]T`/`[N]T` → `map[K]V`: element indices (0, 1, 2 …) become map keys, cast to key type `K`.\
 ⁹ `struct` → `map[K]V`: exported field names become keys; embedded structs are inlined; nested structs recurse into nested maps when the value type is `any` or `map`.\
+ⁿ `string` → `map[K]V`: succeeds when the string looks like a JSON object or array — decoded automatically. Non-JSON strings error.\
 ᵃ `error`/`Stringer` → any target: calls `.Error()` or `.String()`, then parses the result the same way a plain `string` source would. Succeeds whenever the string value would succeed.\
-ᵇ `map`/`struct` → `struct`: source keys/fields matched **case-sensitively** to target exported fields. Unmatched fields retain their zero value; `STRICT` promotes mismatches to errors. Anonymous fields are promoted on both sides. Use `ToStruct[T]` / `ToStructE[T]` for arbitrary struct types.\
+ᵇ `map`/`struct` → `struct`: source keys/fields matched **case-sensitively** to target exported fields. Unmatched fields retain their zero value; `STRICT` promotes mismatches to errors. Anonymous fields are promoted on both sides. Use `To[T]` / `ToE[T]` for arbitrary struct types.\
 ˡ `string` → `[]T`: `[]byte` and `[]rune` use direct Go string conversion. All other element types attempt scalar wrap (e.g. `"42"` → `[]int{42}`); if that fails and the string looks like a JSON collection, it is decoded automatically. Pass `Op{DECODE, "json"}` to force JSON decoding first.\
 ᵐ `[]byte` (`[]uint8`) and `[]rune` (`[]int32`) are treated as slices for container targets: elements are cast individually when converting to `[]T` or `map[K]V`.\
 ˢ Non-collection sources wrap as single-element slices for `[]T` targets: `42 → []int{42}`. Structs iterate exported fields; maps iterate values; `nil` produces `[zero_T]`.
@@ -160,7 +158,7 @@ cast.ToE[T](v, opts...)  // (T, error)
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | same named type                  | ✓   | ✓   | ✓   | ✓   | ✓   | ✓ᵃ  | ✓ᵃ  |
 | `*time.Time`                     | ~ᵇ  | ✗   | ✗   | ~ʲ  | ~ʲ  | ✗   | ✗   |
-| `time.Time` (as source)          | ✓   | ✗   | ✗   | ~ʲ  | ~ʲ  | ✓   | ✓   |
+| `time.Time` (as source)          | ✓   | ✗   | ✗   | ~ʲ  | ~ʲ  | ✓ʷ  | ✓ʷ  |
 | `url.URL` (value, not ptr)       | ✗   | ✗   | ✗   | ✓   | ~ʲ  | ✗   | ✗   |
 | `big.Int` · `big.Float` (values) | ✓ᵗ  | ✓ᵗ  | ~   | ~ʲ  | ~ʲ  | ✓ᶜ  | ✓   |
 | `*big.Float` → `*big.Int`        | ✓ᵗ  | ✓ᵗ  | ~   | ~ʲ  | ~ʲ  | ~ᶜ  | —   |
@@ -175,10 +173,11 @@ cast.ToE[T](v, opts...)  // (T, error)
 
 **`time.Time` targets**
 
-ᵈ `int*` / `uint*` → `time.Time`: treated as Unix seconds — `time.Unix(n, 0).UTC()`. `uint32` follows the same rule.\
+ᵈ `int*` / `uint*` → `time.Time`: treated as Unix nanoseconds — `time.Unix(0, n).UTC()`. `uint32` follows the same rule.\
 ᵉ `float*` → `time.Time`: treated as Unix seconds; fractional seconds preserved via nanosecond conversion.\
-ᶠ `string` / `[]byte` → `time.Time`: 19 formats tried in order — RFC3339Nano, RFC3339, DateTime, RFC1123Z, RFC1123, RFC822Z, RFC822, DateOnly, then Layout/ANSIC/UnixDate/RubyDate/RFC850/Kitchen/Stamp/StampMilli/StampMicro/StampNano/TimeOnly.\
-ᵗ `big.Int` / `big.Float` (and pointer variants) → `time.Time`: integer part as Unix seconds. → `time.Duration`: as nanoseconds (`*big.Int` must fit in `int64`; `*big.Float` truncated toward zero). → `net.IP`: zero-padded to 16 bytes big-endian as IPv6; negative or > 128-bit values error.
+ᶠ `string` / `[]byte` → `time.Time`: 19 formats tried in order — RFC3339Nano, RFC3339, DateTime, RFC1123Z, RFC1123, RFC822Z, RFC822, DateOnly, then Layout/ANSIC/UnixDate/RubyDate/RFC850/Kitchen/Stamp/StampMilli/StampMicro/StampNano/TimeOnly. The empty string `""` is a special case: `time.Parse("", "")` succeeds and returns the zero `time.Time{}`.\
+ᵗ `*big.Int` / `big.Int` → `time.Time`: treated as Unix nanoseconds — `time.Unix(0, n)`, matching `int*` sources. `*big.Float` / `big.Float` → `time.Time`: treated as Unix seconds with fractional precision, matching `float*` sources. → `time.Duration`: as nanoseconds (`*big.Int` must fit in `int64`; `*big.Float` truncated toward zero). → `net.IP`: zero-padded to 16 bytes big-endian as IPv6; negative or > 128-bit values error.\
+ʷ `time.Time` (as source) → `*big.Int`: stored as Unix nanoseconds (`val.UnixNano()`), matching the nanosecond unit that `*big.Int → time.Time` uses; the round-trip is lossless for times within int64 range. → `*big.Float`: stored as Unix seconds with fractional precision (`val.Unix() + val.Nanosecond()/1e9`), matching the unit that `*big.Float → time.Time` uses.
 
 **`net.IP` targets**
 
@@ -211,17 +210,39 @@ result, err := cast.ToE[[]string](items, cast.Op{cast.UNIQUE_VALUES, true})
 
 **Available flags**
 
-| Flag | Applies to | Effect |
-|:---|:---|:---|
-| `DEFAULT` | all targets | Return this value on error instead of the zero value |
-| `ABS` | `uint*` targets | Use absolute value for negative signed inputs instead of erroring |
-| `DECODE` | `bool`, `int*`, `uint*`, `float*`, `complex*`, `[]T` (string/error/Stringer source) | Decode the source string as the specified format before converting; only `"json"` is supported. For scalar targets it fires as a fallback after normal parsing fails (e.g. `"\"1\""` → `1`). For `[]T` it forces JSON decoding first, bypassing `[]byte`/`[]rune` special-casing. Note: `map[K]V` already auto-decodes JSON-like strings without this flag. |
-| `LENGTH` | `[]T`, `chan T` | Pre-allocate slice capacity or set channel buffer size (≥ 1 for chan) |
-| `UNIQUE_VALUES` | `[]T` | Deduplicate after conversion, preserving first-seen order |
-| `JSON` | `string` | JSON-encode the resulting string (adds quotes and escaping) |
-| `PRIVATE` | map from struct; struct from map/struct | Include unexported fields when reading a struct source or hydrating a struct target |
-| `STRICT` | map from struct; struct from map/struct | Error instead of silently skipping unconvertible fields or unmatched keys |
-| `DUPLICATE_KEY_ERROR` | map from map | Error when two source keys cast to the same target key |
+Flags are either **global** or **local**. Global flags propagate into nested casts (e.g. into element-level conversions inside `[]T` or `map[K]V`). Local flags apply only at the outermost call and are stripped before any nested casts.
+
+| Flag | Type | Scope | Applies to | Effect |
+|:---|:---:|:---:|:---|:---|
+| `DEFAULT` | target type T | local | all targets | Return this value on error instead of the zero value. **Val must be the exact same type as T** — a wrong-typed DEFAULT causes an immediate error before the input is inspected, even for inputs that would otherwise succeed. |
+| `ABS` | `bool` | global | `uint*` targets | Use absolute value when the source is negative instead of erroring. Applies to signed integer sources (`int`, `int8`…`int64`), float sources (`float32`, `float64`), and numeric string sources that parse to a negative value. |
+| `DECODE` | `string` | local | `bool`, `int*`, `uint*`, `float*`, `complex*`, `[]T` (string/error/Stringer source) | Decode the source string as the specified format before converting; only `"json"` is supported. For scalar targets it fires as a fallback after normal parsing fails (e.g. `"\"1\""` → `1`). For `[]T` it forces JSON decoding first, bypassing `[]byte`/`[]rune` special-casing. Note: `map[K]V` already auto-decodes JSON-like strings without this flag. |
+| `DUPLICATE_KEY_ERROR` | `bool` | local | `map[K]V` from `map` | Error when two source keys cast to the same target key |
+| `FORMAT` | `string` | global | `time.Time` (string or `[]byte` source) | Use this exact `time.Parse` layout instead of trying the 19 built-in formats (e.g. `"2006/01/02"`). When set, the default format list is skipped entirely. Without FORMAT, the empty string `""` is a valid source that returns the zero `time.Time{}`. |
+| `JSON` | `bool` | global | `string` target | JSON-encode the resulting string (adds quotes and escaping). Because JSON is global it also applies to string elements inside `[]string`, `map[K]string`, etc. |
+| `LENGTH` | `int` | global | `[]T`, `chan T` | Pre-allocate slice capacity (≥ 0) or set channel buffer size (≥ 1). Because LENGTH is global, for composite types like `chan []int` a single LENGTH value controls both the channel buffer and the inner slice capacity. |
+| `PRIVATE` | `bool` | global | struct source → map; map/struct → struct target | Include unexported fields when reading a struct source or hydrating a struct target. Propagates to nested struct conversions at all levels. |
+| `STRICT` | `bool` | global | struct source → map; map/struct → struct target | Error instead of silently skipping unconvertible fields or unmatched keys. Propagates to nested struct conversions. |
+| `UNIQUE_VALUES` | `bool` | global | `[]T` | Deduplicate after conversion, preserving first-seen order. Because UNIQUE_VALUES is global, for nested slice types like `[][]int` every level is deduplicated independently. |
+
+**Global flag propagation** — Global flags propagate through the entire conversion tree via `ops.Global()`. Every element-level cast inside a container receives the same global flags as the outer call. Practical consequences:
+
+```go
+// ABS propagates: every element in []uint is absolute-valued
+cast.To[[]uint]([]int{-5, 3, -1}, cast.Op{cast.ABS, true})         // []uint{5, 3, 1}
+
+// JSON propagates: every string element is JSON-encoded
+cast.To[[]string]([]int{1, 2}, cast.Op{cast.JSON, true})             // []string{`"1"`, `"2"`}
+
+// LENGTH propagates: sets both channel buffer and inner slice capacity
+cast.ToE[chan []int]([]string{"a","b"}, cast.Op{cast.LENGTH, 10})    // chan (buf 10) of []int (cap 10)
+
+// UNIQUE_VALUES propagates: each inner []int is independently deduplicated
+cast.To[[][]int]([][]int{{1,2,1},{3,3}}, cast.Op{cast.UNIQUE_VALUES, true}) // [][]int{{1,2},{3}}
+
+// FORMAT propagates: every element parsed with the custom layout
+cast.To[[]time.Time]([]string{"2024/04/22"}, cast.Op{cast.FORMAT, "2006/01/02"})
+```
 
 ### Examples
 
@@ -250,9 +271,12 @@ cast.To[int]("8.51") // 8   — string → float64 → Floor
 cast.To[int](true)   // 1
 cast.To[int](nil)    // 0
 
-// Negative → unsigned: errors by default; ABS takes the absolute value instead
-cast.To[uint](-5)                               // 0 (error silently dropped)
-cast.To[uint](-5, cast.Op{cast.ABS, true})      // 5
+// Negative → unsigned: errors by default; ABS takes the absolute value instead.
+// ABS works for signed int, float, and numeric string sources.
+cast.To[uint](-5)                                    // 0 (error silently dropped)
+cast.To[uint](-5, cast.Op{cast.ABS, true})           // 5
+cast.To[uint](float64(-3.9), cast.Op{cast.ABS, true}) // 3 (floor of 3.9)
+cast.To[uint]("-7.5", cast.Op{cast.ABS, true})        // 7 (floor of 7.5)
 ```
 
 ##### String
@@ -335,7 +359,7 @@ cast.ToE[map[string]any](myStruct,
 
 #### Structs
 
-`ToStruct[T]` / `ToStructE[T]` hydrate a struct from a map or another struct. Field matching is **case-sensitive** on exported field names. Fields with no matching source key retain their zero value.
+`To[T]` / `ToE[T]` hydrate a struct from a map or another struct when `T` is a struct type. Field matching is **case-sensitive** on exported field names. Fields with no matching source key retain their zero value.
 
 ```go
 type Point struct {
@@ -344,22 +368,22 @@ type Point struct {
 }
 
 // From a map: values are cast to each field's type
-point, _ := cast.ToStructE[Point](map[string]any{"X": 3, "Y": "4"})
+point, _ := cast.ToE[Point](map[string]any{"X": 3, "Y": "4"})
 // Point{X: 3, Y: 4}
 
 // From another struct: matched by exported field name; extra source fields are ignored
 type Src struct{ X, Y, Z int }
-pointFromStruct, _ := cast.ToStructE[Point](Src{X: 10, Y: 20, Z: 30})
+pointFromStruct, _ := cast.ToE[Point](Src{X: 10, Y: 20, Z: 30})
 // Point{X: 10, Y: 20}  — Z ignored, no matching field
 
 // STRICT: error when source has keys with no matching target field
-_, strictErr := cast.ToStructE[Point](
+_, strictErr := cast.ToE[Point](
     map[string]any{"X": 1, "Y": 2, "Z": 3},
     cast.Op{cast.STRICT, true},
 )
 // strictErr != nil — "Z" has no matching field in Point
 
-// Also accessible via the standard To[T] / ToE[T] entry points
+// To[T] drops the error and returns the zero value on failure
 pointFromMap := cast.To[Point](map[string]any{"X": 5, "Y": 6})
 // Point{X: 5, Y: 6}
 ```
@@ -374,7 +398,7 @@ type Config struct {
     Port int    `json:"port,omitempty"` // matched by key "port"
     Skip string `cast:"-"`             // never populated from any source
 }
-cfg, _ := cast.ToStructE[Config](map[string]any{"host": "localhost", "port": 8080})
+cfg, _ := cast.ToE[Config](map[string]any{"host": "localhost", "port": 8080})
 // Config{Host: "localhost", Port: 8080}
 
 // Struct source: source field keys follow the same tag priority
@@ -382,7 +406,7 @@ type Src struct {
     Host string `cast:"host"`
     Port int    `json:"port"`
 }
-cfg2, _ := cast.ToStructE[Config](Src{Host: "db", Port: 5432})
+cfg2, _ := cast.ToE[Config](Src{Host: "db", Port: 5432})
 // Config{Host: "db", Port: 5432}
 ```
 
@@ -397,7 +421,7 @@ type connConfig struct {
 }
 
 // From a map
-conn, _ := cast.ToStructE[connConfig](
+conn, _ := cast.ToE[connConfig](
     map[string]any{"host": "localhost", "port": 8080},
     cast.Op{cast.PRIVATE, true},
 )
@@ -405,7 +429,7 @@ conn, _ := cast.ToStructE[connConfig](
 
 // From a struct with unexported source fields
 type Src struct{ host string; port int }
-conn2, _ := cast.ToStructE[connConfig](Src{host: "db", port: 5432}, cast.Op{cast.PRIVATE, true})
+conn2, _ := cast.ToE[connConfig](Src{host: "db", port: 5432}, cast.Op{cast.PRIVATE, true})
 // connConfig{host: "db", port: 5432}
 ```
 
@@ -436,11 +460,11 @@ nestedFunc := cast.To[cast.Func[chan int]](42)    // func() chan int
 `time.Time`, `time.Duration`, `net.IP`, `*url.URL`, `*regexp.Regexp`, `*big.Int`, and `*big.Float` are direct cast targets via `To[T]` / `ToE[T]`. See [Named-type targets](#named-type-targets) for the full source compatibility matrix.
 
 ```go
-// time.Time — string (19 formats tried), int/uint (Unix seconds), float (Unix seconds)
-rfcTime, _    := cast.ToE[time.Time]("2024-04-22T12:00:00Z") // RFC3339
-dateTime, _   := cast.ToE[time.Time]("2024-04-22")           // DateOnly
-unixSecTime   := cast.To[time.Time](int64(1713787200))        // Unix seconds
-unixSecTime2  := cast.To[time.Time](float64(1713787200.5))    // Unix seconds (fractional)
+// time.Time — string (19 formats tried), int/uint (Unix nanoseconds), float (Unix seconds)
+rfcTime, _    := cast.ToE[time.Time]("2024-04-22T12:00:00Z")          // RFC3339
+dateTime, _   := cast.ToE[time.Time]("2024-04-22")                    // DateOnly
+unixNsTime    := cast.To[time.Time](int64(1_713_787_200_000_000_000)) // 2024-04-22 (Unix ns)
+unixSecTime   := cast.To[time.Time](float64(1713787200.5))             // Unix seconds (fractional)
 
 // time.Duration — time.ParseDuration syntax, or int/float as nanoseconds
 duration, _  := cast.ToE[time.Duration]("1h30m45s")

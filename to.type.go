@@ -1,32 +1,33 @@
 package cast
 
 import (
-	"fmt"
-	"strings"
+	internal "github.com/bdlm/cast/v2/internal/cast"
 )
 
 // Sentinel errors and reusable format strings used throughout the package.
+// These are re-exports of the values defined in the internal package so that
+// callers see them through the cast namespace while the conversion code lives
+// behind the internal/ boundary.
 var (
 	// ErrorUnableToCast is a sentinel error returned when a value cannot be
-	// cast to the requested type. It is used as a fallback error message in
-	// conversion operations that do not provide more specific error details.
-	ErrorUnableToCast = fmt.Errorf("unable to cast value")
+	// cast to the requested type.
+	ErrorUnableToCast = internal.ErrorUnableToCast
 
 	// ErrorSignedToUnsigned is returned when a negative value is cast to an
 	// unsigned integer type and the ABS flag is not set.
-	ErrorSignedToUnsigned = fmt.Errorf("cannot cast signed value to unsigned integer")
+	ErrorSignedToUnsigned = internal.ErrorSignedToUnsigned
 
 	// ErrorInvalidOption is a format string (not an error value) used to build
 	// error messages when an Op flag carries an unexpected value type.
-	ErrorInvalidOption = "invalid %s value '%v'"
+	ErrorInvalidOption = internal.ErrorInvalidOption
 
 	// ErrorStrErrorCastingFunc is a format string (not an error value) used
 	// when an element cast fails inside a Func[T] closure generator.
-	ErrorStrErrorCastingFunc = "error casting %T to %T during function generation"
+	ErrorStrErrorCastingFunc = internal.ErrorStrErrorCastingFunc
 
 	// ErrorStrUnableToCast is a format string (not an error value) used when
 	// a value cannot be converted to the requested target type.
-	ErrorStrUnableToCast = "unable to cast %#.10v of type %T to %T"
+	ErrorStrUnableToCast = internal.ErrorStrUnableToCast
 
 	// Error is a deprecated alias for [ErrorUnableToCast].
 	//
@@ -35,211 +36,28 @@ var (
 )
 
 // Flag is the key type for conversion options passed to [To] and [ToE].
-type Flag int
+type Flag = internal.Flag
 
 // Op is a single key/value option passed to [To] or [ToE]. Build one with a
 // [Flag] constant and the appropriate value type for that flag.
-type Op struct {
-	Flag Flag
-	Val  any
-}
+//
+// The Val type must exactly match the target type T for [DEFAULT], or the
+// converter returns an error immediately — before the input is even inspected.
+type Op = internal.Op
 
-// Available option flags. Flags fall into two categories:
-//
-// Global flags propagate through the full conversion tree and are preserved by
-// [ops.Global]. They apply the same way at every level of a nested conversion:
-//   - ABS, FORMAT, JSON, LENGTH, PRIVATE, STRICT, UNIQUE_VALUES
-//
-// Local flags apply only to the conversion they are passed to and are stripped
-// by [ops.Global]. Container converters read their own local flags, then pass
-// [ops.Global] to element-level casts so the local flags do not leak into
-// nested conversions where they carry no meaning or the wrong type:
-//   - DECODE, DEFAULT, DUPLICATE_KEY_ERROR
+// Available option flags. See the internal package for full documentation.
 const (
-	DEFAULT Flag = iota // TTo,  LOCAL  — value to return on error; type-specific, not passed to nested casts
-
-	ABS                 // bool,   GLOBAL — use absolute value during uint conversion
-	DECODE              // string, LOCAL  — decode string source before conversion; only applies to string/error/Stringer sources; supported values: "JSON"/"json"
-	DUPLICATE_KEY_ERROR // bool,   LOCAL  — error on duplicate key (map→map only); not meaningful in nested casts
-	FORMAT              // string, GLOBAL — Format string for time/duration parsing
-	JSON                // bool,   GLOBAL — encode strings as JSON
-	LENGTH              // int,    GLOBAL — initial capacity for slices / buffer size for channels; applies to all slice and chan targets in the tree (slices allow 0; channels require >= 1)
-	PRIVATE             // bool,   GLOBAL — include unexported struct fields in map output
-	STRICT              // bool,   GLOBAL — return error instead of skipping unconvertible fields
-	UNIQUE_VALUES       // bool,   GLOBAL — dedupe slice values; applies to all slice targets in the tree
+	DEFAULT             = internal.DEFAULT
+	ABS                 = internal.ABS
+	DECODE              = internal.DECODE
+	DUPLICATE_KEY_ERROR = internal.DUPLICATE_KEY_ERROR
+	FORMAT              = internal.FORMAT
+	JSON                = internal.JSON
+	LENGTH              = internal.LENGTH
+	PRIVATE             = internal.PRIVATE
+	STRICT              = internal.STRICT
+	UNIQUE_VALUES       = internal.UNIQUE_VALUES
 )
-
-// ops is the internal parsed representation of conversion options. A plain
-// struct is used instead of a map so that the common zero-options path
-// allocates nothing and bool-flag checks are plain field reads.
-//
-// defaultVal and lengthVal preserve the original Op.Val for type-checking and
-// error messages. formatVal and decodeVal are stored as pre-parsed strings.
-// All bool flags are parsed eagerly by parseOps.
-type ops struct {
-	hasDefault bool
-	defaultVal any // DEFAULT value; meaningful only when hasDefault is true
-
-	hasLength bool
-	lengthVal any // LENGTH value preserved for ToE[int] parsing and error messages
-
-	hasFormat bool
-	formatVal string // FORMAT value preserved for time/duration parsing and error messages
-
-	hasDecode bool
-	decodeVal string // DECODE format, normalized to lowercase (e.g. "json")
-
-	abs        bool
-	dupKeyErr  bool
-	uniqueVals bool
-	jsonEncode bool
-	private    bool
-	strict     bool
-}
-
-// Global returns a copy of ops containing only the flags that apply
-// universally across all target types. Local flags (DECODE, DEFAULT,
-// DUPLICATE_KEY_ERROR) are dropped; global flags (ABS, FORMAT, JSON, LENGTH,
-// PRIVATE, STRICT, UNIQUE_VALUES) are retained.
-//
-// Container converters call this when passing ops to element-level casts so
-// that a container's own local flags do not leak into nested conversions where
-// they carry no meaning or the wrong type.
-func (o ops) Global() ops {
-	return ops{
-		abs:        o.abs,
-		hasLength:  o.hasLength,
-		lengthVal:  o.lengthVal,
-		hasFormat:  o.hasFormat,
-		formatVal:  o.formatVal,
-		uniqueVals: o.uniqueVals,
-		jsonEncode: o.jsonEncode,
-		private:    o.private,
-		strict:     o.strict,
-	}
-}
-
-// Delete returns a copy of ops with the given flag cleared.
-func (o ops) Delete(key Flag) ops {
-	switch key {
-	case DEFAULT:
-		o.hasDefault = false
-		o.defaultVal = nil
-	case ABS:
-		o.abs = false
-	case DECODE:
-		o.hasDecode = false
-		o.decodeVal = ""
-	case DUPLICATE_KEY_ERROR:
-		o.dupKeyErr = false
-	case FORMAT:
-		o.hasFormat = false
-		o.formatVal = ""
-	case JSON:
-		o.jsonEncode = false
-	case LENGTH:
-		o.hasLength = false
-		o.lengthVal = nil
-	case PRIVATE:
-		o.private = false
-	case STRICT:
-		o.strict = false
-	case UNIQUE_VALUES:
-		o.uniqueVals = false
-	}
-	return o
-}
-
-// List converts ops back to a []Op slice for passing to recursive ToE calls
-// for element-level casts inside containers.
-func (o ops) List() []Op {
-	var list []Op
-	if o.hasDefault {
-		list = append(list, Op{DEFAULT, o.defaultVal})
-	}
-	if o.hasDecode {
-		list = append(list, Op{DECODE, o.decodeVal})
-	}
-	if o.hasLength {
-		list = append(list, Op{LENGTH, o.lengthVal})
-	}
-	if o.abs {
-		list = append(list, Op{ABS, true})
-	}
-	if o.dupKeyErr {
-		list = append(list, Op{DUPLICATE_KEY_ERROR, true})
-	}
-	if o.hasFormat {
-		list = append(list, Op{FORMAT, o.formatVal})
-	}
-	if o.uniqueVals {
-		list = append(list, Op{UNIQUE_VALUES, true})
-	}
-	if o.jsonEncode {
-		list = append(list, Op{JSON, true})
-	}
-	if o.private {
-		list = append(list, Op{PRIVATE, true})
-	}
-	if o.strict {
-		list = append(list, Op{STRICT, true})
-	}
-	return list
-}
-
-// parseOps collapses the public variadic []Op into the internal ops struct
-// used by all conversion functions. Bool flags are parsed eagerly; DEFAULT and
-// LENGTH preserve their raw Val for type-checking at each call site; FORMAT and
-// DECODE are stored as normalized strings.
-func parseOps(o []Op) ops {
-	if len(o) == 0 {
-		return ops{}
-	}
-	var result ops
-	for _, op := range o {
-		switch op.Flag {
-		case DEFAULT:
-			result.hasDefault = true
-			result.defaultVal = op.Val
-		case ABS:
-			result.abs, _ = op.Val.(bool)
-		case DECODE:
-			if s, ok := op.Val.(string); ok && s != "" {
-				result.hasDecode = true
-				result.decodeVal = strings.ToLower(s)
-			}
-		case DUPLICATE_KEY_ERROR:
-			result.dupKeyErr, _ = op.Val.(bool)
-		case FORMAT:
-			result.hasFormat = true
-			result.formatVal, _ = op.Val.(string)
-		case JSON:
-			result.jsonEncode, _ = op.Val.(bool)
-		case LENGTH:
-			result.hasLength = true
-			result.lengthVal = op.Val
-		case PRIVATE:
-			result.private, _ = op.Val.(bool)
-		case STRICT:
-			result.strict, _ = op.Val.(bool)
-		case UNIQUE_VALUES:
-			result.uniqueVals, _ = op.Val.(bool)
-		}
-	}
-	return result
-}
-
-// integer, float, and complexNum are internal constraints used by the
-// per-kind conversion functions. They accept named types with the matching
-// underlying type (e.g. type Celsius float32).
-type integer interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
-}
-
-type float interface{ ~float32 | ~float64 }
-
-type complexNum interface{ ~complex64 | ~complex128 }
 
 // Func is a named zero-argument function type that returns a T. A named type
 // is required because Go generics cannot use plain function literals as type
